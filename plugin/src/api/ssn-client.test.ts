@@ -140,6 +140,24 @@ describe("SsnClient", () => {
 		await expect(client.sendCommand({ action: "clearOverlay" })).resolves.toBe("ok");
 		expect(requests.some(request => request.url === "/session-5/clearOverlay")).toBe(true);
 	});
+
+	it("keeps targeted custom commands compatible even when action names overlap SSApp", async () => {
+		const { server, port, requests } = await createHttpServer("ok");
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+
+		client.configure({
+			sessionId: "session-6",
+			apiHost: `127.0.0.1:${port}`,
+			useTls: false,
+			httpFallback: true,
+			requestTimeoutMs: 500
+		});
+
+		await expect(client.sendCommand({ action: "startSource", target: "overlay", value: "source-1" })).resolves.toBe("ok");
+		expect(requests.some(request => request.url === "/session-6/startSource/overlay/source-1")).toBe(true);
+	});
 });
 
 async function createServer(): Promise<{ server: WebSocketServer; port: number; messages: Record<string, unknown>[] }> {

@@ -345,5 +345,8 @@ function isSsappCommand(payload: SsnCommandPayload): boolean {
 	if (typeof payload.action === "string" && payload.action.startsWith("ssapp.")) {
 		return true;
 	}
+	if (payload.target && payload.target !== "null") {
+		return false;
+	}
 	return SSAPP_ACTIONS.has(payload.action);
 }
