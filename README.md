@@ -18,12 +18,12 @@ Current workspace capabilities:
 
 - Guided setup in the property inspector with a short Social Stream Ninja explanation.
 - Connection Status action.
-- Preset SSN Command action.
+- Preset Command action with SSN remote controls and capability-aware SSApp source controls.
 - Custom Command action.
 - Global session/API configuration in the property inspector.
 - WebSocket client for `wss://io.socialstream.ninja`.
 - Optional HTTP fallback for simple request/response commands.
-- A command registry seeded with common SSN commands from `../api.md`.
+- A command registry seeded with common SSN commands from `../api.md`, including dock pinning, waitlist, chat, poll, queue, and SSApp source presets.
 - Capability-aware SSApp source controls when Social Stream advertises SSApp support.
 
 ## Suggested Actions
@@ -31,7 +31,7 @@ Current workspace capabilities:
 | Action | Purpose | Starting commands |
 | --- | --- | --- |
 | Setup / Status | Configure session ID and show API connection state | WebSocket send channel 1, listen channel 2 |
-| Preset Command | Button presets for common remote controls and advertised SSApp source controls | `clearOverlay`, `nextInQueue`, `getQueueSize`, `drawmode`, `resetwaitlist`, `stopentries`, `startentries`, `selectwinner`, `startSource`, `stopSource` |
+| Preset Command | Button presets for common remote controls and advertised SSApp source controls | `clearOverlay`, `nextInQueue`, `pin`, `unpin`, `nextPinned`, `resetwaitlist`, `startentries`, `downloadwaitlist`, `selectwinner`, `startSource`, `stopSource` |
 | Custom Command | Send any `{ action, target, value }` payload | Power-user and development testing |
 
 ## API Assumptions
@@ -81,7 +81,7 @@ npx @elgato/cli@latest restart ninja.socialstream.streamdeck
 
 ## Next Work
 
-- Expand preset actions around queue, waitlist, poll, timer, overlay, and chat commands.
+- Add timer and additional overlay presets once command semantics are confirmed.
 - Add live feedback from channel 4 for last message, message counts, and active platform.
 - Add safer command grouping and second-press guards for destructive commands.
 - Add README screenshots once a real Stream Deck profile exists.
