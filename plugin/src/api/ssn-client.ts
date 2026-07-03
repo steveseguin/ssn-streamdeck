@@ -34,7 +34,7 @@ export class SsnClient {
 	private listeners = {
 		state: new Set<Listener<ConnectionStateName>>(),
 		message: new Set<Listener<unknown>>(),
-		capabilities: new Set<Listener<StreamDeckCapabilities>>()
+		capabilities: new Set<Listener<StreamDeckCapabilities | null>>()
 	};
 
 	get connectionState(): ConnectionStateName {
@@ -51,10 +51,14 @@ export class SsnClient {
 			next.outChannel !== this.settings.outChannel;
 		this.settings = next;
 		if (!next.sessionId) {
+			this.setCapabilities(null);
 			this.disconnect("missing-session");
 			return;
 		}
 		if (changed || !this.isSocketOpen()) {
+			if (changed) {
+				this.setCapabilities(null);
+			}
 			this.connect();
 		}
 	}
@@ -67,7 +71,7 @@ export class SsnClient {
 		return this.addListener("message", listener);
 	}
 
-	onCapabilities(listener: Listener<StreamDeckCapabilities>): () => void {
+	onCapabilities(listener: Listener<StreamDeckCapabilities | null>): () => void {
 		return this.addListener("capabilities", listener);
 	}
 
@@ -95,18 +99,21 @@ export class SsnClient {
 		this.socket.on("message", data => this.handleMessage(data.toString()));
 		this.socket.on("close", () => {
 			this.rejectPendingRequests(new Error("Social Stream API WebSocket closed"));
+			this.setCapabilities(null);
 			if (this.settings.sessionId) {
 				this.setState("disconnected");
 			}
 		});
 		this.socket.on("error", () => {
 			this.rejectPendingRequests(new Error("Social Stream API WebSocket error"));
+			this.setCapabilities(null);
 			this.setState("error");
 		});
 	}
 
 	disconnect(state: ConnectionStateName = "disconnected"): void {
 		this.closeSocket();
+		this.setCapabilities(null);
 		this.setState(state);
 	}
 
@@ -257,7 +264,10 @@ export class SsnClient {
 		this.emit("state", state);
 	}
 
-	private setCapabilities(capabilities: StreamDeckCapabilities): void {
+	private setCapabilities(capabilities: StreamDeckCapabilities | null): void {
+		if (this.capabilities === capabilities) {
+			return;
+		}
 		this.capabilities = capabilities;
 		this.emit("capabilities", capabilities);
 	}

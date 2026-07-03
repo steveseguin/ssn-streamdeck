@@ -60,6 +60,37 @@ describe("SsnClient", () => {
 		});
 	});
 
+	it("clears advertised capabilities when the session is removed", async () => {
+		const { port, server } = await createServer();
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+		const seenCapabilities: Array<StreamDeckCapabilities | null> = [];
+		client.onCapabilities(next => seenCapabilities.push(next));
+
+		client.configure({
+			sessionId: "session-clear",
+			apiHost: `127.0.0.1:${port}`,
+			useTls: false,
+			httpFallback: false,
+			requestTimeoutMs: 500
+		});
+
+		await waitFor(() => client.getCapabilities() !== null);
+		client.configure({
+			sessionId: "",
+			apiHost: `127.0.0.1:${port}`,
+			useTls: false,
+			httpFallback: false,
+			requestTimeoutMs: 500
+		});
+
+		expect(client.getCapabilities()).toBeNull();
+		expect(seenCapabilities.some(next => next?.ssapp?.available === true)).toBe(true);
+		expect(seenCapabilities[seenCapabilities.length - 1]).toBeNull();
+		expect(seenCapabilities.filter(next => next === null)).toHaveLength(1);
+	});
+
 	it("resolves awaited socket callbacks", async () => {
 		const { port, server } = await createServer();
 		cleanup.push(() => server.close());

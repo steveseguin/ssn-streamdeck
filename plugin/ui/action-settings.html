@@ -632,8 +632,8 @@
 
 		function handlePluginMessage(payload) {
 			if (payload.type === "status") {
-				if (payload.capabilities) {
-					capabilities = payload.capabilities;
+				if (Object.prototype.hasOwnProperty.call(payload, "capabilities")) {
+					capabilities = payload.capabilities || null;
 					renderActionSettings();
 				}
 				currentState = payload.state || currentState;
