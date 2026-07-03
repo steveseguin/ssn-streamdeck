@@ -580,7 +580,9 @@
 		}
 
 		function renderSetupSteps() {
-			const hasSession = !!(globalSettings.sessionId && String(globalSettings.sessionId).trim());
+			const sessionInput = byId("sessionId");
+			const sessionValue = sessionInput ? sessionInput.value : globalSettings.sessionId;
+			const hasSession = !!(sessionValue && String(sessionValue).trim());
 			byId("stepSession").classList.toggle("done", hasSession);
 			byId("stepConnect").classList.toggle("done", currentState === "connected");
 			byId("stepAction").classList.toggle("done", actionUuid === "ninja.socialstream.streamdeck.command" || actionUuid === "ninja.socialstream.streamdeck.custom-command");
@@ -660,9 +662,12 @@
 			return value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[char]));
 		}
 
-		["sessionId", "apiHost", "inChannel", "outChannel", "useTls", "httpFallback"].forEach(id => {
+		["sessionId", "apiHost", "inChannel", "outChannel"].forEach(id => {
 			byId(id).addEventListener("change", saveGlobalSettings);
-			byId(id).addEventListener("input", saveGlobalSettings);
+			byId(id).addEventListener("input", renderSetupSteps);
+		});
+		["useTls", "httpFallback"].forEach(id => {
+			byId(id).addEventListener("change", saveGlobalSettings);
 		});
 		[
 			"statusTitle",
