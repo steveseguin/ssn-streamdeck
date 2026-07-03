@@ -2,134 +2,243 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { deflateSync } from "node:zlib";
 
-const SIZE = 144;
+const BASE_SIZE = 144;
+const SUPERSAMPLE = 4;
 const assets = {
-	category: { bg: [18, 24, 34], fg: [74, 144, 226], mark: "grid" },
-	command: { bg: [18, 24, 34], fg: [74, 144, 226], mark: "chat" },
-	connection: { bg: [18, 24, 34], fg: [46, 204, 113], mark: "link" },
-	custom: { bg: [26, 30, 40], fg: [245, 158, 11], mark: "bolt" },
-	plugin: { bg: [18, 24, 34], fg: [74, 144, 226], mark: "broadcast" },
-	"state-neutral": { bg: [31, 36, 48], fg: [148, 163, 184], mark: "dash" },
-	"state-on": { bg: [16, 107, 63], fg: [255, 255, 255], mark: "check" }
+	category: {
+		bgA: [21, 28, 39],
+		bgB: [35, 45, 60],
+		fg: [87, 166, 255],
+		fg2: [75, 214, 185],
+		mark: "grid"
+	},
+	command: {
+		bgA: [18, 24, 34],
+		bgB: [36, 42, 57],
+		fg: [88, 166, 255],
+		fg2: [176, 214, 255],
+		mark: "chat"
+	},
+	connection: {
+		bgA: [18, 26, 34],
+		bgB: [24, 48, 48],
+		fg: [71, 214, 185],
+		fg2: [205, 255, 239],
+		mark: "link"
+	},
+	custom: {
+		bgA: [28, 27, 35],
+		bgB: [49, 39, 28],
+		fg: [255, 190, 86],
+		fg2: [255, 241, 202],
+		mark: "bolt"
+	},
+	plugin: {
+		bgA: [18, 24, 34],
+		bgB: [34, 44, 60],
+		fg: [88, 166, 255],
+		fg2: [75, 214, 185],
+		mark: "broadcast"
+	},
+	"state-neutral": {
+		bgA: [31, 36, 48],
+		bgB: [42, 48, 63],
+		fg: [172, 184, 204],
+		fg2: [226, 232, 240],
+		mark: "dash"
+	},
+	"state-on": {
+		bgA: [16, 112, 69],
+		bgB: [23, 145, 97],
+		fg: [255, 255, 255],
+		fg2: [188, 255, 218],
+		mark: "check"
+	}
 };
 
 for (const [name, config] of Object.entries(assets)) {
-	const pixels = createCanvas(SIZE, SIZE, config.bg);
-	drawMark(pixels, config.mark, config.fg);
-	await writePng(join(process.cwd(), "imgs", name + ".png"), pixels, SIZE, SIZE);
-	await writePng(join(process.cwd(), "imgs", name + "@2x.png"), scalePixels(pixels, SIZE, SIZE, 2), SIZE * 2, SIZE * 2);
+	await writePng(join(process.cwd(), "imgs", name + ".png"), renderAsset(config, BASE_SIZE), BASE_SIZE, BASE_SIZE);
+	await writePng(join(process.cwd(), "imgs", name + "@2x.png"), renderAsset(config, BASE_SIZE * 2), BASE_SIZE * 2, BASE_SIZE * 2);
 }
 
-function createCanvas(width, height, color) {
-	const pixels = new Uint8Array(width * height * 4);
-	for (let i = 0; i < pixels.length; i += 4) {
-		pixels[i] = color[0];
-		pixels[i + 1] = color[1];
-		pixels[i + 2] = color[2];
-		pixels[i + 3] = 255;
-	}
-	return pixels;
+function renderAsset(config, outputSize) {
+	const canvas = createCanvas(outputSize * SUPERSAMPLE, outputSize * SUPERSAMPLE);
+	fillBackground(canvas, config);
+	drawGlass(canvas);
+	drawMark(canvas, config);
+	return downsample(canvas, outputSize, outputSize);
 }
 
-function drawMark(pixels, mark, color) {
-	if (mark === "broadcast") {
-		drawCircle(pixels, 72, 72, 13, color);
-		drawRing(pixels, 72, 72, 38, 7, color);
-		drawRing(pixels, 72, 72, 58, 7, [147, 197, 253]);
+function createCanvas(width, height) {
+	return {
+		width,
+		height,
+		unit: width / BASE_SIZE,
+		pixels: new Uint8Array(width * height * 4)
+	};
+}
+
+function fillBackground(canvas, config) {
+	const cx = canvas.width / 2;
+	const cy = canvas.height / 2;
+	const maxDistance = Math.sqrt(cx * cx + cy * cy);
+	for (let y = 0; y < canvas.height; y += 1) {
+		for (let x = 0; x < canvas.width; x += 1) {
+			const diagonal = (x + y) / (canvas.width + canvas.height);
+			const distance = Math.sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy)) / maxDistance;
+			const base = mix(config.bgA, config.bgB, diagonal);
+			const lifted = mix(base, [58, 70, 91], Math.max(0, .28 - distance) * .45);
+			const shaded = mix(lifted, [5, 8, 14], Math.max(0, distance - .54) * .55);
+			setPixel(canvas, x, y, shaded, 255);
+		}
+	}
+}
+
+function drawGlass(canvas) {
+	drawCircle(canvas, 34, 26, 46, [255, 255, 255, 18]);
+	drawLine(canvas, 28, 126, 116, 18, [255, 255, 255, 15], 2);
+	drawRoundedRect(canvas, 15, 15, 114, 114, 24, [255, 255, 255, 10]);
+}
+
+function drawMark(canvas, config) {
+	const shadow = [0, 0, 0, 82];
+	const fg = [...config.fg, 255];
+	const fg2 = [...config.fg2, 255];
+
+	if (config.mark === "broadcast") {
+		drawRing(canvas, 72, 74, 47, 8, shadow, 0, 3);
+		drawRing(canvas, 72, 74, 47, 8, fg);
+		drawRing(canvas, 72, 74, 30, 7, fg2);
+		drawCircle(canvas, 72, 74, 12, shadow, 0, 3);
+		drawCircle(canvas, 72, 74, 12, fg);
+		drawRoundedRect(canvas, 45, 96, 54, 22, 8, shadow, 0, 3);
+		drawRoundedRect(canvas, 45, 96, 54, 22, 8, fg2);
 		return;
 	}
-	if (mark === "chat") {
-		drawRoundedRect(pixels, 28, 34, 88, 62, 12, color);
-		drawPolygon(pixels, [[52, 96], [44, 120], [76, 96]], color);
-		drawRect(pixels, 44, 52, 56, 8, [18, 24, 34]);
-		drawRect(pixels, 44, 72, 38, 8, [18, 24, 34]);
+
+	if (config.mark === "chat") {
+		drawRoundedRect(canvas, 25, 32, 94, 64, 15, shadow, 0, 4);
+		drawRoundedRect(canvas, 25, 32, 94, 64, 15, fg);
+		drawPolygon(canvas, [[50, 94], [40, 119], [76, 94]], shadow, 0, 4);
+		drawPolygon(canvas, [[50, 94], [40, 119], [76, 94]], fg);
+		drawRoundedRect(canvas, 42, 51, 61, 8, 4, [11, 18, 28, 255]);
+		drawRoundedRect(canvas, 42, 72, 42, 8, 4, [11, 18, 28, 255]);
+		drawCircle(canvas, 103, 76, 5, fg2);
 		return;
 	}
-	if (mark === "grid") {
-		for (let y = 34; y <= 86; y += 30) {
-			for (let x = 34; x <= 86; x += 30) {
-				drawRoundedRect(pixels, x, y, 24, 24, 5, color);
+
+	if (config.mark === "grid") {
+		for (let y = 33; y <= 87; y += 27) {
+			for (let x = 33; x <= 87; x += 27) {
+				drawRoundedRect(canvas, x, y, 22, 22, 6, shadow, 0, 3);
+				drawRoundedRect(canvas, x, y, 22, 22, 6, fg);
 			}
 		}
+		drawRoundedRect(canvas, 73, 101, 36, 12, 6, fg2);
 		return;
 	}
-	if (mark === "link") {
-		drawRing(pixels, 54, 72, 26, 9, color);
-		drawRing(pixels, 90, 72, 26, 9, color);
-		drawRect(pixels, 52, 66, 40, 12, color);
+
+	if (config.mark === "link") {
+		drawRing(canvas, 54, 72, 26, 9, shadow, 0, 4);
+		drawRing(canvas, 91, 72, 26, 9, shadow, 0, 4);
+		drawRing(canvas, 54, 72, 26, 9, fg);
+		drawRing(canvas, 91, 72, 26, 9, fg);
+		drawRoundedRect(canvas, 51, 65, 43, 14, 7, fg2);
+		drawCircle(canvas, 72, 72, 7, [20, 37, 39, 255]);
 		return;
 	}
-	if (mark === "bolt") {
-		drawPolygon(pixels, [[81, 18], [40, 80], [68, 80], [58, 126], [104, 58], [75, 58]], color);
+
+	if (config.mark === "bolt") {
+		const points = [[82, 18], [39, 80], [68, 80], [58, 126], [105, 58], [76, 58]];
+		drawPolygon(canvas, points, shadow, 0, 4);
+		drawPolygon(canvas, points, fg);
+		drawLine(canvas, 40, 40, 25, 72, fg2, 6);
+		drawLine(canvas, 110, 72, 94, 104, fg2, 6);
 		return;
 	}
-	if (mark === "check") {
-		drawLine(pixels, 34, 75, 62, 101, color, 13);
-		drawLine(pixels, 62, 101, 112, 42, color, 13);
+
+	if (config.mark === "check") {
+		drawLine(canvas, 34, 75, 62, 101, shadow, 14, 0, 4);
+		drawLine(canvas, 62, 101, 112, 42, shadow, 14, 0, 4);
+		drawLine(canvas, 34, 75, 62, 101, fg, 14);
+		drawLine(canvas, 62, 101, 112, 42, fg, 14);
+		drawCircle(canvas, 112, 42, 3, fg2);
 		return;
 	}
-	drawRect(pixels, 36, 66, 72, 12, color);
+
+	drawRoundedRect(canvas, 35, 67, 74, 11, 5, shadow, 0, 3);
+	drawRoundedRect(canvas, 35, 67, 74, 11, 5, fg);
 }
 
-function drawRoundedRect(pixels, x, y, width, height, radius, color) {
-	for (let py = y; py < y + height; py += 1) {
-		for (let px = x; px < x + width; px += 1) {
-			const dx = px < x + radius ? x + radius - px : px >= x + width - radius ? px - (x + width - radius - 1) : 0;
-			const dy = py < y + radius ? y + radius - py : py >= y + height - radius ? py - (y + height - radius - 1) : 0;
-			if (dx * dx + dy * dy <= radius * radius || dx === 0 || dy === 0) {
-				setPixel(pixels, px, py, color);
+function drawRoundedRect(canvas, x, y, width, height, radius, color, offsetX = 0, offsetY = 0) {
+	const sx = toPx(canvas, x + offsetX);
+	const sy = toPx(canvas, y + offsetY);
+	const sw = toPx(canvas, width);
+	const sh = toPx(canvas, height);
+	const sr = toPx(canvas, radius);
+	for (let py = sy; py < sy + sh; py += 1) {
+		for (let px = sx; px < sx + sw; px += 1) {
+			const dx = px < sx + sr ? sx + sr - px : px >= sx + sw - sr ? px - (sx + sw - sr - 1) : 0;
+			const dy = py < sy + sr ? sy + sr - py : py >= sy + sh - sr ? py - (sy + sh - sr - 1) : 0;
+			if (dx * dx + dy * dy <= sr * sr || dx === 0 || dy === 0) {
+				blendPixel(canvas, px, py, color);
 			}
 		}
 	}
 }
 
-function drawRect(pixels, x, y, width, height, color) {
-	for (let py = y; py < y + height; py += 1) {
-		for (let px = x; px < x + width; px += 1) {
-			setPixel(pixels, px, py, color);
-		}
-	}
-}
-
-function drawCircle(pixels, cx, cy, radius, color) {
-	for (let y = cy - radius; y <= cy + radius; y += 1) {
-		for (let x = cx - radius; x <= cx + radius; x += 1) {
-			if ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= radius * radius) {
-				setPixel(pixels, x, y, color);
+function drawCircle(canvas, cx, cy, radius, color, offsetX = 0, offsetY = 0) {
+	const scx = toPx(canvas, cx + offsetX);
+	const scy = toPx(canvas, cy + offsetY);
+	const sr = toPx(canvas, radius);
+	for (let y = scy - sr; y <= scy + sr; y += 1) {
+		for (let x = scx - sr; x <= scx + sr; x += 1) {
+			if ((x - scx) * (x - scx) + (y - scy) * (y - scy) <= sr * sr) {
+				blendPixel(canvas, x, y, color);
 			}
 		}
 	}
 }
 
-function drawRing(pixels, cx, cy, radius, thickness, color) {
-	const inner = radius - thickness;
-	for (let y = cy - radius; y <= cy + radius; y += 1) {
-		for (let x = cx - radius; x <= cx + radius; x += 1) {
-			const d = (x - cx) * (x - cx) + (y - cy) * (y - cy);
-			if (d <= radius * radius && d >= inner * inner) {
-				setPixel(pixels, x, y, color);
+function drawRing(canvas, cx, cy, radius, thickness, color, offsetX = 0, offsetY = 0) {
+	const scx = toPx(canvas, cx + offsetX);
+	const scy = toPx(canvas, cy + offsetY);
+	const sr = toPx(canvas, radius);
+	const inner = Math.max(0, sr - toPx(canvas, thickness));
+	for (let y = scy - sr; y <= scy + sr; y += 1) {
+		for (let x = scx - sr; x <= scx + sr; x += 1) {
+			const d = (x - scx) * (x - scx) + (y - scy) * (y - scy);
+			if (d <= sr * sr && d >= inner * inner) {
+				blendPixel(canvas, x, y, color);
 			}
 		}
 	}
 }
 
-function drawLine(pixels, x1, y1, x2, y2, color, width) {
-	const steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
+function drawLine(canvas, x1, y1, x2, y2, color, width, offsetX = 0, offsetY = 0) {
+	const steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1)) * 2;
 	for (let i = 0; i <= steps; i += 1) {
 		const t = steps === 0 ? 0 : i / steps;
-		drawCircle(pixels, Math.round(x1 + (x2 - x1) * t), Math.round(y1 + (y2 - y1) * t), Math.floor(width / 2), color);
+		drawCircle(
+			canvas,
+			x1 + (x2 - x1) * t + offsetX,
+			y1 + (y2 - y1) * t + offsetY,
+			width / 2,
+			color
+		);
 	}
 }
 
-function drawPolygon(pixels, points, color) {
-	const minX = Math.floor(Math.min(...points.map(point => point[0])));
-	const maxX = Math.ceil(Math.max(...points.map(point => point[0])));
-	const minY = Math.floor(Math.min(...points.map(point => point[1])));
-	const maxY = Math.ceil(Math.max(...points.map(point => point[1])));
+function drawPolygon(canvas, points, color, offsetX = 0, offsetY = 0) {
+	const scaled = points.map(point => [toPx(canvas, point[0] + offsetX), toPx(canvas, point[1] + offsetY)]);
+	const minX = Math.floor(Math.min(...scaled.map(point => point[0])));
+	const maxX = Math.ceil(Math.max(...scaled.map(point => point[0])));
+	const minY = Math.floor(Math.min(...scaled.map(point => point[1])));
+	const maxY = Math.ceil(Math.max(...scaled.map(point => point[1])));
 	for (let y = minY; y <= maxY; y += 1) {
 		for (let x = minX; x <= maxX; x += 1) {
-			if (pointInPolygon(x, y, points)) {
-				setPixel(pixels, x, y, color);
+			if (pointInPolygon(x, y, scaled)) {
+				blendPixel(canvas, x, y, color);
 			}
 		}
 	}
@@ -150,35 +259,67 @@ function pointInPolygon(x, y, points) {
 	return inside;
 }
 
-function setPixel(pixels, x, y, color) {
-	if (x < 0 || y < 0 || x >= SIZE || y >= SIZE) {
-		return;
-	}
-	const index = (y * SIZE + x) * 4;
-	pixels[index] = color[0];
-	pixels[index + 1] = color[1];
-	pixels[index + 2] = color[2];
-	pixels[index + 3] = 255;
+function toPx(canvas, value) {
+	return Math.round(value * canvas.unit);
 }
 
-function scalePixels(pixels, width, height, scale) {
-	const scaled = new Uint8Array(width * scale * height * scale * 4);
-	const scaledWidth = width * scale;
+function mix(a, b, t) {
+	return [
+		Math.round(a[0] + (b[0] - a[0]) * t),
+		Math.round(a[1] + (b[1] - a[1]) * t),
+		Math.round(a[2] + (b[2] - a[2]) * t)
+	];
+}
+
+function setPixel(canvas, x, y, color, alpha = 255) {
+	if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) {
+		return;
+	}
+	const index = (y * canvas.width + x) * 4;
+	canvas.pixels[index] = color[0];
+	canvas.pixels[index + 1] = color[1];
+	canvas.pixels[index + 2] = color[2];
+	canvas.pixels[index + 3] = alpha;
+}
+
+function blendPixel(canvas, x, y, color) {
+	if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) {
+		return;
+	}
+	const alpha = (color[3] ?? 255) / 255;
+	const index = (y * canvas.width + x) * 4;
+	canvas.pixels[index] = Math.round(canvas.pixels[index] * (1 - alpha) + color[0] * alpha);
+	canvas.pixels[index + 1] = Math.round(canvas.pixels[index + 1] * (1 - alpha) + color[1] * alpha);
+	canvas.pixels[index + 2] = Math.round(canvas.pixels[index + 2] * (1 - alpha) + color[2] * alpha);
+	canvas.pixels[index + 3] = 255;
+}
+
+function downsample(canvas, width, height) {
+	const output = new Uint8Array(width * height * 4);
+	const block = SUPERSAMPLE * SUPERSAMPLE;
 	for (let y = 0; y < height; y += 1) {
 		for (let x = 0; x < width; x += 1) {
-			const source = (y * width + x) * 4;
-			for (let sy = 0; sy < scale; sy += 1) {
-				for (let sx = 0; sx < scale; sx += 1) {
-					const target = ((y * scale + sy) * scaledWidth + x * scale + sx) * 4;
-					scaled[target] = pixels[source];
-					scaled[target + 1] = pixels[source + 1];
-					scaled[target + 2] = pixels[source + 2];
-					scaled[target + 3] = pixels[source + 3];
+			let r = 0;
+			let g = 0;
+			let b = 0;
+			let a = 0;
+			for (let sy = 0; sy < SUPERSAMPLE; sy += 1) {
+				for (let sx = 0; sx < SUPERSAMPLE; sx += 1) {
+					const source = ((y * SUPERSAMPLE + sy) * canvas.width + x * SUPERSAMPLE + sx) * 4;
+					r += canvas.pixels[source];
+					g += canvas.pixels[source + 1];
+					b += canvas.pixels[source + 2];
+					a += canvas.pixels[source + 3];
 				}
 			}
+			const target = (y * width + x) * 4;
+			output[target] = Math.round(r / block);
+			output[target + 1] = Math.round(g / block);
+			output[target + 2] = Math.round(b / block);
+			output[target + 3] = Math.round(a / block);
 		}
 	}
-	return scaled;
+	return output;
 }
 
 async function writePng(path, pixels, width, height) {

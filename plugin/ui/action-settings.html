@@ -6,37 +6,54 @@
 	<style>
 		:root {
 			color-scheme: dark;
-			--bg: #1f1f1f;
-			--panel: #2b2b2b;
-			--field: #151515;
-			--text: #f2f2f2;
-			--muted: #aaa;
-			--accent: #4a90e2;
+			--bg: #191b20;
+			--panel: #242830;
+			--panel-strong: #2d3340;
+			--field: #101318;
+			--border: #3f4654;
+			--text: #f4f7fb;
+			--muted: #adb7c6;
+			--soft: #d7deea;
+			--accent: #58a6ff;
+			--accent-2: #47d6b6;
 			--ok: #35d07f;
 			--warn: #f59e0b;
 			--error: #ef4444;
 		}
 		body {
 			margin: 0;
-			padding: 14px;
+			padding: 12px;
 			background: var(--bg);
 			color: var(--text);
-			font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+			font: 13px/1.42 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+		}
+		h1, h2, h3, p {
+			margin: 0;
+		}
+		h1 {
+			font-size: 16px;
+			line-height: 1.15;
 		}
 		h2 {
-			margin: 16px 0 10px;
-			font-size: 14px;
+			margin: 14px 0 8px;
+			font-size: 13px;
+			text-transform: uppercase;
+			letter-spacing: .04em;
+			color: var(--soft);
+		}
+		h3 {
+			font-size: 13px;
 		}
 		label {
 			display: block;
 			margin: 10px 0 4px;
 			color: var(--muted);
-			font-weight: 600;
+			font-weight: 650;
 		}
 		input, select, textarea, button {
 			box-sizing: border-box;
 			width: 100%;
-			border: 1px solid #444;
+			border: 1px solid var(--border);
 			border-radius: 6px;
 			background: var(--field);
 			color: var(--text);
@@ -48,122 +65,316 @@
 			resize: vertical;
 		}
 		button {
-			background: #303a4d;
+			background: linear-gradient(135deg, #2f6fbf, #23518d);
+			border-color: #3f7fd2;
 			cursor: pointer;
+			font-weight: 750;
+		}
+		button.secondary {
+			background: #303744;
+			border-color: #4c5668;
+			color: var(--soft);
+		}
+		details {
+			margin-top: 10px;
+			border: 1px solid var(--border);
+			border-radius: 8px;
+			background: #1d2129;
+		}
+		summary {
+			cursor: pointer;
+			padding: 9px 10px;
+			color: var(--soft);
 			font-weight: 700;
+		}
+		details .details-body {
+			padding: 0 10px 10px;
+		}
+		.panel {
+			margin-bottom: 10px;
+			padding: 11px;
+			border: 1px solid var(--border);
+			border-radius: 8px;
+			background: var(--panel);
+		}
+		.hero {
+			position: relative;
+			overflow: hidden;
+			border-color: #40506a;
+			background:
+				linear-gradient(135deg, rgba(88, 166, 255, .20), rgba(71, 214, 182, .12)),
+				linear-gradient(180deg, #2b3241, #20242d);
+		}
+		.hero:after {
+			content: "";
+			position: absolute;
+			right: -26px;
+			top: -32px;
+			width: 104px;
+			height: 104px;
+			border: 14px solid rgba(88, 166, 255, .16);
+			border-radius: 999px;
+		}
+		.hero p {
+			position: relative;
+			margin-top: 7px;
+			color: var(--soft);
+		}
+		.status {
+			display: flex;
+			align-items: flex-start;
+			gap: 9px;
+			padding: 10px;
+			border-radius: 8px;
+			background: var(--panel-strong);
+		}
+		.dot {
+			flex: 0 0 auto;
+			width: 10px;
+			height: 10px;
+			margin-top: 4px;
+			border-radius: 999px;
+			background: var(--warn);
+			box-shadow: 0 0 0 4px rgba(245, 158, 11, .12);
+		}
+		.status.ok .dot {
+			background: var(--ok);
+			box-shadow: 0 0 0 4px rgba(53, 208, 127, .12);
+		}
+		.status.error .dot {
+			background: var(--error);
+			box-shadow: 0 0 0 4px rgba(239, 68, 68, .13);
+		}
+		.status-title {
+			font-weight: 750;
+		}
+		.status-note {
+			margin-top: 2px;
+			color: var(--muted);
+			font-size: 12px;
+		}
+		.steps {
+			display: grid;
+			gap: 8px;
+		}
+		.step {
+			display: grid;
+			grid-template-columns: 22px 1fr;
+			gap: 8px;
+			align-items: start;
+		}
+		.step-badge {
+			display: grid;
+			place-items: center;
+			width: 20px;
+			height: 20px;
+			border: 1px solid var(--border);
+			border-radius: 999px;
+			color: var(--muted);
+			background: #151922;
+			font-size: 11px;
+			font-weight: 800;
+		}
+		.step.done .step-badge {
+			border-color: rgba(53, 208, 127, .6);
+			background: rgba(53, 208, 127, .14);
+			color: #b7f7d1;
+		}
+		.step-title {
+			font-weight: 750;
+		}
+		.step-text {
+			color: var(--muted);
+			font-size: 12px;
 		}
 		.row {
 			display: grid;
 			grid-template-columns: 1fr 1fr;
 			gap: 8px;
 		}
-		.status {
+		.actions {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 8px;
+			margin-top: 10px;
+		}
+		.checkline {
 			display: flex;
 			align-items: center;
 			gap: 8px;
-			padding: 10px;
-			border-radius: 8px;
-			background: var(--panel);
+			margin-top: 9px;
+			color: var(--soft);
+			font-weight: 600;
 		}
-		.dot {
-			width: 10px;
-			height: 10px;
-			border-radius: 999px;
-			background: var(--warn);
+		.checkline input {
+			width: auto;
 		}
-		.status.ok .dot { background: var(--ok); }
-		.status.error .dot { background: var(--error); }
 		.hint {
 			margin-top: 6px;
 			color: var(--muted);
 			font-size: 12px;
 		}
+		.capability {
+			margin-top: 8px;
+			padding: 8px;
+			border-radius: 7px;
+			background: #171b23;
+			color: var(--muted);
+			font-size: 12px;
+		}
+		.capability strong {
+			color: var(--text);
+		}
+		.inline-code {
+			color: #dbeafe;
+			font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+		}
 		.hidden {
 			display: none;
-		}
-		code {
-			color: #dbeafe;
 		}
 	</style>
 </head>
 <body>
-	<div id="statusBox" class="status">
-		<div class="dot"></div>
-		<div id="statusText">Enter a Social Stream session ID.</div>
-	</div>
-
-	<h2>Connection</h2>
-	<label for="sessionId">Session ID</label>
-	<input id="sessionId" type="password" placeholder="Same ID used in dock.html?session=...">
-
-	<label for="apiHost">API host</label>
-	<input id="apiHost" type="text" placeholder="io.socialstream.ninja">
-
-	<div class="row">
-		<div>
-			<label for="inChannel">In channel</label>
-			<input id="inChannel" type="number" min="1" step="1" placeholder="1">
+	<section class="panel hero">
+		<h1>Social Stream Ninja</h1>
+		<p>Collect live chat from multiple platforms and control overlays, queues, polls, docks, and SSApp sources from Stream Deck keys.</p>
+		<div class="actions">
+			<button type="button" data-url="https://socialstream.ninja/">Open Social Stream</button>
+			<button class="secondary" type="button" data-url="https://socialstream.ninja/docs/guides.html">Help</button>
 		</div>
-		<div>
-			<label for="outChannel">Out channel</label>
-			<input id="outChannel" type="number" min="1" step="1" placeholder="1">
-		</div>
-	</div>
-	<div class="hint">Remote control sends on channel 1 and listens on channel 2. Chat listener workflows usually use channel 4.</div>
-	<div id="capabilityText" class="hint">SSApp source controls unavailable until capabilities are received.</div>
-
-	<label>
-		<input id="useTls" type="checkbox" checked style="width:auto;">
-		Use TLS
-	</label>
-	<label>
-		<input id="httpFallback" type="checkbox" checked style="width:auto;">
-		Allow HTTP fallback
-	</label>
-
-	<button id="testConnection" type="button">Test Connection</button>
-
-	<section id="commandSettings" class="hidden">
-		<h2>SSN Command</h2>
-		<label for="command">Command</label>
-		<select id="command">
-			<option value="nextInQueue">Next in queue</option>
-			<option value="clearOverlay">Clear overlay</option>
-			<option value="getQueueSize">Get queue size</option>
-			<option value="sendChat">Send chat</option>
-			<option value="sendEncodedChat">Send encoded chat</option>
-			<option value="drawmode">Draw mode</option>
-			<option value="resetwaitlist">Reset waitlist</option>
-			<option value="selectwinner">Select winner</option>
-			<option value="resetpoll">Reset poll</option>
-			<option value="closepoll">Close poll</option>
-		</select>
-		<label id="targetLabel" for="target">Target</label>
-		<input id="target" type="text" placeholder="Optional">
-		<label for="value">Value</label>
-		<textarea id="value" placeholder="Optional"></textarea>
-		<label for="commandTitle">Title override</label>
-		<input id="commandTitle" type="text" placeholder="Optional">
-		<label>
-			<input id="commandAwaitResponse" type="checkbox" style="width:auto;">
-			Wait for response
-		</label>
 	</section>
 
-	<section id="customSettings" class="hidden">
+	<div id="statusBox" class="status">
+		<div class="dot"></div>
+		<div>
+			<div id="statusText" class="status-title">Enter a Social Stream Ninja session ID.</div>
+			<div id="statusNote" class="status-note">Use the same session ID as your Social Stream dock, overlay, or desktop app.</div>
+		</div>
+	</div>
+
+	<section class="panel">
+		<h2>Setup Guide</h2>
+		<div class="steps">
+			<div id="stepOpen" class="step done">
+				<div class="step-badge">1</div>
+				<div>
+					<div class="step-title">Open Social Stream Ninja</div>
+					<div class="step-text">Run the browser version or the SSApp desktop app before using Stream Deck actions.</div>
+				</div>
+			</div>
+			<div id="stepSession" class="step">
+				<div class="step-badge">2</div>
+				<div>
+					<div class="step-title">Paste your session ID</div>
+					<div class="step-text">This is the private ID used in URLs such as <span class="inline-code">dock.html?session=...</span>.</div>
+				</div>
+			</div>
+			<div id="stepConnect" class="step">
+				<div class="step-badge">3</div>
+				<div>
+					<div class="step-title">Test the connection</div>
+					<div class="step-text">The status key turns online when the Social Stream API socket joins your session.</div>
+				</div>
+			</div>
+			<div id="stepAction" class="step">
+				<div class="step-badge">4</div>
+				<div>
+					<div class="step-title">Choose an action</div>
+					<div class="step-text">Start with a preset command, then use Custom Command only for advanced payloads.</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="panel">
+		<h2>Connection</h2>
+		<label for="sessionId">Session ID</label>
+		<input id="sessionId" type="password" autocomplete="off" placeholder="Same ID used in dock.html?session=...">
+
+		<div class="actions">
+			<button id="testConnection" type="button">Test Connection</button>
+			<button id="showSession" class="secondary" type="button">Show ID</button>
+		</div>
+
+		<details>
+			<summary>Advanced connection settings</summary>
+			<div class="details-body">
+				<label for="apiHost">API host</label>
+				<input id="apiHost" type="text" placeholder="io.socialstream.ninja">
+
+				<div class="row">
+					<div>
+						<label for="inChannel">Listen channel</label>
+						<input id="inChannel" type="number" min="1" step="1" placeholder="2">
+					</div>
+					<div>
+						<label for="outChannel">Send channel</label>
+						<input id="outChannel" type="number" min="1" step="1" placeholder="1">
+					</div>
+				</div>
+				<div class="hint">Default Stream Deck remote control sends on channel 1 and listens for callbacks on channel 2.</div>
+
+				<label class="checkline">
+					<input id="useTls" type="checkbox" checked>
+					Use TLS
+				</label>
+				<label class="checkline">
+					<input id="httpFallback" type="checkbox" checked>
+					Allow HTTP fallback
+				</label>
+			</div>
+		</details>
+
+		<div id="capabilityText" class="capability">SSApp source controls unavailable until capabilities are received.</div>
+	</section>
+
+	<section id="statusSettings" class="panel hidden">
+		<h2>Status Key</h2>
+		<label for="statusTitle">Title override</label>
+		<input id="statusTitle" type="text" placeholder="Optional">
+		<div class="hint">Leave blank to let the key show Setup, Connecting, Online, or Offline.</div>
+	</section>
+
+	<section id="commandSettings" class="panel hidden">
+		<h2>Preset Command</h2>
+		<label for="command">Command</label>
+		<select id="command"></select>
+
+		<label id="targetLabel" for="target">Target</label>
+		<input id="target" type="text" placeholder="Optional">
+
+		<label for="value">Value</label>
+		<textarea id="value" placeholder="Optional"></textarea>
+
+		<label for="commandTitle">Title override</label>
+		<input id="commandTitle" type="text" placeholder="Optional">
+
+		<label class="checkline">
+			<input id="commandAwaitResponse" type="checkbox">
+			Wait for response
+		</label>
+		<div id="commandHint" class="hint">Preset commands use the documented Social Stream remote-control API.</div>
+	</section>
+
+	<section id="customSettings" class="panel hidden">
 		<h2>Custom Command</h2>
 		<label for="customAction">Action</label>
 		<input id="customAction" type="text" placeholder="nextInQueue">
+
 		<label for="customTarget">Target</label>
 		<input id="customTarget" type="text" placeholder="Optional">
+
 		<label for="customValue">Value</label>
 		<textarea id="customValue" placeholder="true, false, text, or JSON"></textarea>
+
 		<label for="customTitle">Title override</label>
 		<input id="customTitle" type="text" placeholder="Optional">
-		<label>
-			<input id="customAwaitResponse" type="checkbox" style="width:auto;">
+
+		<label class="checkline">
+			<input id="customAwaitResponse" type="checkbox">
 			Wait for response
 		</label>
+		<div class="hint">Custom Command is for payloads not yet exposed as presets.</div>
 	</section>
 
 	<script>
@@ -175,31 +386,58 @@
 		let globalSettings = {};
 		let actionSettings = {};
 		let capabilities = null;
-		const commandOptions = [
-			{ value: "nextInQueue", label: "Next in queue", scope: "ssn" },
-			{ value: "clearOverlay", label: "Clear overlay", scope: "ssn" },
-			{ value: "getQueueSize", label: "Get queue size", scope: "ssn" },
-			{ value: "sendChat", label: "Send chat", scope: "ssn" },
-			{ value: "sendEncodedChat", label: "Send encoded chat", scope: "ssn" },
-			{ value: "drawmode", label: "Draw mode", scope: "ssn" },
-			{ value: "resetwaitlist", label: "Reset waitlist", scope: "ssn" },
-			{ value: "selectwinner", label: "Select winner", scope: "ssn" },
-			{ value: "resetpoll", label: "Reset poll", scope: "ssn" },
-			{ value: "closepoll", label: "Close poll", scope: "ssn" },
-			{ value: "getSources", label: "SSApp sources", scope: "ssapp" },
-			{ value: "getSource", label: "SSApp source", scope: "ssapp" },
-			{ value: "startSource", label: "Start source", scope: "ssapp" },
-			{ value: "stopSource", label: "Stop source", scope: "ssapp" },
-			{ value: "restartSource", label: "Restart source", scope: "ssapp" },
-			{ value: "startAllSources", label: "Start all sources", scope: "ssapp" },
-			{ value: "stopAllSources", label: "Stop all sources", scope: "ssapp" },
-			{ value: "restartAllSources", label: "Restart all sources", scope: "ssapp" },
-			{ value: "setSourceMute", label: "Set source mute", scope: "ssapp" },
-			{ value: "toggleSourceMute", label: "Toggle source mute", scope: "ssapp" },
-			{ value: "setSourceVisibility", label: "Set source visibility", scope: "ssapp" },
-			{ value: "toggleSourceVisibility", label: "Toggle source visibility", scope: "ssapp" },
-			{ value: "setSourceConnectionMode", label: "Set source connection mode", scope: "ssapp" }
+		let currentState = "missing-session";
+		const commandGroups = [
+			{
+				label: "Overlay and queue",
+				options: [
+					{ value: "nextInQueue", label: "Next in queue", scope: "ssn" },
+					{ value: "clearOverlay", label: "Clear overlay", scope: "ssn" },
+					{ value: "getQueueSize", label: "Get queue size", scope: "ssn" }
+				]
+			},
+			{
+				label: "Chat and polls",
+				options: [
+					{ value: "sendChat", label: "Send chat", scope: "ssn" },
+					{ value: "sendEncodedChat", label: "Send encoded chat", scope: "ssn" },
+					{ value: "resetpoll", label: "Reset poll", scope: "ssn" },
+					{ value: "closepoll", label: "Close poll", scope: "ssn" }
+				]
+			},
+			{
+				label: "Waitlist and draws",
+				options: [
+					{ value: "removefromwaitlist", label: "Remove entry", scope: "ssn" },
+					{ value: "highlightwaitlist", label: "Highlight entry", scope: "ssn" },
+					{ value: "resetwaitlist", label: "Reset waitlist", scope: "ssn" },
+					{ value: "stopentries", label: "Stop entries", scope: "ssn" },
+					{ value: "startentries", label: "Start entries", scope: "ssn" },
+					{ value: "waitlistmessage", label: "Set waitlist message", scope: "ssn" },
+					{ value: "selectwinner", label: "Select winner", scope: "ssn" },
+					{ value: "drawmode", label: "Draw mode", scope: "ssn" }
+				]
+			},
+			{
+				label: "SSApp sources",
+				options: [
+					{ value: "getSources", label: "List sources", scope: "ssapp" },
+					{ value: "getSource", label: "Get source", scope: "ssapp" },
+					{ value: "startSource", label: "Start source", scope: "ssapp" },
+					{ value: "stopSource", label: "Stop source", scope: "ssapp" },
+					{ value: "restartSource", label: "Restart source", scope: "ssapp" },
+					{ value: "startAllSources", label: "Start all sources", scope: "ssapp" },
+					{ value: "stopAllSources", label: "Stop all sources", scope: "ssapp" },
+					{ value: "restartAllSources", label: "Restart all sources", scope: "ssapp" },
+					{ value: "setSourceMute", label: "Set source mute", scope: "ssapp" },
+					{ value: "toggleSourceMute", label: "Toggle source mute", scope: "ssapp" },
+					{ value: "setSourceVisibility", label: "Set source visibility", scope: "ssapp" },
+					{ value: "toggleSourceVisibility", label: "Toggle source visibility", scope: "ssapp" },
+					{ value: "setSourceConnectionMode", label: "Set connection mode", scope: "ssapp" }
+				]
+			}
 		];
+		const commandOptions = commandGroups.flatMap(group => group.options);
 
 		window.connectElgatoStreamDeckSocket = function(port, uuid, registerEvent, info, actionInfoJson) {
 			pluginUuid = uuid;
@@ -249,6 +487,7 @@
 			byId("outChannel").value = globalSettings.outChannel || "1";
 			byId("useTls").checked = globalSettings.useTls !== false;
 			byId("httpFallback").checked = globalSettings.httpFallback !== false;
+			renderSetupSteps();
 		}
 
 		function ssappAvailable() {
@@ -256,9 +495,16 @@
 		}
 
 		function renderCapabilities() {
-			byId("capabilityText").textContent = ssappAvailable()
-				? "SSApp source controls available."
-				: "SSApp source controls unavailable in the current Social Stream runtime.";
+			if (ssappAvailable()) {
+				const runtime = capabilities.ssapp.runtime || capabilities.runtime || "SSApp";
+				byId("capabilityText").innerHTML = "<strong>SSApp source controls available.</strong> Runtime: " + escapeHtml(String(runtime)) + ".";
+				return;
+			}
+			if (capabilities) {
+				byId("capabilityText").innerHTML = "<strong>Browser mode detected.</strong> Core SSN commands are available. SSApp source controls stay hidden.";
+				return;
+			}
+			byId("capabilityText").textContent = "SSApp source controls will appear here after Social Stream advertises them.";
 		}
 
 		function renderCommandOptions() {
@@ -266,13 +512,19 @@
 			const selected = actionSettings.command || select.value || "nextInQueue";
 			select.innerHTML = "";
 			let selectedIsAvailable = false;
-			commandOptions.forEach(option => {
-				if (option.scope === "ssapp" && !ssappAvailable()) return;
-				const item = document.createElement("option");
-				item.value = option.value;
-				item.textContent = option.label;
-				select.appendChild(item);
-				if (option.value === selected) selectedIsAvailable = true;
+			commandGroups.forEach(group => {
+				const available = group.options.filter(option => option.scope !== "ssapp" || ssappAvailable());
+				if (!available.length) return;
+				const optgroup = document.createElement("optgroup");
+				optgroup.label = group.label;
+				available.forEach(option => {
+					const item = document.createElement("option");
+					item.value = option.value;
+					item.textContent = option.label;
+					optgroup.appendChild(item);
+					if (option.value === selected) selectedIsAvailable = true;
+				});
+				select.appendChild(optgroup);
 			});
 			if (!selectedIsAvailable && selected) {
 				const item = document.createElement("option");
@@ -295,12 +547,19 @@
 			byId("targetLabel").classList.toggle("hidden", !!isSsapp);
 			byId("target").classList.toggle("hidden", !!isSsapp);
 			byId("value").placeholder = isSsapp ? "Source ID or JSON" : "Optional";
+			byId("commandHint").textContent = isSsapp
+				? "SSApp commands are still sent to Social Stream. Social Stream decides how to route them."
+				: "Preset commands use the documented Social Stream remote-control API.";
 		}
 
 		function renderActionSettings() {
+			byId("statusSettings").classList.toggle("hidden", actionUuid !== "ninja.socialstream.streamdeck.connection");
 			byId("commandSettings").classList.toggle("hidden", actionUuid !== "ninja.socialstream.streamdeck.command");
 			byId("customSettings").classList.toggle("hidden", actionUuid !== "ninja.socialstream.streamdeck.custom-command");
 			renderCapabilities();
+			if (actionUuid === "ninja.socialstream.streamdeck.connection") {
+				byId("statusTitle").value = actionSettings.title || "";
+			}
 			if (actionUuid === "ninja.socialstream.streamdeck.command") {
 				renderCommandOptions();
 				byId("command").value = actionSettings.command || "nextInQueue";
@@ -317,6 +576,14 @@
 				byId("customTitle").value = actionSettings.title || "";
 				byId("customAwaitResponse").checked = actionSettings.awaitResponse === true;
 			}
+			renderSetupSteps();
+		}
+
+		function renderSetupSteps() {
+			const hasSession = !!(globalSettings.sessionId && String(globalSettings.sessionId).trim());
+			byId("stepSession").classList.toggle("done", hasSession);
+			byId("stepConnect").classList.toggle("done", currentState === "connected");
+			byId("stepAction").classList.toggle("done", actionUuid === "ninja.socialstream.streamdeck.command" || actionUuid === "ninja.socialstream.streamdeck.custom-command");
 		}
 
 		function saveGlobalSettings() {
@@ -329,11 +596,16 @@
 				httpFallback: byId("httpFallback").checked
 			};
 			send({ event: "setGlobalSettings", context: pluginUuid, payload: globalSettings });
+			renderSetupSteps();
 			setTimeout(requestStatus, 250);
 		}
 
 		function saveActionSettings() {
-			if (actionUuid === "ninja.socialstream.streamdeck.command") {
+			if (actionUuid === "ninja.socialstream.streamdeck.connection") {
+				actionSettings = {
+					title: byId("statusTitle").value.trim()
+				};
+			} else if (actionUuid === "ninja.socialstream.streamdeck.command") {
 				actionSettings = {
 					command: byId("command").value,
 					target: byId("target").value.trim(),
@@ -364,11 +636,13 @@
 					capabilities = payload.capabilities;
 					renderActionSettings();
 				}
+				currentState = payload.state || currentState;
 				updateStatus(payload.ok === true ? "ok" : payload.state === "missing-session" ? "warn" : "error", payload.message || "Status updated.");
 			} else if (payload.type === "capabilities") {
 				capabilities = payload.capabilities || null;
 				renderActionSettings();
 			}
+			renderSetupSteps();
 		}
 
 		function updateStatus(kind, text) {
@@ -377,6 +651,13 @@
 			if (kind === "ok") box.classList.add("ok");
 			if (kind === "error") box.classList.add("error");
 			byId("statusText").textContent = text;
+			byId("statusNote").textContent = kind === "ok"
+				? "You can now add preset commands or SSApp controls if this runtime advertises them."
+				: "Check the session ID and make sure Social Stream Ninja is open with API remote control available.";
+		}
+
+		function escapeHtml(value) {
+			return value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[char]));
 		}
 
 		["sessionId", "apiHost", "inChannel", "outChannel", "useTls", "httpFallback"].forEach(id => {
@@ -384,6 +665,7 @@
 			byId(id).addEventListener("input", saveGlobalSettings);
 		});
 		[
+			"statusTitle",
 			"command", "target", "value", "commandTitle", "commandAwaitResponse",
 			"customAction", "customTarget", "customValue", "customTitle", "customAwaitResponse"
 		].forEach(id => {
@@ -394,6 +676,16 @@
 			saveGlobalSettings();
 			send({ event: "sendToPlugin", action: actionUuid, context: actionContext, payload: { type: "testConnection" } });
 		};
+		byId("showSession").onclick = function() {
+			const input = byId("sessionId");
+			input.type = input.type === "password" ? "text" : "password";
+			byId("showSession").textContent = input.type === "password" ? "Show ID" : "Hide ID";
+		};
+		document.querySelectorAll("[data-url]").forEach(button => {
+			button.addEventListener("click", () => {
+				send({ event: "sendToPlugin", action: actionUuid, context: actionContext, payload: { type: "openUrl", url: button.getAttribute("data-url") } });
+			});
+		});
 	</script>
 </body>
 </html>

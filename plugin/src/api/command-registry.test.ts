@@ -15,6 +15,17 @@ describe("command registry", () => {
 		});
 	});
 
+	it("builds waitlist control presets with default values", () => {
+		expect(buildSsnCommandPayload({ command: "removefromwaitlist" })).toEqual({
+			action: "removefromwaitlist",
+			value: "1"
+		});
+		expect(buildSsnCommandPayload({ command: "waitlistmessage" })).toEqual({
+			action: "waitlistmessage",
+			value: "Type !join to enter!"
+		});
+	});
+
 	it("builds custom commands", () => {
 		expect(buildCustomCommandPayload({ action: "sendChat", value: "Hello" })).toEqual({
 			action: "sendChat",

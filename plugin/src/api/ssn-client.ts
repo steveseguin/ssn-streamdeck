@@ -2,6 +2,22 @@ import WebSocket from "ws";
 import { DEFAULT_API_HOST, normalizeGlobalSettings } from "./settings.js";
 import type { ConnectionStateName, GlobalSettings, SsnCommandPayload, StreamDeckCapabilities } from "./types.js";
 
+const SSAPP_ACTIONS = new Set([
+	"getSources",
+	"getSource",
+	"startSource",
+	"stopSource",
+	"restartSource",
+	"startAllSources",
+	"stopAllSources",
+	"restartAllSources",
+	"setSourceVisibility",
+	"toggleSourceVisibility",
+	"setSourceMute",
+	"toggleSourceMute",
+	"setSourceConnectionMode"
+]);
+
 type Listener<T> = (payload: T) => void;
 type PendingRequest = {
 	resolve: (value: unknown) => void;
@@ -105,6 +121,9 @@ export class SsnClient {
 			}
 			this.sendRaw(command);
 			return command;
+		}
+		if (isSsappCommand(command)) {
+			throw new Error("SSApp source controls require the Social Stream API WebSocket connection");
 		}
 		if (this.settings.httpFallback !== false) {
 			return this.sendHttp(command, options.awaitResponse === true);
@@ -317,4 +336,14 @@ function extractCapabilities(value: unknown): StreamDeckCapabilities | null {
 		return payload as unknown as StreamDeckCapabilities;
 	}
 	return null;
+}
+
+function isSsappCommand(payload: SsnCommandPayload): boolean {
+	if (payload.target === "ssapp") {
+		return true;
+	}
+	if (typeof payload.action === "string" && payload.action.startsWith("ssapp.")) {
+		return true;
+	}
+	return SSAPP_ACTIONS.has(payload.action);
 }

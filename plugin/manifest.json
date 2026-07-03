@@ -3,7 +3,7 @@
 	"UUID": "ninja.socialstream.streamdeck",
 	"Name": "Social Stream Ninja",
 	"Author": "Social Stream Ninja",
-	"Description": "Control Social Stream Ninja from Stream Deck keys.",
+	"Description": "Control Social Stream Ninja, the browser and desktop app that collects live chat from multiple platforms into overlays, docks, queues, polls, and source controls.",
 	"Version": "0.1.0.0",
 	"SDKVersion": 2,
 	"Software": {
@@ -30,8 +30,8 @@
 	"Actions": [
 		{
 			"UUID": "ninja.socialstream.streamdeck.connection",
-			"Name": "Connection Status",
-			"Tooltip": "Configure the Social Stream Ninja session ID and show API connection status.",
+			"Name": "Setup / Status",
+			"Tooltip": "Guided setup for Social Stream Ninja and live API connection status.",
 			"Icon": "imgs/connection",
 			"Controllers": ["Keypad"],
 			"DisableAutomaticStates": true,
@@ -52,7 +52,7 @@
 		},
 		{
 			"UUID": "ninja.socialstream.streamdeck.command",
-			"Name": "SSN Command",
+			"Name": "Preset Command",
 			"Tooltip": "Send a common Social Stream Ninja remote-control command.",
 			"Icon": "imgs/command",
 			"Controllers": ["Keypad"],
@@ -69,7 +69,7 @@
 		{
 			"UUID": "ninja.socialstream.streamdeck.custom-command",
 			"Name": "Custom Command",
-			"Tooltip": "Send any Social Stream Ninja API command with action, target, and value.",
+			"Tooltip": "Send any Social Stream Ninja API command with action, target, and value for advanced workflows.",
 			"Icon": "imgs/custom",
 			"Controllers": ["Keypad"],
 			"DisableAutomaticStates": true,

@@ -17,8 +17,13 @@ export const SSN_COMMANDS: CommandDefinition[] = [
 	{ id: "sendChat", label: "Send Chat", scope: "ssn", defaultValue: "Hello from Stream Deck", valueLabel: "Message" },
 	{ id: "sendEncodedChat", label: "Send Encoded Chat", scope: "ssn", defaultValue: "Hello%20from%20Stream%20Deck", valueLabel: "Encoded message" },
 	{ id: "drawmode", label: "Draw Mode", scope: "ssn", defaultValue: "toggle", valueLabel: "true, false, or toggle" },
+	{ id: "removefromwaitlist", label: "Remove Waitlist Entry", scope: "ssn", defaultValue: "1", valueLabel: "Entry number" },
+	{ id: "highlightwaitlist", label: "Highlight Waitlist Entry", scope: "ssn", defaultValue: "1", valueLabel: "Entry number" },
 	{ id: "resetwaitlist", label: "Reset Waitlist", scope: "ssn" },
-	{ id: "selectwinner", label: "Select Winner", scope: "ssn" },
+	{ id: "stopentries", label: "Stop Waitlist Entries", scope: "ssn" },
+	{ id: "startentries", label: "Start Waitlist Entries", scope: "ssn" },
+	{ id: "waitlistmessage", label: "Set Waitlist Message", scope: "ssn", defaultValue: "Type !join to enter!", valueLabel: "Message" },
+	{ id: "selectwinner", label: "Select Winner", scope: "ssn", defaultValue: "1", valueLabel: "Winner count" },
 	{ id: "resetpoll", label: "Reset Poll", scope: "ssn" },
 	{ id: "closepoll", label: "Close Poll", scope: "ssn" }
 ];

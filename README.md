@@ -1,19 +1,22 @@
 # Social Stream Ninja Stream Deck Plugin
 
-[![Status](https://img.shields.io/badge/status-template-f59e0b)](#status)
+[![Status](https://img.shields.io/badge/status-development-f59e0b)](#status)
 [![Stream Deck](https://img.shields.io/badge/Stream%20Deck-6.8%2B-00aeef)](#requirements)
 [![SDK](https://img.shields.io/badge/SDK-v2-38bdf8)](https://docs.elgato.com/streamdeck/sdk/)
 [![Runtime](https://img.shields.io/badge/runtime-Node%2020-22c55e)](#requirements)
 [![Social Stream Ninja](https://img.shields.io/badge/Social%20Stream-Ninja-4a90e2)](https://socialstream.ninja/)
 
-Starter workspace for a native Elgato Stream Deck plugin for Social Stream Ninja.
+Native Elgato Stream Deck plugin for Social Stream Ninja.
 
-This is intentionally a template, not a finished release. It borrows the same plugin shape used by the VDO.Ninja Stream Deck work: official Stream Deck SDK, TypeScript source, generated icon assets, a property inspector, centralized command payload builders, and focused unit tests.
+Social Stream Ninja collects live chat and stream events from multiple platforms into browser overlays, docks, queues, polls, waitlists, and the standalone SSApp desktop app. This plugin lets Stream Deck users trigger those controls from keys without connecting directly to SSApp.
+
+The plugin uses the official Stream Deck SDK, TypeScript source, generated icon assets, a guided property inspector, centralized command payload builders, and focused unit tests.
 
 ## Status
 
 Current workspace capabilities:
 
+- Guided setup in the property inspector with a short Social Stream Ninja explanation.
 - Connection Status action.
 - Preset SSN Command action.
 - Custom Command action.
@@ -27,8 +30,8 @@ Current workspace capabilities:
 
 | Action | Purpose | Starting commands |
 | --- | --- | --- |
-| Connection Status | Configure session ID and show API connection state | WebSocket send channel 1, listen channel 2 |
-| SSN Command | Button presets for common remote controls and advertised SSApp source controls | `clearOverlay`, `nextInQueue`, `getQueueSize`, `drawmode`, `resetpoll`, `closepoll`, `selectwinner`, `startSource`, `stopSource` |
+| Setup / Status | Configure session ID and show API connection state | WebSocket send channel 1, listen channel 2 |
+| Preset Command | Button presets for common remote controls and advertised SSApp source controls | `clearOverlay`, `nextInQueue`, `getQueueSize`, `drawmode`, `resetwaitlist`, `stopentries`, `startentries`, `selectwinner`, `startSource`, `stopSource` |
 | Custom Command | Send any `{ action, target, value }` payload | Power-user and development testing |
 
 ## API Assumptions

@@ -1,4 +1,5 @@
 import { AddressInfo } from "node:net";
+import http from "node:http";
 import { afterEach, describe, expect, it } from "vitest";
 import { WebSocketServer } from "ws";
 import { SsnClient } from "./ssn-client.js";
@@ -101,6 +102,44 @@ describe("SsnClient", () => {
 
 		await expect(client.sendCommand({ action: "stopSource", value: "source-1" }, { awaitResponse: true })).rejects.toThrow("SSApp unavailable");
 	});
+
+	it("does not fall back to HTTP for SSApp source controls", async () => {
+		const { server, port, requests } = await createHttpServer();
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+
+		client.configure({
+			sessionId: "session-4",
+			apiHost: `127.0.0.1:${port}`,
+			useTls: false,
+			httpFallback: true,
+			requestTimeoutMs: 500
+		});
+
+		await expect(client.sendCommand({ action: "startSource", target: "ssapp", value: "source-1" }, { awaitResponse: true })).rejects.toThrow(
+			"SSApp source controls require"
+		);
+		expect(requests).toEqual([]);
+	});
+
+	it("keeps HTTP fallback for ordinary SSN commands", async () => {
+		const { server, port, requests } = await createHttpServer("ok");
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+
+		client.configure({
+			sessionId: "session-5",
+			apiHost: `127.0.0.1:${port}`,
+			useTls: false,
+			httpFallback: true,
+			requestTimeoutMs: 500
+		});
+
+		await expect(client.sendCommand({ action: "clearOverlay" })).resolves.toBe("ok");
+		expect(requests.some(request => request.url === "/session-5/clearOverlay")).toBe(true);
+	});
 });
 
 async function createServer(): Promise<{ server: WebSocketServer; port: number; messages: Record<string, unknown>[] }> {
@@ -156,6 +195,18 @@ async function createServer(): Promise<{ server: WebSocketServer; port: number; 
 	});
 	const address = server.address() as AddressInfo;
 	return { server, port: address.port, messages };
+}
+
+async function createHttpServer(body = "ok"): Promise<{ server: http.Server; port: number; requests: { method?: string; url?: string }[] }> {
+	const requests: { method?: string; url?: string }[] = [];
+	const server = http.createServer((req, res) => {
+		requests.push({ method: req.method, url: req.url });
+		res.writeHead(200, { "Content-Type": "text/plain" });
+		res.end(body);
+	});
+	await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+	const address = server.address() as AddressInfo;
+	return { server, port: address.port, requests };
 }
 
 async function waitFor(predicate: () => boolean, timeoutMs = 1000): Promise<void> {
