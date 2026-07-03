@@ -25,9 +25,10 @@ This document is the single source of truth for how the Stream Deck plugin shoul
 
 ## Capability Advertisement
 
-`social_stream` publishes runtime capabilities to the Stream Deck connection.
+`social_stream` publishes runtime capabilities through the same Stream Deck connection.
 
-- On connect, `social_stream` sends a capability packet.
+- After connect, Stream Deck requests capabilities with `getCapabilities`.
+- `social_stream` returns the capability packet through the normal callback path when the request includes `get`.
 - Capabilities include SSApp availability and SSApp-specific command support.
 - In SSApp, `available` is true and the SSApp command surface is listed.
 - Outside SSApp, `available` is false and SSApp command support is empty or false.
@@ -564,10 +565,12 @@ Expected event:
 
 ### SSApp source control
 
+SSApp source-control commands should include `target: "ssapp"` so they do not collide with existing targeted SSN/API messages.
+
 - `getSources`:
 
 ```json
-{ "action": "getSources", "get": "sources-1", "apiid": "SESSION_ID" }
+{ "action": "getSources", "target": "ssapp", "get": "sources-1", "apiid": "SESSION_ID" }
 ```
 
 Expected callback result:
@@ -579,73 +582,73 @@ Expected callback result:
 - `getSource`:
 
 ```json
-{ "action": "getSource", "value": "source-id-123", "get": "source-1", "apiid": "SESSION_ID" }
+{ "action": "getSource", "target": "ssapp", "value": "source-id-123", "get": "source-1", "apiid": "SESSION_ID" }
 ```
 
 - `startSource`:
 
 ```json
-{ "action": "startSource", "value": "source-id-123", "apiid": "SESSION_ID" }
+{ "action": "startSource", "target": "ssapp", "value": "source-id-123", "apiid": "SESSION_ID" }
 ```
 
 - `stopSource`:
 
 ```json
-{ "action": "stopSource", "value": "source-id-123", "apiid": "SESSION_ID" }
+{ "action": "stopSource", "target": "ssapp", "value": "source-id-123", "apiid": "SESSION_ID" }
 ```
 
 - `restartSource`:
 
 ```json
-{ "action": "restartSource", "value": "source-id-123", "apiid": "SESSION_ID" }
+{ "action": "restartSource", "target": "ssapp", "value": "source-id-123", "apiid": "SESSION_ID" }
 ```
 
 - `startAllSources`:
 
 ```json
-{ "action": "startAllSources", "value": { "target": "twitch", "groupId": "team-1" }, "apiid": "SESSION_ID" }
+{ "action": "startAllSources", "target": "ssapp", "value": { "target": "twitch", "groupId": "team-1" }, "apiid": "SESSION_ID" }
 ```
 
 - `stopAllSources`:
 
 ```json
-{ "action": "stopAllSources", "value": { "confirm": true }, "apiid": "SESSION_ID" }
+{ "action": "stopAllSources", "target": "ssapp", "value": { "confirm": true }, "apiid": "SESSION_ID" }
 ```
 
 - `restartAllSources`:
 
 ```json
-{ "action": "restartAllSources", "value": { "target": "tiktok" }, "apiid": "SESSION_ID" }
+{ "action": "restartAllSources", "target": "ssapp", "value": { "target": "tiktok" }, "apiid": "SESSION_ID" }
 ```
 
 - `setSourceVisibility`:
 
 ```json
-{ "action": "setSourceVisibility", "value": { "sourceId": "source-id-123", "isVisible": false }, "apiid": "SESSION_ID" }
+{ "action": "setSourceVisibility", "target": "ssapp", "value": { "sourceId": "source-id-123", "isVisible": false }, "apiid": "SESSION_ID" }
 ```
 
 - `toggleSourceVisibility`:
 
 ```json
-{ "action": "toggleSourceVisibility", "value": "source-id-123", "apiid": "SESSION_ID" }
+{ "action": "toggleSourceVisibility", "target": "ssapp", "value": "source-id-123", "apiid": "SESSION_ID" }
 ```
 
 - `setSourceMute`:
 
 ```json
-{ "action": "setSourceMute", "value": { "sourceId": "source-id-123", "isMuted": true }, "apiid": "SESSION_ID" }
+{ "action": "setSourceMute", "target": "ssapp", "value": { "sourceId": "source-id-123", "isMuted": true }, "apiid": "SESSION_ID" }
 ```
 
 - `toggleSourceMute`:
 
 ```json
-{ "action": "toggleSourceMute", "value": "source-id-123", "apiid": "SESSION_ID" }
+{ "action": "toggleSourceMute", "target": "ssapp", "value": "source-id-123", "apiid": "SESSION_ID" }
 ```
 
 - `setSourceConnectionMode`:
 
 ```json
-{ "action": "setSourceConnectionMode", "value": { "sourceId": "source-id-123", "mode": "websocket" }, "apiid": "SESSION_ID" }
+{ "action": "setSourceConnectionMode", "target": "ssapp", "value": { "sourceId": "source-id-123", "mode": "websocket" }, "apiid": "SESSION_ID" }
 ```
 
 ## Message data lifecycle and validation rules
@@ -682,14 +685,13 @@ Stream Deck UI -> plugin settings/press event -> SsnClient.sendCommand -> social
 
 - Channel: control on `out:1`, callbacks/events on `in:2`.
 - API host: `io.socialstream.ninja`.
-- Await response for query-style commands (`getQueueSize`, `getpollpresets`, `gettimerstate`, `getSources`).
+- Await response for query-style commands and SSApp source commands.
 - Stream Deck should never require a separate SSApp endpoint.
 
 ## Open implementation gaps
 
-- Callback request tracking in Stream Deck client is not yet wired to request lifecycle promises.
 - `value` typing in command registry should be stricter when writing presets that use nested fields.
-- `startAllSources` / `stopAllSources` / `restartAllSources` need explicit filter semantics (`all`, target, group, activeOnly).
+- Stream Deck UI should provide a safer filter editor for `startAllSources`, `stopAllSources`, and `restartAllSources`.
 - Last-message visibility could be used by a future feedback action.
 
 ## Open questions before hardening

@@ -138,7 +138,7 @@
 			<option value="resetpoll">Reset poll</option>
 			<option value="closepoll">Close poll</option>
 		</select>
-		<label for="target">Target</label>
+		<label id="targetLabel" for="target">Target</label>
 		<input id="target" type="text" placeholder="Optional">
 		<label for="value">Value</label>
 		<textarea id="value" placeholder="Optional"></textarea>
@@ -284,6 +284,19 @@
 			select.value = selectedIsAvailable || selected ? selected : "nextInQueue";
 		}
 
+		function selectedCommandOption() {
+			const command = byId("command").value || actionSettings.command || "nextInQueue";
+			return commandOptions.find(option => option.value === command) || null;
+		}
+
+		function renderCommandFields() {
+			const option = selectedCommandOption();
+			const isSsapp = option && option.scope === "ssapp";
+			byId("targetLabel").classList.toggle("hidden", !!isSsapp);
+			byId("target").classList.toggle("hidden", !!isSsapp);
+			byId("value").placeholder = isSsapp ? "Source ID or JSON" : "Optional";
+		}
+
 		function renderActionSettings() {
 			byId("commandSettings").classList.toggle("hidden", actionUuid !== "ninja.socialstream.streamdeck.command");
 			byId("customSettings").classList.toggle("hidden", actionUuid !== "ninja.socialstream.streamdeck.custom-command");
@@ -295,6 +308,7 @@
 				byId("value").value = actionSettings.value || "";
 				byId("commandTitle").value = actionSettings.title || "";
 				byId("commandAwaitResponse").checked = actionSettings.awaitResponse === true;
+				renderCommandFields();
 			}
 			if (actionUuid === "ninja.socialstream.streamdeck.custom-command") {
 				byId("customAction").value = actionSettings.action || "nextInQueue";
@@ -339,6 +353,9 @@
 				return;
 			}
 			send({ event: "setSettings", context: actionContext, payload: actionSettings });
+			if (actionUuid === "ninja.socialstream.streamdeck.command") {
+				renderCommandFields();
+			}
 		}
 
 		function handlePluginMessage(payload) {

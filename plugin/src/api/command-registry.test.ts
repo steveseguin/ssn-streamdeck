@@ -25,6 +25,7 @@ describe("command registry", () => {
 	it("builds SSApp source commands through the same payload shape", () => {
 		expect(buildSsnCommandPayload({ command: "setSourceConnectionMode", value: "{\"sourceId\":\"s1\",\"mode\":\"websocket\"}" })).toEqual({
 			action: "setSourceConnectionMode",
+			target: "ssapp",
 			value: {
 				sourceId: "s1",
 				mode: "websocket"

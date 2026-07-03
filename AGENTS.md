@@ -8,7 +8,7 @@
 ## Product Direction
 - Build a native Elgato Stream Deck plugin that controls Social Stream Ninja through the documented API in `../api.md`.
 - Treat the Social Stream session ID as private. Do not hard-code or commit real session IDs.
-- Default remote-control commands should target `io.socialstream.ninja` and channel 1 unless a user explicitly configures another host/channel.
+- Default remote-control commands should target `io.socialstream.ninja`, send on channel 1, and listen for callbacks/capabilities on channel 2 unless a user explicitly configures another host/channel.
 - Keep command definitions centralized in `plugin/src/api/command-registry.ts` so actions, presets, and docs stay aligned.
 
 ## Compatibility

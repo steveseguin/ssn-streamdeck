@@ -12,7 +12,7 @@ This is intentionally a template, not a finished release. It borrows the same pl
 
 ## Status
 
-Initial scaffold only. It provides:
+Current workspace capabilities:
 
 - Connection Status action.
 - Preset SSN Command action.
@@ -21,13 +21,14 @@ Initial scaffold only. It provides:
 - WebSocket client for `wss://io.socialstream.ninja`.
 - Optional HTTP fallback for simple request/response commands.
 - A command registry seeded with common SSN commands from `../api.md`.
+- Capability-aware SSApp source controls when Social Stream advertises SSApp support.
 
 ## Suggested Actions
 
 | Action | Purpose | Starting commands |
 | --- | --- | --- |
-| Connection Status | Configure session ID and show API connection state | WebSocket join on channel 1 |
-| SSN Command | Button presets for common remote controls | `clearOverlay`, `nextInQueue`, `getQueueSize`, `drawmode`, `resetpoll`, `closepoll`, `selectwinner` |
+| Connection Status | Configure session ID and show API connection state | WebSocket send channel 1, listen channel 2 |
+| SSN Command | Button presets for common remote controls and advertised SSApp source controls | `clearOverlay`, `nextInQueue`, `getQueueSize`, `drawmode`, `resetpoll`, `closepoll`, `selectwinner`, `startSource`, `stopSource` |
 | Custom Command | Send any `{ action, target, value }` payload | Power-user and development testing |
 
 ## API Assumptions
@@ -36,10 +37,12 @@ Based on `../api.md`:
 
 - WebSocket host: `wss://io.socialstream.ninja`
 - HTTP host: `https://io.socialstream.ninja`
-- Remote-control channel: channel 1 by default
+- Remote-control send channel: channel 1 by default
+- Remote-control callback/capability listen channel: channel 2 by default
 - Chat-listener channel: channel 4, if the user enables chat message relay
 - Simple command shape: `{ "action": "clearOverlay" }`
 - Value command shape: `{ "action": "sendChat", "value": "Hello" }`
+- SSApp controls use the same Social Stream API socket; the plugin does not connect to SSApp directly.
 
 ## Requirements
 

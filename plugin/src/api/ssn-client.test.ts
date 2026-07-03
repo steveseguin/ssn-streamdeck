@@ -112,7 +112,6 @@ async function createServer(): Promise<{ server: WebSocketServer; port: number; 
 			const message = JSON.parse(raw.toString()) as Record<string, unknown>;
 			messages.push(message);
 			if (message.join) {
-				socket.send(JSON.stringify(capabilities));
 				return;
 			}
 			if (message.action === "getCapabilities" && typeof message.get === "string") {

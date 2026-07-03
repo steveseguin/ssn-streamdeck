@@ -50,7 +50,9 @@ export function buildSsnCommandPayload(settings: SsnCommandSettings): SsnCommand
 	const payload: SsnCommandPayload = { action: definition.id };
 	const target = parseValue(settings.target);
 	const value = parseValue(settings.value || stringFromJsonValue(definition.defaultValue));
-	if (typeof target !== "undefined") {
+	if (definition.scope === "ssapp") {
+		payload.target = "ssapp";
+	} else if (typeof target !== "undefined") {
 		payload.target = target;
 	}
 	if (typeof value !== "undefined") {
