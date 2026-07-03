@@ -141,7 +141,7 @@ describe("SsnClient", () => {
 		expect(requests.some(request => request.url === "/session-5/clearOverlay")).toBe(true);
 	});
 
-	it("keeps targeted custom commands compatible even when action names overlap SSApp", async () => {
+	it("uses the null target segment for HTTP fallback commands with values", async () => {
 		const { server, port, requests } = await createHttpServer("ok");
 		cleanup.push(() => server.close());
 		const client = new SsnClient();
@@ -155,8 +155,45 @@ describe("SsnClient", () => {
 			requestTimeoutMs: 500
 		});
 
+		await expect(client.sendCommand({ action: "removefromwaitlist", value: "1" })).resolves.toBe("ok");
+		expect(requests.some(request => request.url === "/session-6/removefromwaitlist/null/1")).toBe(true);
+	});
+
+	it("does not fall back to HTTP for JSON payload values", async () => {
+		const { server, port, requests } = await createHttpServer("ok");
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+
+		client.configure({
+			sessionId: "session-7",
+			apiHost: `127.0.0.1:${port}`,
+			useTls: false,
+			httpFallback: true,
+			requestTimeoutMs: 500
+		});
+
+		const value = { id: "external-1", chatname: "User", chatmessage: "Pinned note", type: "api" };
+		await expect(client.sendCommand({ action: "pin", value })).rejects.toThrow("HTTP fallback supports only primitive");
+		expect(requests).toEqual([]);
+	});
+
+	it("keeps targeted custom commands compatible even when action names overlap SSApp", async () => {
+		const { server, port, requests } = await createHttpServer("ok");
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+
+		client.configure({
+			sessionId: "session-8",
+			apiHost: `127.0.0.1:${port}`,
+			useTls: false,
+			httpFallback: true,
+			requestTimeoutMs: 500
+		});
+
 		await expect(client.sendCommand({ action: "startSource", target: "overlay", value: "source-1" })).resolves.toBe("ok");
-		expect(requests.some(request => request.url === "/session-6/startSource/overlay/source-1")).toBe(true);
+		expect(requests.some(request => request.url === "/session-8/startSource/overlay/source-1")).toBe(true);
 	});
 });
 

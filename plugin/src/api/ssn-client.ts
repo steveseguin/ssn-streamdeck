@@ -167,6 +167,9 @@ export class SsnClient {
 		if (!this.settings.sessionId) {
 			throw new Error("Missing Social Stream session ID");
 		}
+		if (hasComplexHttpPathSegment(payload.target) || hasComplexHttpPathSegment(payload.value)) {
+			throw new Error("Social Stream API HTTP fallback supports only primitive target/value fields; use the WebSocket connection for JSON payloads");
+		}
 		const response = await fetch(this.buildHttpUrl(payload));
 		const text = await response.text();
 		if (!response.ok) {
@@ -236,10 +239,12 @@ export class SsnClient {
 		const host = normalizeHost(this.settings.apiHost || DEFAULT_API_HOST);
 		const parts = [this.settings.sessionId || "", payload.action];
 		if ("target" in payload) {
-			parts.push(String(payload.target ?? "null"));
+			parts.push(formatHttpPathSegment(payload.target));
+		} else if ("value" in payload) {
+			parts.push("null");
 		}
 		if ("value" in payload) {
-			parts.push(String(payload.value ?? "null"));
+			parts.push(formatHttpPathSegment(payload.value));
 		}
 		return `${protocol}://${host}/${parts.map(encodeURIComponent).join("/")}`;
 	}
@@ -349,4 +354,15 @@ function isSsappCommand(payload: SsnCommandPayload): boolean {
 		return false;
 	}
 	return SSAPP_ACTIONS.has(payload.action);
+}
+
+function formatHttpPathSegment(value: unknown): string {
+	if (value === null || typeof value === "undefined") {
+		return "null";
+	}
+	return String(value);
+}
+
+function hasComplexHttpPathSegment(value: unknown): boolean {
+	return !!value && typeof value === "object";
 }
