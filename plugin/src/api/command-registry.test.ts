@@ -57,6 +57,9 @@ describe("command registry", () => {
 		expect(uiCommands.filter(command => !registryCommands.has(command))).toEqual([]);
 		expect(uiCommands).toContain("pin");
 		expect(uiCommands).toContain("downloadwaitlist");
+		expect(uiCommands).not.toContain("openentries");
+		expect(uiCommands).not.toContain("resumeentries");
+		expect(uiCommands).not.toContain("setwaitlistmessage");
 	});
 
 	it("builds custom commands", () => {
