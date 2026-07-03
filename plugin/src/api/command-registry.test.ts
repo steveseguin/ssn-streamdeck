@@ -62,6 +62,18 @@ describe("command registry", () => {
 		expect(uiCommands).not.toContain("setwaitlistmessage");
 	});
 
+	it("keeps property inspector response defaults aligned with required-response presets", () => {
+		const html = readFileSync(new URL("../../ui/action-settings.html", import.meta.url), "utf8");
+		const uiCommands = new Set(Array.from(html.matchAll(/\{\s*value:\s*"([^"]+)"/g), match => match[1]));
+		const uiResponseCommands = new Set(Array.from(html.matchAll(/\{\s*value:\s*"([^"]+)"[^}]*defaultAwaitResponse:\s*true/g), match => match[1]));
+		const requiredResponseCommands = COMMANDS.filter(command => command.defaultAwaitResponse === true && uiCommands.has(command.id)).map(command => command.id);
+		const registryResponseCommands = new Set(COMMANDS.filter(command => command.defaultAwaitResponse === true).map(command => command.id));
+		expect(Array.from(uiResponseCommands).filter(command => !registryResponseCommands.has(command))).toEqual([]);
+		for (const command of requiredResponseCommands) {
+			expect(uiResponseCommands.has(command)).toBe(true);
+		}
+	});
+
 	it("builds custom commands", () => {
 		expect(buildCustomCommandPayload({ action: "sendChat", value: "Hello" })).toEqual({
 			action: "sendChat",

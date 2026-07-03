@@ -383,7 +383,7 @@
 				options: [
 					{ value: "nextInQueue", label: "Next in queue", scope: "ssn" },
 					{ value: "clearOverlay", label: "Clear overlay", scope: "ssn" },
-					{ value: "getQueueSize", label: "Get queue size", scope: "ssn" }
+					{ value: "getQueueSize", label: "Get queue size", scope: "ssn", defaultAwaitResponse: true }
 				]
 			},
 			{
@@ -420,19 +420,19 @@
 			{
 				label: "SSApp sources",
 				options: [
-					{ value: "getSources", label: "List sources", scope: "ssapp" },
-					{ value: "getSource", label: "Get source", scope: "ssapp" },
-					{ value: "startSource", label: "Start source", scope: "ssapp" },
-					{ value: "stopSource", label: "Stop source", scope: "ssapp" },
-					{ value: "restartSource", label: "Restart source", scope: "ssapp" },
-					{ value: "startAllSources", label: "Start all sources", scope: "ssapp" },
-					{ value: "stopAllSources", label: "Stop all sources", scope: "ssapp" },
-					{ value: "restartAllSources", label: "Restart all sources", scope: "ssapp" },
-					{ value: "setSourceMute", label: "Set source mute", scope: "ssapp" },
-					{ value: "toggleSourceMute", label: "Toggle source mute", scope: "ssapp" },
-					{ value: "setSourceVisibility", label: "Set source visibility", scope: "ssapp" },
-					{ value: "toggleSourceVisibility", label: "Toggle source visibility", scope: "ssapp" },
-					{ value: "setSourceConnectionMode", label: "Set connection mode", scope: "ssapp" }
+					{ value: "getSources", label: "List sources", scope: "ssapp", defaultAwaitResponse: true },
+					{ value: "getSource", label: "Get source", scope: "ssapp", defaultAwaitResponse: true },
+					{ value: "startSource", label: "Start source", scope: "ssapp", defaultAwaitResponse: true },
+					{ value: "stopSource", label: "Stop source", scope: "ssapp", defaultAwaitResponse: true },
+					{ value: "restartSource", label: "Restart source", scope: "ssapp", defaultAwaitResponse: true },
+					{ value: "startAllSources", label: "Start all sources", scope: "ssapp", defaultAwaitResponse: true },
+					{ value: "stopAllSources", label: "Stop all sources", scope: "ssapp", defaultAwaitResponse: true },
+					{ value: "restartAllSources", label: "Restart all sources", scope: "ssapp", defaultAwaitResponse: true },
+					{ value: "setSourceMute", label: "Set source mute", scope: "ssapp", defaultAwaitResponse: true },
+					{ value: "toggleSourceMute", label: "Toggle source mute", scope: "ssapp", defaultAwaitResponse: true },
+					{ value: "setSourceVisibility", label: "Set source visibility", scope: "ssapp", defaultAwaitResponse: true },
+					{ value: "toggleSourceVisibility", label: "Toggle source visibility", scope: "ssapp", defaultAwaitResponse: true },
+					{ value: "setSourceConnectionMode", label: "Set connection mode", scope: "ssapp", defaultAwaitResponse: true }
 				]
 			}
 		];
@@ -544,12 +544,17 @@
 			const option = selectedCommandOption();
 			const isSsapp = option && option.scope === "ssapp";
 			const valueLabel = option && option.valueLabel;
+			const requiresResponse = !!(option && option.defaultAwaitResponse === true);
+			const awaitResponse = byId("commandAwaitResponse");
 			byId("targetLabel").classList.toggle("hidden", !!isSsapp);
 			byId("target").classList.toggle("hidden", !!isSsapp);
 			byId("value").placeholder = valueLabel || (isSsapp ? "Source ID or JSON" : "Optional");
-			byId("commandHint").textContent = isSsapp
+			awaitResponse.checked = requiresResponse || actionSettings.awaitResponse === true;
+			awaitResponse.disabled = requiresResponse;
+			const baseHint = isSsapp
 				? "SSApp commands are still sent to Social Stream. Social Stream decides how to route them."
 				: "Preset commands use the documented Social Stream remote-control API.";
+			byId("commandHint").textContent = requiresResponse ? baseHint + " This command waits for the result." : baseHint;
 		}
 
 		function renderActionSettings() {
@@ -608,12 +613,13 @@
 					title: byId("statusTitle").value.trim()
 				};
 			} else if (actionUuid === "ninja.socialstream.streamdeck.command") {
+				const option = selectedCommandOption();
 				actionSettings = {
 					command: byId("command").value,
 					target: byId("target").value.trim(),
 					value: byId("value").value.trim(),
 					title: byId("commandTitle").value.trim(),
-					awaitResponse: byId("commandAwaitResponse").checked
+					awaitResponse: !!(option && option.defaultAwaitResponse === true) || byId("commandAwaitResponse").checked
 				};
 			} else if (actionUuid === "ninja.socialstream.streamdeck.custom-command") {
 				actionSettings = {
@@ -630,6 +636,17 @@
 			if (actionUuid === "ninja.socialstream.streamdeck.command") {
 				renderCommandFields();
 			}
+		}
+
+		function handleCommandChange() {
+			const option = selectedCommandOption();
+			actionSettings = {
+				...actionSettings,
+				command: byId("command").value,
+				awaitResponse: !!(option && option.defaultAwaitResponse === true)
+			};
+			renderCommandFields();
+			saveActionSettings();
 		}
 
 		function handlePluginMessage(payload) {
@@ -671,12 +688,13 @@
 		});
 		[
 			"statusTitle",
-			"command", "target", "value", "commandTitle", "commandAwaitResponse",
+			"target", "value", "commandTitle", "commandAwaitResponse",
 			"customAction", "customTarget", "customValue", "customTitle", "customAwaitResponse"
 		].forEach(id => {
 			byId(id).addEventListener("change", saveActionSettings);
 			byId(id).addEventListener("input", saveActionSettings);
 		});
+		byId("command").addEventListener("change", handleCommandChange);
 		byId("testConnection").onclick = function() {
 			saveGlobalSettings();
 			send({ event: "sendToPlugin", action: actionUuid, context: actionContext, payload: { type: "testConnection" } });
