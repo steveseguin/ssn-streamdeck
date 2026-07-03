@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { COMMANDS, buildCustomCommandPayload, buildSsnCommandPayload, getCommandDefinition, parseValue } from "./command-registry.js";
 
@@ -51,8 +52,7 @@ describe("command registry", () => {
 	});
 
 	it("keeps property inspector preset commands backed by the registry", () => {
-		const html = readFileSync(new URL("../../ui/action-settings.html", import.meta.url), "utf8");
-		const uiCommands = Array.from(html.matchAll(/\{\s*value:\s*"([^"]+)"/g), match => match[1]);
+		const uiCommands = Array.from(readUiCommandOptions().keys());
 		const registryCommands = new Set(COMMANDS.map(command => command.id));
 		expect(uiCommands.filter(command => !registryCommands.has(command))).toEqual([]);
 		expect(uiCommands).toContain("pin");
@@ -63,14 +63,23 @@ describe("command registry", () => {
 	});
 
 	it("keeps property inspector response defaults aligned with required-response presets", () => {
-		const html = readFileSync(new URL("../../ui/action-settings.html", import.meta.url), "utf8");
-		const uiCommands = new Set(Array.from(html.matchAll(/\{\s*value:\s*"([^"]+)"/g), match => match[1]));
-		const uiResponseCommands = new Set(Array.from(html.matchAll(/\{\s*value:\s*"([^"]+)"[^}]*defaultAwaitResponse:\s*true/g), match => match[1]));
+		const uiOptions = readUiCommandOptions();
+		const uiCommands = new Set(uiOptions.keys());
+		const uiResponseCommands = new Set(Array.from(uiOptions).filter(([, option]) => option.defaultAwaitResponse === true).map(([command]) => command));
 		const requiredResponseCommands = COMMANDS.filter(command => command.defaultAwaitResponse === true && uiCommands.has(command.id)).map(command => command.id);
 		const registryResponseCommands = new Set(COMMANDS.filter(command => command.defaultAwaitResponse === true).map(command => command.id));
 		expect(Array.from(uiResponseCommands).filter(command => !registryResponseCommands.has(command))).toEqual([]);
 		for (const command of requiredResponseCommands) {
 			expect(uiResponseCommands.has(command)).toBe(true);
+		}
+	});
+
+	it("keeps property inspector value defaults aligned with visible preset defaults", () => {
+		const uiOptions = readUiCommandOptions();
+		const visibleDefaultCommands = COMMANDS.filter(command => typeof command.defaultValue !== "undefined" && uiOptions.has(command.id));
+		for (const command of visibleDefaultCommands) {
+			expect(uiOptions.get(command.id)).toHaveProperty("defaultValue");
+			expect(uiOptions.get(command.id)?.defaultValue).toEqual(command.defaultValue);
 		}
 	});
 
@@ -105,3 +114,25 @@ describe("command registry", () => {
 		expect(parseValue("hello")).toBe("hello");
 	});
 });
+
+type UiCommandOption = {
+	value: string;
+	defaultAwaitResponse?: boolean;
+	defaultValue?: unknown;
+};
+
+function readUiCommandOptions(): Map<string, UiCommandOption> {
+	const html = readFileSync(new URL("../../ui/action-settings.html", import.meta.url), "utf8");
+	const options = new Map<string, UiCommandOption>();
+	for (const line of html.split(/\r?\n/)) {
+		if (!line.includes("{ value:")) {
+			continue;
+		}
+		const objectLiteral = line.trim().replace(/,$/, "");
+		const option = runInNewContext(`(${objectLiteral})`) as Partial<UiCommandOption>;
+		if (typeof option.value === "string") {
+			options.set(option.value, option as UiCommandOption);
+		}
+	}
+	return options;
+}

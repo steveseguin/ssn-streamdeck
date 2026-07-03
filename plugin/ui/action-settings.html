@@ -389,8 +389,8 @@
 			{
 				label: "Chat and polls",
 				options: [
-					{ value: "sendChat", label: "Send chat", scope: "ssn", valueLabel: "Message" },
-					{ value: "sendEncodedChat", label: "Send encoded chat", scope: "ssn", valueLabel: "Encoded message" },
+					{ value: "sendChat", label: "Send chat", scope: "ssn", defaultValue: "Hello from Stream Deck", valueLabel: "Message" },
+					{ value: "sendEncodedChat", label: "Send encoded chat", scope: "ssn", defaultValue: "Hello%20from%20Stream%20Deck", valueLabel: "Encoded message" },
 					{ value: "resetpoll", label: "Reset poll", scope: "ssn" },
 					{ value: "closepoll", label: "Close poll", scope: "ssn" }
 				]
@@ -406,15 +406,15 @@
 			{
 				label: "Waitlist and draws",
 				options: [
-					{ value: "removefromwaitlist", label: "Remove entry", scope: "ssn", valueLabel: "Entry number" },
-					{ value: "highlightwaitlist", label: "Highlight entry", scope: "ssn", valueLabel: "Entry number" },
+					{ value: "removefromwaitlist", label: "Remove entry", scope: "ssn", defaultValue: "1", valueLabel: "Entry number" },
+					{ value: "highlightwaitlist", label: "Highlight entry", scope: "ssn", defaultValue: "1", valueLabel: "Entry number" },
 					{ value: "resetwaitlist", label: "Reset waitlist", scope: "ssn" },
 					{ value: "stopentries", label: "Stop entries", scope: "ssn" },
 					{ value: "startentries", label: "Start entries", scope: "ssn" },
-					{ value: "waitlistmessage", label: "Set waitlist message", scope: "ssn", valueLabel: "Message" },
+					{ value: "waitlistmessage", label: "Set waitlist message", scope: "ssn", defaultValue: "Type !join to enter!", valueLabel: "Message" },
 					{ value: "downloadwaitlist", label: "Download waitlist", scope: "ssn" },
-					{ value: "selectwinner", label: "Select winner", scope: "ssn", valueLabel: "Winner count" },
-					{ value: "drawmode", label: "Draw mode", scope: "ssn", valueLabel: "true, false, or toggle" }
+					{ value: "selectwinner", label: "Select winner", scope: "ssn", defaultValue: "1", valueLabel: "Winner count" },
+					{ value: "drawmode", label: "Draw mode", scope: "ssn", defaultValue: "toggle", valueLabel: "true, false, or toggle" }
 				]
 			},
 			{
@@ -425,9 +425,9 @@
 					{ value: "startSource", label: "Start source", scope: "ssapp", defaultAwaitResponse: true },
 					{ value: "stopSource", label: "Stop source", scope: "ssapp", defaultAwaitResponse: true },
 					{ value: "restartSource", label: "Restart source", scope: "ssapp", defaultAwaitResponse: true },
-					{ value: "startAllSources", label: "Start all sources", scope: "ssapp", defaultAwaitResponse: true },
-					{ value: "stopAllSources", label: "Stop all sources", scope: "ssapp", defaultAwaitResponse: true },
-					{ value: "restartAllSources", label: "Restart all sources", scope: "ssapp", defaultAwaitResponse: true },
+					{ value: "startAllSources", label: "Start all sources", scope: "ssapp", defaultValue: {}, defaultAwaitResponse: true },
+					{ value: "stopAllSources", label: "Stop all sources", scope: "ssapp", defaultValue: { confirm: true }, defaultAwaitResponse: true },
+					{ value: "restartAllSources", label: "Restart all sources", scope: "ssapp", defaultValue: { confirm: true }, defaultAwaitResponse: true },
 					{ value: "setSourceMute", label: "Set source mute", scope: "ssapp", defaultAwaitResponse: true },
 					{ value: "toggleSourceMute", label: "Toggle source mute", scope: "ssapp", defaultAwaitResponse: true },
 					{ value: "setSourceVisibility", label: "Set source visibility", scope: "ssapp", defaultAwaitResponse: true },
@@ -540,6 +540,11 @@
 			return commandOptions.find(option => option.value === command) || null;
 		}
 
+		function optionDefaultValue(option) {
+			if (!option || !Object.prototype.hasOwnProperty.call(option, "defaultValue")) return "";
+			return typeof option.defaultValue === "string" ? option.defaultValue : JSON.stringify(option.defaultValue);
+		}
+
 		function renderCommandFields() {
 			const option = selectedCommandOption();
 			const isSsapp = option && option.scope === "ssapp";
@@ -643,8 +648,10 @@
 			actionSettings = {
 				...actionSettings,
 				command: byId("command").value,
+				value: optionDefaultValue(option),
 				awaitResponse: !!(option && option.defaultAwaitResponse === true)
 			};
+			byId("value").value = actionSettings.value || "";
 			renderCommandFields();
 			saveActionSettings();
 		}
