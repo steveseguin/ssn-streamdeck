@@ -9,6 +9,7 @@
 		"build": "npm run assets && tsc -p tsconfig.json && node scripts/copy-assets.mjs",
 		"check": "tsc -p tsconfig.json --noEmit",
 		"test": "vitest run",
+		"test:runtime": "node scripts/streamdeck-runtime-smoke.mjs",
 		"dev": "tsc -p tsconfig.json --watch"
 	},
 	"dependencies": {
