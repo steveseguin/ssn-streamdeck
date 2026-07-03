@@ -1,0 +1,4 @@
+node_modules/
+logs/
+ninja.socialstream.streamdeck.sdPlugin/
+*.streamDeckPlugin

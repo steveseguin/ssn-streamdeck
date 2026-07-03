@@ -1,0 +1,313 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Social Stream Ninja Settings</title>
+	<style>
+		:root {
+			color-scheme: dark;
+			--bg: #1f1f1f;
+			--panel: #2b2b2b;
+			--field: #151515;
+			--text: #f2f2f2;
+			--muted: #aaa;
+			--accent: #4a90e2;
+			--ok: #35d07f;
+			--warn: #f59e0b;
+			--error: #ef4444;
+		}
+		body {
+			margin: 0;
+			padding: 14px;
+			background: var(--bg);
+			color: var(--text);
+			font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+		}
+		h2 {
+			margin: 16px 0 10px;
+			font-size: 14px;
+		}
+		label {
+			display: block;
+			margin: 10px 0 4px;
+			color: var(--muted);
+			font-weight: 600;
+		}
+		input, select, textarea, button {
+			box-sizing: border-box;
+			width: 100%;
+			border: 1px solid #444;
+			border-radius: 6px;
+			background: var(--field);
+			color: var(--text);
+			padding: 8px;
+			font: inherit;
+		}
+		textarea {
+			min-height: 58px;
+			resize: vertical;
+		}
+		button {
+			background: #303a4d;
+			cursor: pointer;
+			font-weight: 700;
+		}
+		.row {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 8px;
+		}
+		.status {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 10px;
+			border-radius: 8px;
+			background: var(--panel);
+		}
+		.dot {
+			width: 10px;
+			height: 10px;
+			border-radius: 999px;
+			background: var(--warn);
+		}
+		.status.ok .dot { background: var(--ok); }
+		.status.error .dot { background: var(--error); }
+		.hint {
+			margin-top: 6px;
+			color: var(--muted);
+			font-size: 12px;
+		}
+		.hidden {
+			display: none;
+		}
+		code {
+			color: #dbeafe;
+		}
+	</style>
+</head>
+<body>
+	<div id="statusBox" class="status">
+		<div class="dot"></div>
+		<div id="statusText">Enter a Social Stream session ID.</div>
+	</div>
+
+	<h2>Connection</h2>
+	<label for="sessionId">Session ID</label>
+	<input id="sessionId" type="password" placeholder="Same ID used in dock.html?session=...">
+
+	<label for="apiHost">API host</label>
+	<input id="apiHost" type="text" placeholder="io.socialstream.ninja">
+
+	<div class="row">
+		<div>
+			<label for="inChannel">In channel</label>
+			<input id="inChannel" type="number" min="1" step="1" placeholder="1">
+		</div>
+		<div>
+			<label for="outChannel">Out channel</label>
+			<input id="outChannel" type="number" min="1" step="1" placeholder="1">
+		</div>
+	</div>
+	<div class="hint">Remote control defaults to channel 1. Chat listener workflows usually use channel 4.</div>
+
+	<label>
+		<input id="useTls" type="checkbox" checked style="width:auto;">
+		Use TLS
+	</label>
+	<label>
+		<input id="httpFallback" type="checkbox" checked style="width:auto;">
+		Allow HTTP fallback
+	</label>
+
+	<button id="testConnection" type="button">Test Connection</button>
+
+	<section id="commandSettings" class="hidden">
+		<h2>SSN Command</h2>
+		<label for="command">Command</label>
+		<select id="command">
+			<option value="nextInQueue">Next in queue</option>
+			<option value="clearOverlay">Clear overlay</option>
+			<option value="getQueueSize">Get queue size</option>
+			<option value="sendChat">Send chat</option>
+			<option value="sendEncodedChat">Send encoded chat</option>
+			<option value="drawmode">Draw mode</option>
+			<option value="resetwaitlist">Reset waitlist</option>
+			<option value="selectwinner">Select winner</option>
+			<option value="resetpoll">Reset poll</option>
+			<option value="closepoll">Close poll</option>
+		</select>
+		<label for="target">Target</label>
+		<input id="target" type="text" placeholder="Optional">
+		<label for="value">Value</label>
+		<textarea id="value" placeholder="Optional"></textarea>
+		<label for="commandTitle">Title override</label>
+		<input id="commandTitle" type="text" placeholder="Optional">
+		<label>
+			<input id="commandAwaitResponse" type="checkbox" style="width:auto;">
+			Wait for response
+		</label>
+	</section>
+
+	<section id="customSettings" class="hidden">
+		<h2>Custom Command</h2>
+		<label for="customAction">Action</label>
+		<input id="customAction" type="text" placeholder="nextInQueue">
+		<label for="customTarget">Target</label>
+		<input id="customTarget" type="text" placeholder="Optional">
+		<label for="customValue">Value</label>
+		<textarea id="customValue" placeholder="true, false, text, or JSON"></textarea>
+		<label for="customTitle">Title override</label>
+		<input id="customTitle" type="text" placeholder="Optional">
+		<label>
+			<input id="customAwaitResponse" type="checkbox" style="width:auto;">
+			Wait for response
+		</label>
+	</section>
+
+	<script>
+		let websocket = null;
+		let actionInfo = null;
+		let actionUuid = "";
+		let actionContext = "";
+		let pluginUuid = "";
+		let globalSettings = {};
+		let actionSettings = {};
+
+		window.connectElgatoStreamDeckSocket = function(port, uuid, registerEvent, info, actionInfoJson) {
+			pluginUuid = uuid;
+			actionInfo = JSON.parse(actionInfoJson);
+			actionUuid = actionInfo.action || "";
+			actionContext = actionInfo.context || "";
+			actionSettings = actionInfo.payload && actionInfo.payload.settings ? actionInfo.payload.settings : {};
+			websocket = new WebSocket("ws://127.0.0.1:" + port);
+			websocket.onopen = function() {
+				send({ event: registerEvent, uuid: uuid });
+				send({ event: "getGlobalSettings", context: pluginUuid });
+				renderActionSettings();
+				requestStatus();
+			};
+			websocket.onmessage = function(event) {
+				const message = JSON.parse(event.data);
+				if (message.event === "didReceiveGlobalSettings") {
+					globalSettings = message.payload && message.payload.settings ? message.payload.settings : {};
+					renderGlobalSettings();
+				} else if (message.event === "didReceiveSettings") {
+					actionSettings = message.payload && message.payload.settings ? message.payload.settings : {};
+					renderActionSettings();
+				} else if (message.event === "sendToPropertyInspector") {
+					handlePluginMessage(message.payload || {});
+				}
+			};
+		};
+
+		function byId(id) {
+			return document.getElementById(id);
+		}
+
+		function send(message) {
+			if (websocket && websocket.readyState === WebSocket.OPEN) {
+				websocket.send(JSON.stringify(message));
+			}
+		}
+
+		function requestStatus() {
+			send({ event: "sendToPlugin", action: actionUuid, context: actionContext, payload: { type: "requestStatus" } });
+		}
+
+		function renderGlobalSettings() {
+			byId("sessionId").value = globalSettings.sessionId || "";
+			byId("apiHost").value = globalSettings.apiHost || "io.socialstream.ninja";
+			byId("inChannel").value = globalSettings.inChannel || "1";
+			byId("outChannel").value = globalSettings.outChannel || "1";
+			byId("useTls").checked = globalSettings.useTls !== false;
+			byId("httpFallback").checked = globalSettings.httpFallback !== false;
+		}
+
+		function renderActionSettings() {
+			byId("commandSettings").classList.toggle("hidden", actionUuid !== "ninja.socialstream.streamdeck.command");
+			byId("customSettings").classList.toggle("hidden", actionUuid !== "ninja.socialstream.streamdeck.custom-command");
+			if (actionUuid === "ninja.socialstream.streamdeck.command") {
+				byId("command").value = actionSettings.command || "nextInQueue";
+				byId("target").value = actionSettings.target || "";
+				byId("value").value = actionSettings.value || "";
+				byId("commandTitle").value = actionSettings.title || "";
+				byId("commandAwaitResponse").checked = actionSettings.awaitResponse === true;
+			}
+			if (actionUuid === "ninja.socialstream.streamdeck.custom-command") {
+				byId("customAction").value = actionSettings.action || "nextInQueue";
+				byId("customTarget").value = actionSettings.target || "";
+				byId("customValue").value = actionSettings.value || "";
+				byId("customTitle").value = actionSettings.title || "";
+				byId("customAwaitResponse").checked = actionSettings.awaitResponse === true;
+			}
+		}
+
+		function saveGlobalSettings() {
+			globalSettings = {
+				sessionId: byId("sessionId").value.trim(),
+				apiHost: byId("apiHost").value.trim() || "io.socialstream.ninja",
+				inChannel: Number(byId("inChannel").value || 1),
+				outChannel: Number(byId("outChannel").value || 1),
+				useTls: byId("useTls").checked,
+				httpFallback: byId("httpFallback").checked
+			};
+			send({ event: "setGlobalSettings", context: pluginUuid, payload: globalSettings });
+			setTimeout(requestStatus, 250);
+		}
+
+		function saveActionSettings() {
+			if (actionUuid === "ninja.socialstream.streamdeck.command") {
+				actionSettings = {
+					command: byId("command").value,
+					target: byId("target").value.trim(),
+					value: byId("value").value.trim(),
+					title: byId("commandTitle").value.trim(),
+					awaitResponse: byId("commandAwaitResponse").checked
+				};
+			} else if (actionUuid === "ninja.socialstream.streamdeck.custom-command") {
+				actionSettings = {
+					action: byId("customAction").value.trim() || "nextInQueue",
+					target: byId("customTarget").value.trim(),
+					value: byId("customValue").value.trim(),
+					title: byId("customTitle").value.trim(),
+					awaitResponse: byId("customAwaitResponse").checked
+				};
+			} else {
+				return;
+			}
+			send({ event: "setSettings", context: actionContext, payload: actionSettings });
+		}
+
+		function handlePluginMessage(payload) {
+			if (payload.type === "status") {
+				updateStatus(payload.ok === true ? "ok" : payload.state === "missing-session" ? "warn" : "error", payload.message || "Status updated.");
+			}
+		}
+
+		function updateStatus(kind, text) {
+			const box = byId("statusBox");
+			box.classList.remove("ok", "error");
+			if (kind === "ok") box.classList.add("ok");
+			if (kind === "error") box.classList.add("error");
+			byId("statusText").textContent = text;
+		}
+
+		["sessionId", "apiHost", "inChannel", "outChannel", "useTls", "httpFallback"].forEach(id => {
+			byId(id).addEventListener("change", saveGlobalSettings);
+			byId(id).addEventListener("input", saveGlobalSettings);
+		});
+		[
+			"command", "target", "value", "commandTitle", "commandAwaitResponse",
+			"customAction", "customTarget", "customValue", "customTitle", "customAwaitResponse"
+		].forEach(id => {
+			byId(id).addEventListener("change", saveActionSettings);
+			byId(id).addEventListener("input", saveActionSettings);
+		});
+		byId("testConnection").onclick = function() {
+			saveGlobalSettings();
+			send({ event: "sendToPlugin", action: actionUuid, context: actionContext, payload: { type: "testConnection" } });
+		};
+	</script>
+</body>
+</html>

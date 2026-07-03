@@ -1,0 +1,86 @@
+{
+	"$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+	"UUID": "ninja.socialstream.streamdeck",
+	"Name": "Social Stream Ninja",
+	"Author": "Social Stream Ninja",
+	"Description": "Control Social Stream Ninja from Stream Deck keys.",
+	"Version": "0.1.0.0",
+	"SDKVersion": 2,
+	"Software": {
+		"MinimumVersion": "6.8"
+	},
+	"Nodejs": {
+		"Version": "20"
+	},
+	"OS": [
+		{
+			"Platform": "windows",
+			"MinimumVersion": "10"
+		},
+		{
+			"Platform": "mac",
+			"MinimumVersion": "12"
+		}
+	],
+	"Category": "Social Stream Ninja",
+	"CategoryIcon": "imgs/category",
+	"Icon": "imgs/plugin",
+	"CodePath": "bin/plugin.js",
+	"PropertyInspectorPath": "ui/action-settings.html",
+	"Actions": [
+		{
+			"UUID": "ninja.socialstream.streamdeck.connection",
+			"Name": "Connection Status",
+			"Tooltip": "Configure the Social Stream Ninja session ID and show API connection status.",
+			"Icon": "imgs/connection",
+			"Controllers": ["Keypad"],
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Name": "Waiting",
+					"Image": "imgs/state-neutral",
+					"Title": "SSN",
+					"ShowTitle": true
+				},
+				{
+					"Name": "Connected",
+					"Image": "imgs/state-on",
+					"Title": "SSN",
+					"ShowTitle": true
+				}
+			]
+		},
+		{
+			"UUID": "ninja.socialstream.streamdeck.command",
+			"Name": "SSN Command",
+			"Tooltip": "Send a common Social Stream Ninja remote-control command.",
+			"Icon": "imgs/command",
+			"Controllers": ["Keypad"],
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Name": "Ready",
+					"Image": "imgs/command",
+					"Title": "SSN",
+					"ShowTitle": true
+				}
+			]
+		},
+		{
+			"UUID": "ninja.socialstream.streamdeck.custom-command",
+			"Name": "Custom Command",
+			"Tooltip": "Send any Social Stream Ninja API command with action, target, and value.",
+			"Icon": "imgs/custom",
+			"Controllers": ["Keypad"],
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Name": "Ready",
+					"Image": "imgs/custom",
+					"Title": "Custom",
+					"ShowTitle": true
+				}
+			]
+		}
+	]
+}
