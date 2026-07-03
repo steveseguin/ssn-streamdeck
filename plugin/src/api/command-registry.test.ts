@@ -83,6 +83,33 @@ describe("command registry", () => {
 		}
 	});
 
+	it("keeps property inspector SSApp presets gated by advertised capabilities", () => {
+		const uiOptions = readUiCommandOptions();
+		const expectedPaths = new Map<string, string[]>([
+			["getSources", ["sourceControls", "list"]],
+			["getSource", ["sourceControls", "get"]],
+			["startSource", ["sourceControls", "start"]],
+			["stopSource", ["sourceControls", "stop"]],
+			["restartSource", ["sourceControls", "restart"]],
+			["startAllSources", ["bulkControls", "startAll"]],
+			["stopAllSources", ["bulkControls", "stopAll"]],
+			["restartAllSources", ["bulkControls", "restartAll"]],
+			["setSourceMute", ["mute", "set"]],
+			["toggleSourceMute", ["mute", "toggle"]],
+			["setSourceVisibility", ["visibility", "set"]],
+			["toggleSourceVisibility", ["visibility", "toggle"]],
+			["setSourceConnectionMode", ["connectionMode", "set"]]
+		]);
+		const ssappCommands = Array.from(uiOptions).filter(([, option]) => option.scope === "ssapp").map(([command]) => command);
+		expect(ssappCommands).toEqual(Array.from(expectedPaths.keys()));
+		for (const [command, option] of uiOptions) {
+			if (option.scope !== "ssapp") {
+				continue;
+			}
+			expect(option.capabilityPath).toEqual(expectedPaths.get(command));
+		}
+	});
+
 	it("builds custom commands", () => {
 		expect(buildCustomCommandPayload({ action: "sendChat", value: "Hello" })).toEqual({
 			action: "sendChat",
@@ -117,6 +144,8 @@ describe("command registry", () => {
 
 type UiCommandOption = {
 	value: string;
+	scope?: "ssn" | "ssapp";
+	capabilityPath?: string[];
 	defaultAwaitResponse?: boolean;
 	defaultValue?: unknown;
 };

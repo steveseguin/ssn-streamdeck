@@ -420,19 +420,19 @@
 			{
 				label: "SSApp sources",
 				options: [
-					{ value: "getSources", label: "List sources", scope: "ssapp", defaultAwaitResponse: true },
-					{ value: "getSource", label: "Get source", scope: "ssapp", defaultAwaitResponse: true },
-					{ value: "startSource", label: "Start source", scope: "ssapp", defaultAwaitResponse: true },
-					{ value: "stopSource", label: "Stop source", scope: "ssapp", defaultAwaitResponse: true },
-					{ value: "restartSource", label: "Restart source", scope: "ssapp", defaultAwaitResponse: true },
-					{ value: "startAllSources", label: "Start all sources", scope: "ssapp", defaultValue: {}, defaultAwaitResponse: true },
-					{ value: "stopAllSources", label: "Stop all sources", scope: "ssapp", defaultValue: { confirm: true }, defaultAwaitResponse: true },
-					{ value: "restartAllSources", label: "Restart all sources", scope: "ssapp", defaultValue: { confirm: true }, defaultAwaitResponse: true },
-					{ value: "setSourceMute", label: "Set source mute", scope: "ssapp", defaultAwaitResponse: true },
-					{ value: "toggleSourceMute", label: "Toggle source mute", scope: "ssapp", defaultAwaitResponse: true },
-					{ value: "setSourceVisibility", label: "Set source visibility", scope: "ssapp", defaultAwaitResponse: true },
-					{ value: "toggleSourceVisibility", label: "Toggle source visibility", scope: "ssapp", defaultAwaitResponse: true },
-					{ value: "setSourceConnectionMode", label: "Set connection mode", scope: "ssapp", defaultAwaitResponse: true }
+					{ value: "getSources", label: "List sources", scope: "ssapp", capabilityPath: ["sourceControls", "list"], defaultAwaitResponse: true },
+					{ value: "getSource", label: "Get source", scope: "ssapp", capabilityPath: ["sourceControls", "get"], defaultAwaitResponse: true },
+					{ value: "startSource", label: "Start source", scope: "ssapp", capabilityPath: ["sourceControls", "start"], defaultAwaitResponse: true },
+					{ value: "stopSource", label: "Stop source", scope: "ssapp", capabilityPath: ["sourceControls", "stop"], defaultAwaitResponse: true },
+					{ value: "restartSource", label: "Restart source", scope: "ssapp", capabilityPath: ["sourceControls", "restart"], defaultAwaitResponse: true },
+					{ value: "startAllSources", label: "Start all sources", scope: "ssapp", capabilityPath: ["bulkControls", "startAll"], defaultValue: {}, defaultAwaitResponse: true },
+					{ value: "stopAllSources", label: "Stop all sources", scope: "ssapp", capabilityPath: ["bulkControls", "stopAll"], defaultValue: { confirm: true }, defaultAwaitResponse: true },
+					{ value: "restartAllSources", label: "Restart all sources", scope: "ssapp", capabilityPath: ["bulkControls", "restartAll"], defaultValue: { confirm: true }, defaultAwaitResponse: true },
+					{ value: "setSourceMute", label: "Set source mute", scope: "ssapp", capabilityPath: ["mute", "set"], defaultAwaitResponse: true },
+					{ value: "toggleSourceMute", label: "Toggle source mute", scope: "ssapp", capabilityPath: ["mute", "toggle"], defaultAwaitResponse: true },
+					{ value: "setSourceVisibility", label: "Set source visibility", scope: "ssapp", capabilityPath: ["visibility", "set"], defaultAwaitResponse: true },
+					{ value: "toggleSourceVisibility", label: "Toggle source visibility", scope: "ssapp", capabilityPath: ["visibility", "toggle"], defaultAwaitResponse: true },
+					{ value: "setSourceConnectionMode", label: "Set connection mode", scope: "ssapp", capabilityPath: ["connectionMode", "set"], defaultAwaitResponse: true }
 				]
 			}
 		];
@@ -493,6 +493,22 @@
 			return !!(capabilities && capabilities.ssapp && capabilities.ssapp.available === true);
 		}
 
+		function capabilityEnabled(path) {
+			if (!path || !path.length) return true;
+			if (!ssappAvailable()) return false;
+			let current = capabilities.ssapp;
+			for (const key of path) {
+				if (!current || current[key] === undefined || current[key] === false) return false;
+				current = current[key];
+			}
+			return current === true || Array.isArray(current) || !!(current && typeof current === "object");
+		}
+
+		function commandOptionAvailable(option) {
+			if (!option || option.scope !== "ssapp") return true;
+			return capabilityEnabled(option.capabilityPath);
+		}
+
 		function renderCapabilities() {
 			if (ssappAvailable()) {
 				const runtime = capabilities.ssapp.runtime || capabilities.runtime || "SSApp";
@@ -512,7 +528,7 @@
 			select.innerHTML = "";
 			let selectedIsAvailable = false;
 			commandGroups.forEach(group => {
-				const available = group.options.filter(option => option.scope !== "ssapp" || ssappAvailable());
+				const available = group.options.filter(commandOptionAvailable);
 				if (!available.length) return;
 				const optgroup = document.createElement("optgroup");
 				optgroup.label = group.label;
