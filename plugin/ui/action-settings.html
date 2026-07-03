@@ -109,7 +109,8 @@
 			<input id="outChannel" type="number" min="1" step="1" placeholder="1">
 		</div>
 	</div>
-	<div class="hint">Remote control defaults to channel 1. Chat listener workflows usually use channel 4.</div>
+	<div class="hint">Remote control sends on channel 1 and listens on channel 2. Chat listener workflows usually use channel 4.</div>
+	<div id="capabilityText" class="hint">SSApp source controls unavailable until capabilities are received.</div>
 
 	<label>
 		<input id="useTls" type="checkbox" checked style="width:auto;">
@@ -173,6 +174,32 @@
 		let pluginUuid = "";
 		let globalSettings = {};
 		let actionSettings = {};
+		let capabilities = null;
+		const commandOptions = [
+			{ value: "nextInQueue", label: "Next in queue", scope: "ssn" },
+			{ value: "clearOverlay", label: "Clear overlay", scope: "ssn" },
+			{ value: "getQueueSize", label: "Get queue size", scope: "ssn" },
+			{ value: "sendChat", label: "Send chat", scope: "ssn" },
+			{ value: "sendEncodedChat", label: "Send encoded chat", scope: "ssn" },
+			{ value: "drawmode", label: "Draw mode", scope: "ssn" },
+			{ value: "resetwaitlist", label: "Reset waitlist", scope: "ssn" },
+			{ value: "selectwinner", label: "Select winner", scope: "ssn" },
+			{ value: "resetpoll", label: "Reset poll", scope: "ssn" },
+			{ value: "closepoll", label: "Close poll", scope: "ssn" },
+			{ value: "getSources", label: "SSApp sources", scope: "ssapp" },
+			{ value: "getSource", label: "SSApp source", scope: "ssapp" },
+			{ value: "startSource", label: "Start source", scope: "ssapp" },
+			{ value: "stopSource", label: "Stop source", scope: "ssapp" },
+			{ value: "restartSource", label: "Restart source", scope: "ssapp" },
+			{ value: "startAllSources", label: "Start all sources", scope: "ssapp" },
+			{ value: "stopAllSources", label: "Stop all sources", scope: "ssapp" },
+			{ value: "restartAllSources", label: "Restart all sources", scope: "ssapp" },
+			{ value: "setSourceMute", label: "Set source mute", scope: "ssapp" },
+			{ value: "toggleSourceMute", label: "Toggle source mute", scope: "ssapp" },
+			{ value: "setSourceVisibility", label: "Set source visibility", scope: "ssapp" },
+			{ value: "toggleSourceVisibility", label: "Toggle source visibility", scope: "ssapp" },
+			{ value: "setSourceConnectionMode", label: "Set source connection mode", scope: "ssapp" }
+		];
 
 		window.connectElgatoStreamDeckSocket = function(port, uuid, registerEvent, info, actionInfoJson) {
 			pluginUuid = uuid;
@@ -218,16 +245,51 @@
 		function renderGlobalSettings() {
 			byId("sessionId").value = globalSettings.sessionId || "";
 			byId("apiHost").value = globalSettings.apiHost || "io.socialstream.ninja";
-			byId("inChannel").value = globalSettings.inChannel || "1";
+			byId("inChannel").value = globalSettings.inChannel || "2";
 			byId("outChannel").value = globalSettings.outChannel || "1";
 			byId("useTls").checked = globalSettings.useTls !== false;
 			byId("httpFallback").checked = globalSettings.httpFallback !== false;
 		}
 
+		function ssappAvailable() {
+			return !!(capabilities && capabilities.ssapp && capabilities.ssapp.available === true);
+		}
+
+		function renderCapabilities() {
+			byId("capabilityText").textContent = ssappAvailable()
+				? "SSApp source controls available."
+				: "SSApp source controls unavailable in the current Social Stream runtime.";
+		}
+
+		function renderCommandOptions() {
+			const select = byId("command");
+			const selected = actionSettings.command || select.value || "nextInQueue";
+			select.innerHTML = "";
+			let selectedIsAvailable = false;
+			commandOptions.forEach(option => {
+				if (option.scope === "ssapp" && !ssappAvailable()) return;
+				const item = document.createElement("option");
+				item.value = option.value;
+				item.textContent = option.label;
+				select.appendChild(item);
+				if (option.value === selected) selectedIsAvailable = true;
+			});
+			if (!selectedIsAvailable && selected) {
+				const item = document.createElement("option");
+				item.value = selected;
+				item.textContent = selected + " (unavailable)";
+				item.disabled = true;
+				select.appendChild(item);
+			}
+			select.value = selectedIsAvailable || selected ? selected : "nextInQueue";
+		}
+
 		function renderActionSettings() {
 			byId("commandSettings").classList.toggle("hidden", actionUuid !== "ninja.socialstream.streamdeck.command");
 			byId("customSettings").classList.toggle("hidden", actionUuid !== "ninja.socialstream.streamdeck.custom-command");
+			renderCapabilities();
 			if (actionUuid === "ninja.socialstream.streamdeck.command") {
+				renderCommandOptions();
 				byId("command").value = actionSettings.command || "nextInQueue";
 				byId("target").value = actionSettings.target || "";
 				byId("value").value = actionSettings.value || "";
@@ -247,7 +309,7 @@
 			globalSettings = {
 				sessionId: byId("sessionId").value.trim(),
 				apiHost: byId("apiHost").value.trim() || "io.socialstream.ninja",
-				inChannel: Number(byId("inChannel").value || 1),
+				inChannel: Number(byId("inChannel").value || 2),
 				outChannel: Number(byId("outChannel").value || 1),
 				useTls: byId("useTls").checked,
 				httpFallback: byId("httpFallback").checked
@@ -281,7 +343,14 @@
 
 		function handlePluginMessage(payload) {
 			if (payload.type === "status") {
+				if (payload.capabilities) {
+					capabilities = payload.capabilities;
+					renderActionSettings();
+				}
 				updateStatus(payload.ok === true ? "ok" : payload.state === "missing-session" ? "warn" : "error", payload.message || "Status updated.");
+			} else if (payload.type === "capabilities") {
+				capabilities = payload.capabilities || null;
+				renderActionSettings();
 			}
 		}
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCustomCommandPayload, buildSsnCommandPayload, parseValue } from "./command-registry.js";
+import { buildCustomCommandPayload, buildSsnCommandPayload, getCommandDefinition, parseValue } from "./command-registry.js";
 
 describe("command registry", () => {
 	it("builds simple preset commands", () => {
@@ -20,6 +20,21 @@ describe("command registry", () => {
 			action: "sendChat",
 			value: "Hello"
 		});
+	});
+
+	it("builds SSApp source commands through the same payload shape", () => {
+		expect(buildSsnCommandPayload({ command: "setSourceConnectionMode", value: "{\"sourceId\":\"s1\",\"mode\":\"websocket\"}" })).toEqual({
+			action: "setSourceConnectionMode",
+			value: {
+				sourceId: "s1",
+				mode: "websocket"
+			}
+		});
+	});
+
+	it("awaits SSApp command responses by default", () => {
+		expect(getCommandDefinition("startSource").defaultAwaitResponse).toBe(true);
+		expect(getCommandDefinition("setSourceConnectionMode").defaultAwaitResponse).toBe(true);
 	});
 
 	it("parses primitive and JSON values", () => {

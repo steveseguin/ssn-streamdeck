@@ -1,16 +1,24 @@
 import WebSocket from "ws";
 import { DEFAULT_API_HOST, normalizeGlobalSettings } from "./settings.js";
-import type { ConnectionStateName, GlobalSettings, SsnCommandPayload } from "./types.js";
+import type { ConnectionStateName, GlobalSettings, SsnCommandPayload, StreamDeckCapabilities } from "./types.js";
 
 type Listener<T> = (payload: T) => void;
+type PendingRequest = {
+	resolve: (value: unknown) => void;
+	reject: (error: Error) => void;
+	timeout: NodeJS.Timeout;
+};
 
 export class SsnClient {
 	private settings: GlobalSettings = normalizeGlobalSettings(undefined);
 	private socket: WebSocket | null = null;
 	private state: ConnectionStateName = "missing-session";
+	private capabilities: StreamDeckCapabilities | null = null;
+	private pendingRequests = new Map<string, PendingRequest>();
 	private listeners = {
 		state: new Set<Listener<ConnectionStateName>>(),
-		message: new Set<Listener<unknown>>()
+		message: new Set<Listener<unknown>>(),
+		capabilities: new Set<Listener<StreamDeckCapabilities>>()
 	};
 
 	get connectionState(): ConnectionStateName {
@@ -43,6 +51,14 @@ export class SsnClient {
 		return this.addListener("message", listener);
 	}
 
+	onCapabilities(listener: Listener<StreamDeckCapabilities>): () => void {
+		return this.addListener("capabilities", listener);
+	}
+
+	getCapabilities(): StreamDeckCapabilities | null {
+		return this.capabilities;
+	}
+
 	connect(): void {
 		this.closeSocket();
 		if (!this.settings.sessionId) {
@@ -58,14 +74,19 @@ export class SsnClient {
 				out: this.settings.outChannel || 1
 			});
 			this.setState("connected");
+			this.requestCapabilities().catch(() => undefined);
 		});
 		this.socket.on("message", data => this.handleMessage(data.toString()));
 		this.socket.on("close", () => {
+			this.rejectPendingRequests(new Error("Social Stream API WebSocket closed"));
 			if (this.settings.sessionId) {
 				this.setState("disconnected");
 			}
 		});
-		this.socket.on("error", () => this.setState("error"));
+		this.socket.on("error", () => {
+			this.rejectPendingRequests(new Error("Social Stream API WebSocket error"));
+			this.setState("error");
+		});
 	}
 
 	disconnect(state: ConnectionStateName = "disconnected"): void {
@@ -79,6 +100,9 @@ export class SsnClient {
 			apiid: this.settings.sessionId || payload.apiid
 		};
 		if (this.isSocketOpen()) {
+			if (options.awaitResponse === true || command.get) {
+				return this.sendSocketRequest(command);
+			}
 			this.sendRaw(command);
 			return command;
 		}
@@ -86,6 +110,38 @@ export class SsnClient {
 			return this.sendHttp(command, options.awaitResponse === true);
 		}
 		throw new Error("Social Stream API WebSocket is not connected");
+	}
+
+	async requestCapabilities(): Promise<StreamDeckCapabilities | null> {
+		const response = await this.sendCommand({ action: "getCapabilities" }, { awaitResponse: true });
+		const capabilities = extractCapabilities(response);
+		if (capabilities) {
+			this.setCapabilities(capabilities);
+			return capabilities;
+		}
+		return null;
+	}
+
+	private sendSocketRequest(payload: SsnCommandPayload): Promise<unknown> {
+		const get = typeof payload.get === "string" && payload.get ? payload.get : this.createRequestId(payload.action);
+		const request = {
+			...payload,
+			get
+		};
+		return new Promise((resolve, reject) => {
+			const timeout = setTimeout(() => {
+				this.pendingRequests.delete(get);
+				reject(new Error(`Social Stream API request timed out: ${payload.action}`));
+			}, this.settings.requestTimeoutMs || 5000);
+			this.pendingRequests.set(get, { resolve, reject, timeout });
+			try {
+				this.sendRaw(request);
+			} catch (error) {
+				clearTimeout(timeout);
+				this.pendingRequests.delete(get);
+				reject(error instanceof Error ? error : new Error(String(error)));
+			}
+		});
 	}
 
 	private async sendHttp(payload: SsnCommandPayload, awaitResponse: boolean): Promise<unknown> {
@@ -116,11 +172,19 @@ export class SsnClient {
 	}
 
 	private handleMessage(raw: string): void {
+		let message: unknown = raw;
 		try {
-			this.emit("message", JSON.parse(raw) as unknown);
+			message = JSON.parse(raw) as unknown;
 		} catch {
 			this.emit("message", raw);
+			return;
 		}
+		const capabilities = extractCapabilities(message);
+		if (capabilities) {
+			this.setCapabilities(capabilities);
+		}
+		this.resolveCallback(message);
+		this.emit("message", message);
 	}
 
 	private isSocketOpen(): boolean {
@@ -131,6 +195,7 @@ export class SsnClient {
 		if (!this.socket) {
 			return;
 		}
+		this.rejectPendingRequests(new Error("Social Stream API WebSocket disconnected"));
 		const socket = this.socket;
 		this.socket = null;
 		socket.removeAllListeners();
@@ -168,6 +233,50 @@ export class SsnClient {
 		this.emit("state", state);
 	}
 
+	private setCapabilities(capabilities: StreamDeckCapabilities): void {
+		this.capabilities = capabilities;
+		this.emit("capabilities", capabilities);
+	}
+
+	private resolveCallback(message: unknown): void {
+		if (!isRecord(message)) {
+			return;
+		}
+		const callback = message.callback;
+		if (!isRecord(callback) || typeof callback.get !== "string") {
+			return;
+		}
+		const pending = this.pendingRequests.get(callback.get);
+		if (!pending) {
+			return;
+		}
+		this.pendingRequests.delete(callback.get);
+		clearTimeout(pending.timeout);
+		const result = callback.result;
+		const capabilities = extractCapabilities(result);
+		if (capabilities) {
+			this.setCapabilities(capabilities);
+		}
+		if (isRecord(result) && result.ok === false) {
+			const error = isRecord(result.error) ? result.error : {};
+			pending.reject(new Error(typeof error.message === "string" ? error.message : "Social Stream API request failed"));
+			return;
+		}
+		pending.resolve(result);
+	}
+
+	private rejectPendingRequests(error: Error): void {
+		for (const pending of this.pendingRequests.values()) {
+			clearTimeout(pending.timeout);
+			pending.reject(error);
+		}
+		this.pendingRequests.clear();
+	}
+
+	private createRequestId(action: string): string {
+		return `sd-${action}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+	}
+
 	private addListener<K extends keyof SsnClient["listeners"]>(
 		type: K,
 		listener: SsnClient["listeners"][K] extends Set<Listener<infer T>> ? Listener<T> : never
@@ -190,4 +299,22 @@ export class SsnClient {
 
 function normalizeHost(host: string): string {
 	return host.replace(/^[a-z][a-z0-9+.-]*:\/\//i, "").replace(/\/.*$/, "");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function extractCapabilities(value: unknown): StreamDeckCapabilities | null {
+	if (!isRecord(value)) {
+		return null;
+	}
+	if (value.type === "capabilities" && typeof value.version === "number") {
+		return value as unknown as StreamDeckCapabilities;
+	}
+	const payload = value.payload;
+	if (isRecord(payload) && payload.type === "capabilities" && typeof payload.version === "number") {
+		return payload as unknown as StreamDeckCapabilities;
+	}
+	return null;
 }

@@ -12,6 +12,12 @@ export async function initializeServices(): Promise<void> {
 	const settings = normalizeGlobalSettings(await streamDeck.settings.getGlobalSettings<GlobalSettings>());
 	ssnClient.onState(state => sessionStore.setConnectionState(state));
 	ssnClient.onMessage(message => sessionStore.setLastMessage(message));
+	ssnClient.onCapabilities(capabilities => {
+		streamDeck.ui.sendToPropertyInspector({
+			type: "capabilities",
+			capabilities
+		});
+	});
 	ssnClient.configure(settings);
 	registerPropertyInspectorMessages();
 
@@ -46,7 +52,8 @@ async function sendInspectorStatus(message?: string): Promise<void> {
 		type: "status",
 		ok: state === "connected",
 		state,
-		message: message || statusMessage(state)
+		message: message || statusMessage(state),
+		capabilities: ssnClient.getCapabilities()
 	});
 }
 

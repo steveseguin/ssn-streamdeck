@@ -8,7 +8,7 @@ export function normalizeGlobalSettings(settings: Partial<GlobalSettings> | unde
 		apiHost: stringOrEmpty(settings?.apiHost) || DEFAULT_API_HOST,
 		useTls: settings?.useTls !== false,
 		httpFallback: settings?.httpFallback !== false,
-		inChannel: positiveInteger(settings?.inChannel, 1),
+		inChannel: positiveInteger(settings?.inChannel, 2),
 		outChannel: positiveInteger(settings?.outChannel, 1),
 		requestTimeoutMs: positiveInteger(settings?.requestTimeoutMs, 5000)
 	};

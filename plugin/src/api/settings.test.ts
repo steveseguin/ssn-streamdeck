@@ -8,7 +8,7 @@ describe("settings normalization", () => {
 			apiHost: "io.socialstream.ninja",
 			useTls: true,
 			httpFallback: true,
-			inChannel: 1,
+			inChannel: 2,
 			outChannel: 1,
 			requestTimeoutMs: 5000
 		});

@@ -14,8 +14,11 @@ export class SsnCommandAction extends SingletonAction<SsnCommandSettings> {
 
 	override async onKeyDown(ev: KeyDownEvent<SsnCommandSettings>): Promise<void> {
 		const settings = normalizeSsnCommandSettings(ev.payload.settings);
+		const definition = getCommandDefinition(settings.command);
 		try {
-			await ssnClient.sendCommand(buildSsnCommandPayload(settings), { awaitResponse: settings.awaitResponse === true });
+			await ssnClient.sendCommand(buildSsnCommandPayload(settings), {
+				awaitResponse: settings.awaitResponse === true || definition.defaultAwaitResponse === true
+			});
 			await ev.action.showOk();
 		} catch {
 			await ev.action.showAlert();

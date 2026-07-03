@@ -15,8 +15,29 @@ export interface GlobalSettings extends JsonObject {
 export interface SsnCommandPayload extends JsonObject {
 	action: string;
 	apiid?: string;
+	get?: string;
 	target?: JsonValue;
 	value?: JsonValue;
+}
+
+export interface SsappCapabilities extends JsonObject {
+	available?: boolean;
+	runtime?: string | null;
+	version?: string | null;
+	sourceControls?: JsonObject | boolean;
+	bulkControls?: JsonObject | boolean;
+	visibility?: JsonObject | boolean;
+	mute?: JsonObject | boolean;
+	connectionMode?: JsonObject | boolean;
+	sourceStatus?: JsonObject | boolean;
+}
+
+export interface StreamDeckCapabilities extends JsonObject {
+	type: "capabilities";
+	version: number;
+	runtime?: string;
+	ssapp?: SsappCapabilities;
+	ssn?: JsonObject;
 }
 
 export interface SsnCommandSettings extends JsonObject {
