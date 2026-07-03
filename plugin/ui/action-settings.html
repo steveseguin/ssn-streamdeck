@@ -399,23 +399,34 @@
 			{
 				label: "Chat and polls",
 				options: [
-					{ value: "sendChat", label: "Send chat", scope: "ssn" },
-					{ value: "sendEncodedChat", label: "Send encoded chat", scope: "ssn" },
+					{ value: "sendChat", label: "Send chat", scope: "ssn", valueLabel: "Message" },
+					{ value: "sendEncodedChat", label: "Send encoded chat", scope: "ssn", valueLabel: "Encoded message" },
 					{ value: "resetpoll", label: "Reset poll", scope: "ssn" },
 					{ value: "closepoll", label: "Close poll", scope: "ssn" }
 				]
 			},
 			{
+				label: "Dock messages",
+				options: [
+					{ value: "pin", label: "Pin message", scope: "ssn", valueLabel: "Message ID or JSON message" },
+					{ value: "unpin", label: "Unpin message", scope: "ssn", valueLabel: "Message ID" },
+					{ value: "nextPinned", label: "Next pinned message", scope: "ssn" }
+				]
+			},
+			{
 				label: "Waitlist and draws",
 				options: [
-					{ value: "removefromwaitlist", label: "Remove entry", scope: "ssn" },
-					{ value: "highlightwaitlist", label: "Highlight entry", scope: "ssn" },
+					{ value: "removefromwaitlist", label: "Remove entry", scope: "ssn", valueLabel: "Entry number" },
+					{ value: "highlightwaitlist", label: "Highlight entry", scope: "ssn", valueLabel: "Entry number" },
 					{ value: "resetwaitlist", label: "Reset waitlist", scope: "ssn" },
 					{ value: "stopentries", label: "Stop entries", scope: "ssn" },
 					{ value: "startentries", label: "Start entries", scope: "ssn" },
-					{ value: "waitlistmessage", label: "Set waitlist message", scope: "ssn" },
-					{ value: "selectwinner", label: "Select winner", scope: "ssn" },
-					{ value: "drawmode", label: "Draw mode", scope: "ssn" }
+					{ value: "openentries", label: "Open entries", scope: "ssn" },
+					{ value: "resumeentries", label: "Resume entries", scope: "ssn" },
+					{ value: "waitlistmessage", label: "Set waitlist message", scope: "ssn", valueLabel: "Message" },
+					{ value: "downloadwaitlist", label: "Download waitlist", scope: "ssn" },
+					{ value: "selectwinner", label: "Select winner", scope: "ssn", valueLabel: "Winner count" },
+					{ value: "drawmode", label: "Draw mode", scope: "ssn", valueLabel: "true, false, or toggle" }
 				]
 			},
 			{
@@ -544,9 +555,10 @@
 		function renderCommandFields() {
 			const option = selectedCommandOption();
 			const isSsapp = option && option.scope === "ssapp";
+			const valueLabel = option && option.valueLabel;
 			byId("targetLabel").classList.toggle("hidden", !!isSsapp);
 			byId("target").classList.toggle("hidden", !!isSsapp);
-			byId("value").placeholder = isSsapp ? "Source ID or JSON" : "Optional";
+			byId("value").placeholder = valueLabel || (isSsapp ? "Source ID or JSON" : "Optional");
 			byId("commandHint").textContent = isSsapp
 				? "SSApp commands are still sent to Social Stream. Social Stream decides how to route them."
 				: "Preset commands use the documented Social Stream remote-control API.";

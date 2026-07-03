@@ -1,5 +1,6 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { buildCustomCommandPayload, buildSsnCommandPayload, getCommandDefinition, parseValue } from "./command-registry.js";
+import { COMMANDS, buildCustomCommandPayload, buildSsnCommandPayload, getCommandDefinition, parseValue } from "./command-registry.js";
 
 describe("command registry", () => {
 	it("builds simple preset commands", () => {
@@ -24,6 +25,38 @@ describe("command registry", () => {
 			action: "waitlistmessage",
 			value: "Type !join to enter!"
 		});
+	});
+
+	it("builds dock pinning and waitlist management presets", () => {
+		expect(buildSsnCommandPayload({ command: "pin", value: "message-1" })).toEqual({
+			action: "pin",
+			value: "message-1"
+		});
+		expect(buildSsnCommandPayload({ command: "unpin", value: "message-1" })).toEqual({
+			action: "unpin",
+			value: "message-1"
+		});
+		expect(buildSsnCommandPayload({ command: "nextPinned" })).toEqual({
+			action: "nextPinned"
+		});
+		expect(buildSsnCommandPayload({ command: "openentries" })).toEqual({
+			action: "openentries"
+		});
+		expect(buildSsnCommandPayload({ command: "resumeentries" })).toEqual({
+			action: "resumeentries"
+		});
+		expect(buildSsnCommandPayload({ command: "downloadwaitlist" })).toEqual({
+			action: "downloadwaitlist"
+		});
+	});
+
+	it("keeps property inspector preset commands backed by the registry", () => {
+		const html = readFileSync(new URL("../../ui/action-settings.html", import.meta.url), "utf8");
+		const uiCommands = Array.from(html.matchAll(/\{\s*value:\s*"([^"]+)"/g), match => match[1]);
+		const registryCommands = new Set(COMMANDS.map(command => command.id));
+		expect(uiCommands.filter(command => !registryCommands.has(command))).toEqual([]);
+		expect(uiCommands).toContain("pin");
+		expect(uiCommands).toContain("downloadwaitlist");
 	});
 
 	it("builds custom commands", () => {
