@@ -85,8 +85,20 @@ This document is the single source of truth for how the Stream Deck plugin shoul
       "sendChat": true,
       "sendEncodedChat": true,
       "drawmode": true,
+      "pin": true,
+      "unpin": true,
+      "nextPinned": true,
       "resetwaitlist": true,
       "selectwinner": true,
+      "removefromwaitlist": true,
+      "highlightwaitlist": true,
+      "stopentries": true,
+      "startentries": true,
+      "openentries": true,
+      "resumeentries": true,
+      "waitlistmessage": true,
+      "setwaitlistmessage": true,
+      "downloadwaitlist": true,
       "resetpoll": true,
       "closepoll": true
     }
@@ -198,7 +210,7 @@ Observed action handlers support more than the plugin currently exposes:
 
 - Queue: `nextInQueue`, `getQueueSize`, `clear`, `clearAll`
 - Chat/message: `sendChat`, `sendEncodedChat`, `blockUser`, `extContent`, `autoShow`
-- Waitlist: `resetwaitlist`, `selectwinner`, `removefromwaitlist`, `highlightwaitlist`, `stopentries`, `downloadwaitlist`
+- Waitlist: `resetwaitlist`, `selectwinner`, `removefromwaitlist`, `highlightwaitlist`, `stopentries`, `startentries`, `openentries`, `resumeentries`, `waitlistmessage`, `setwaitlistmessage`, `downloadwaitlist`
 - Poll: `loadpoll`, `setpollsettings`, `getpollpresets`, `createpoll`, `resetpoll`, `closepoll`
 - Timer: `starttimer`, `pausetimer`, `toggletimer`, `resettimer`, `timeradd`, `timersubtract`, `settimer`, `gettimerstate`
 - Runtime state: `drawmode`, `emoteonly`, `getHype`
@@ -462,7 +474,7 @@ Expected event:
 - `selectwinner`:
 
 ```json
-{ "action": "selectwinner", "apiid": "SESSION_ID" }
+{ "action": "selectwinner", "value": 1, "apiid": "SESSION_ID" }
 ```
 
 - `resetwaitlist`:
@@ -474,13 +486,37 @@ Expected event:
 - `removefromwaitlist`:
 
 ```json
-{ "action": "removefromwaitlist", "value": "userOrIndex", "apiid": "SESSION_ID" }
+{ "action": "removefromwaitlist", "value": 1, "apiid": "SESSION_ID" }
 ```
 
 - `highlightwaitlist`:
 
 ```json
-{ "action": "highlightwaitlist", "value": "userOrIndex", "apiid": "SESSION_ID" }
+{ "action": "highlightwaitlist", "value": 1, "apiid": "SESSION_ID" }
+```
+
+- `stopentries`:
+
+```json
+{ "action": "stopentries", "apiid": "SESSION_ID" }
+```
+
+- `startentries`, `openentries`, and `resumeentries`:
+
+```json
+{ "action": "startentries", "apiid": "SESSION_ID" }
+```
+
+- `waitlistmessage` and `setwaitlistmessage`:
+
+```json
+{ "action": "waitlistmessage", "value": "Type !join to enter!", "apiid": "SESSION_ID" }
+```
+
+- `downloadwaitlist`:
+
+```json
+{ "action": "downloadwaitlist", "apiid": "SESSION_ID" }
 ```
 
 ### Poll
