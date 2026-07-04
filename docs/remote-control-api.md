@@ -170,11 +170,27 @@ Current plugin command coverage:
 - `getQueueSize`
 - `sendChat`
 - `sendEncodedChat`
+- `pin`
+- `unpin`
+- `nextPinned`
 - `drawmode`
+- `removefromwaitlist`
+- `highlightwaitlist`
 - `resetwaitlist`
+- `stopentries`
+- `startentries`
+- `waitlistmessage`
+- `downloadwaitlist`
 - `selectwinner`
 - `resetpoll`
 - `closepoll`
+- advertised SSApp source commands when available:
+  - `getSources`, `getSource`
+  - `startSource`, `stopSource`, `restartSource`
+  - `startAllSources`, `stopAllSources`, `restartAllSources`
+  - `setSourceVisibility`, `toggleSourceVisibility`
+  - `setSourceMute`, `toggleSourceMute`
+  - `setSourceConnectionMode`
 
 ### Social Stream Ninja extension/API (`social_stream`)
 
@@ -208,7 +224,7 @@ Stored under Stream Deck plugin global settings:
   apiHost: string,             // default io.socialstream.ninja
   useTls: boolean,             // default true
   httpFallback: boolean,       // default true
-  inChannel: number,           // default 1 (plugin currently defaults to 1)
+  inChannel: number,           // default 2 (callback/capability listen channel)
   outChannel: number,          // default 1 (plugin currently defaults to 1)
   requestTimeoutMs: number      // default 5000
 }
@@ -300,7 +316,7 @@ Recommended defaults:
 - Control sender/listener: `out:1`, `in:2`
 - Optional chat/feed listener: `in:4`
 
-Plugin defaults are currently `inChannel=1`, `outChannel=1`; for v1 callback reliability use `inChannel=2` with `outChannel=1`.
+Plugin defaults are currently `inChannel=2`, `outChannel=1` for callback/capability reliability.
 
 ## HTTP fallback request shape
 

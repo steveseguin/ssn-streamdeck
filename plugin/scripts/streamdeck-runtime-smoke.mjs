@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
+import { readdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { WebSocketServer } from "ws";
@@ -15,6 +16,11 @@ const sessionId = "runtime-session";
 
 if (!existsSync(pluginEntry)) {
 	throw new Error("Compiled plugin missing. Run `npm run build` before `npm run test:runtime`.");
+}
+
+const bundledTestFiles = await findBundledTestFiles(join(sdPluginRoot, "bin"));
+if (bundledTestFiles.length) {
+	throw new Error(`Compiled test files should not be included in the Stream Deck bundle: ${bundledTestFiles.join(", ")}`);
 }
 
 const cleanup = [];
@@ -291,4 +297,18 @@ async function waitFor(find, label, timeoutMs = 5000) {
 		await new Promise(resolve => setTimeout(resolve, 25));
 	}
 	throw new Error(`Timed out waiting for ${label}`);
+}
+
+async function findBundledTestFiles(dir) {
+	if (!existsSync(dir)) return [];
+	const matches = [];
+	for (const entry of await readdir(dir, { withFileTypes: true })) {
+		const fullPath = join(dir, entry.name);
+		if (entry.isDirectory()) {
+			matches.push(...(await findBundledTestFiles(fullPath)));
+		} else if (/\.test\.js(?:\.map)?$/.test(entry.name)) {
+			matches.push(fullPath);
+		}
+	}
+	return matches;
 }
