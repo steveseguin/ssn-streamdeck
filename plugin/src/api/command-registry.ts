@@ -13,6 +13,7 @@ export type CommandDefinition = {
 export const SSN_COMMANDS: CommandDefinition[] = [
 	{ id: "nextInQueue", label: "Next In Queue", scope: "ssn" },
 	{ id: "clearOverlay", label: "Clear Overlay", scope: "ssn" },
+	{ id: "resetleaderboard", label: "Reset Leaderboard", scope: "ssn" },
 	{ id: "getQueueSize", label: "Queue Size", scope: "ssn", defaultAwaitResponse: true },
 	{ id: "sendChat", label: "Send Chat", scope: "ssn", defaultValue: "Hello from Stream Deck", valueLabel: "Message" },
 	{ id: "sendEncodedChat", label: "Send Encoded Chat", scope: "ssn", defaultValue: "Hello%20from%20Stream%20Deck", valueLabel: "Encoded message" },

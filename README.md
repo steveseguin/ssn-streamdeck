@@ -31,7 +31,7 @@ Current workspace capabilities:
 | Action | Purpose | Starting commands |
 | --- | --- | --- |
 | Setup / Status | Configure session ID and show API connection state | WebSocket send channel 1, listen channel 2 |
-| Preset Command | Button presets for common remote controls and advertised SSApp source controls | `clearOverlay`, `nextInQueue`, `pin`, `unpin`, `nextPinned`, `resetwaitlist`, `startentries`, `downloadwaitlist`, `selectwinner`, `startSource`, `stopSource` |
+| Preset Command | Button presets for common remote controls and advertised SSApp source controls | `clearOverlay`, `nextInQueue`, `resetleaderboard`, `pin`, `unpin`, `nextPinned`, `resetwaitlist`, `startentries`, `downloadwaitlist`, `selectwinner`, `startSource`, `stopSource` |
 | Custom Command | Send any `{ action, target, value }` payload | Power-user and development testing |
 
 ## API Assumptions

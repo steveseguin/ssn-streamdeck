@@ -8,6 +8,9 @@ describe("command registry", () => {
 		expect(buildSsnCommandPayload({ command: "nextInQueue" })).toEqual({
 			action: "nextInQueue"
 		});
+		expect(buildSsnCommandPayload({ command: "resetleaderboard" })).toEqual({
+			action: "resetleaderboard"
+		});
 	});
 
 	it("builds preset commands with values", () => {
@@ -55,6 +58,7 @@ describe("command registry", () => {
 		const uiCommands = Array.from(readUiCommandOptions().keys());
 		const registryCommands = new Set(COMMANDS.map(command => command.id));
 		expect(uiCommands.filter(command => !registryCommands.has(command))).toEqual([]);
+		expect(uiCommands).toContain("resetleaderboard");
 		expect(uiCommands).toContain("pin");
 		expect(uiCommands).toContain("downloadwaitlist");
 		expect(uiCommands).not.toContain("openentries");
