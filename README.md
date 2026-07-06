@@ -12,6 +12,10 @@ Social Stream Ninja collects live chat and stream events from multiple platforms
 
 The plugin uses the official Stream Deck SDK, TypeScript source, generated icon assets, a guided property inspector, centralized command payload builders, and focused unit tests.
 
+## Preview
+
+![Social Stream Ninja Stream Deck property inspector](docs/images/property-inspector-preview.png)
+
 ## Status
 
 Current workspace capabilities:
