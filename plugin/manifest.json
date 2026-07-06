@@ -3,7 +3,8 @@
 	"UUID": "ninja.socialstream.streamdeck",
 	"Name": "Social Stream Ninja",
 	"Author": "Social Stream Ninja",
-	"Description": "Control Social Stream Ninja, the browser and desktop app that collects live chat from multiple platforms into overlays, docks, queues, polls, and source controls.",
+	"URL": "https://socialstream.ninja",
+	"Description": "Control Social Stream Ninja from Stream Deck keys: overlays, docks, queues, polls, chat actions, and SSApp source controls for live streams.",
 	"Version": "0.1.0.0",
 	"SDKVersion": 2,
 	"Software": {
@@ -23,7 +24,7 @@
 		}
 	],
 	"Category": "Social Stream Ninja",
-	"CategoryIcon": "imgs/category",
+	"CategoryIcon": "imgs/actions/category",
 	"Icon": "imgs/plugin",
 	"CodePath": "bin/plugin.js",
 	"PropertyInspectorPath": "ui/action-settings.html",
@@ -32,7 +33,7 @@
 			"UUID": "ninja.socialstream.streamdeck.connection",
 			"Name": "Setup / Status",
 			"Tooltip": "Guided setup for Social Stream Ninja and live API connection status.",
-			"Icon": "imgs/connection",
+			"Icon": "imgs/actions/connection",
 			"Controllers": ["Keypad"],
 			"DisableAutomaticStates": true,
 			"States": [
@@ -48,13 +49,14 @@
 					"Title": "SSN",
 					"ShowTitle": true
 				}
-			]
+			],
+			"UserTitleEnabled": false
 		},
 		{
 			"UUID": "ninja.socialstream.streamdeck.command",
 			"Name": "Preset Command",
 			"Tooltip": "Send a common Social Stream Ninja remote-control command.",
-			"Icon": "imgs/command",
+			"Icon": "imgs/actions/command",
 			"Controllers": ["Keypad"],
 			"DisableAutomaticStates": true,
 			"States": [
@@ -64,13 +66,14 @@
 					"Title": "SSN",
 					"ShowTitle": true
 				}
-			]
+			],
+			"UserTitleEnabled": false
 		},
 		{
 			"UUID": "ninja.socialstream.streamdeck.custom-command",
 			"Name": "Custom Command",
 			"Tooltip": "Send any Social Stream Ninja API command with action, target, and value for advanced workflows.",
-			"Icon": "imgs/custom",
+			"Icon": "imgs/actions/custom",
 			"Controllers": ["Keypad"],
 			"DisableAutomaticStates": true,
 			"States": [
@@ -80,7 +83,8 @@
 					"Title": "Custom",
 					"ShowTitle": true
 				}
-			]
+			],
+			"UserTitleEnabled": false
 		}
 	]
 }

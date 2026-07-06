@@ -222,18 +222,12 @@
 		.hidden {
 			display: none;
 		}
+		.setup-details {
+			margin-bottom: 10px;
+		}
 	</style>
 </head>
 <body>
-	<section class="panel hero">
-		<h1>Social Stream Ninja</h1>
-		<p>Collect live chat from multiple platforms and control overlays, queues, polls, docks, and SSApp sources from Stream Deck keys.</p>
-		<div class="actions">
-			<button type="button" data-url="https://socialstream.ninja/">Open Social Stream</button>
-			<button class="secondary" type="button" data-url="https://socialstream.ninja/docs/commands.html#streamdeck-companion">Help</button>
-		</div>
-	</section>
-
 	<div id="statusBox" class="status">
 		<div class="dot"></div>
 		<div>
@@ -242,81 +236,95 @@
 		</div>
 	</div>
 
-	<section class="panel">
-		<h2>Setup Guide</h2>
-		<div class="steps">
-			<div id="stepOpen" class="step done">
-				<div class="step-badge">1</div>
-				<div>
-					<div class="step-title">Open Social Stream Ninja</div>
-					<div class="step-text">Run the browser version or the SSApp desktop app before using Stream Deck actions.</div>
+	<details id="setupDetails" class="setup-details">
+		<summary>Setup and connection</summary>
+		<div class="details-body">
+			<section class="panel hero">
+				<h1>Social Stream Ninja</h1>
+				<p>Collect live chat from multiple platforms and control overlays, queues, polls, docks, and SSApp sources from Stream Deck keys.</p>
+				<div class="actions">
+					<button type="button" data-url="https://socialstream.ninja/">Open Social Stream</button>
+					<button class="secondary" type="button" data-url="https://socialstream.ninja/docs/commands.html#streamdeck-companion">Help</button>
 				</div>
-			</div>
-			<div id="stepSession" class="step">
-				<div class="step-badge">2</div>
-				<div>
-					<div class="step-title">Paste your session ID</div>
-					<div class="step-text">This is the private ID used in URLs such as <span class="inline-code">dock.html?session=...</span>.</div>
-				</div>
-			</div>
-			<div id="stepConnect" class="step">
-				<div class="step-badge">3</div>
-				<div>
-					<div class="step-title">Test the connection</div>
-					<div class="step-text">The status key turns online when the Social Stream API socket joins your session.</div>
-				</div>
-			</div>
-			<div id="stepAction" class="step">
-				<div class="step-badge">4</div>
-				<div>
-					<div class="step-title">Choose an action</div>
-					<div class="step-text">Start with a preset command, then use Custom Command only for advanced payloads.</div>
-				</div>
-			</div>
-		</div>
-	</section>
+			</section>
 
-	<section class="panel">
-		<h2>Connection</h2>
-		<label for="sessionId">Session ID</label>
-		<input id="sessionId" type="password" autocomplete="off" placeholder="Same ID used in dock.html?session=...">
-
-		<div class="actions">
-			<button id="testConnection" type="button">Test Connection</button>
-			<button id="showSession" class="secondary" type="button">Show ID</button>
-		</div>
-
-		<details>
-			<summary>Advanced connection settings</summary>
-			<div class="details-body">
-				<label for="apiHost">API host</label>
-				<input id="apiHost" type="text" placeholder="io.socialstream.ninja">
-
-				<div class="row">
-					<div>
-						<label for="inChannel">Listen channel</label>
-						<input id="inChannel" type="number" min="1" step="1" placeholder="2">
+			<section class="panel">
+				<h2>Setup Guide</h2>
+				<div class="steps">
+					<div id="stepOpen" class="step done">
+						<div class="step-badge">1</div>
+						<div>
+							<div class="step-title">Open Social Stream Ninja</div>
+							<div class="step-text">Run the browser version or the SSApp desktop app before using Stream Deck actions.</div>
+						</div>
 					</div>
-					<div>
-						<label for="outChannel">Send channel</label>
-						<input id="outChannel" type="number" min="1" step="1" placeholder="1">
+					<div id="stepSession" class="step">
+						<div class="step-badge">2</div>
+						<div>
+							<div class="step-title">Paste your session ID</div>
+							<div class="step-text">This is the private ID used in URLs such as <span class="inline-code">dock.html?session=...</span>.</div>
+						</div>
+					</div>
+					<div id="stepConnect" class="step">
+						<div class="step-badge">3</div>
+						<div>
+							<div class="step-title">Test the connection</div>
+							<div class="step-text">The status key turns online when the Social Stream API socket joins your session.</div>
+						</div>
+					</div>
+					<div id="stepAction" class="step">
+						<div class="step-badge">4</div>
+						<div>
+							<div class="step-title">Choose an action</div>
+							<div class="step-text">Start with a preset command, then use Custom Command only for advanced payloads.</div>
+						</div>
 					</div>
 				</div>
-				<div class="hint">Default Stream Deck remote control sends on channel 1 and listens for callbacks on channel 2.</div>
+			</section>
 
-				<label class="checkline">
-					<input id="useTls" type="checkbox" checked>
-					Use TLS
-				</label>
-				<label class="checkline">
-					<input id="httpFallback" type="checkbox" checked>
-					Allow HTTP fallback
-				</label>
-			</div>
-		</details>
+			<section class="panel">
+				<h2>Connection</h2>
+				<label for="sessionId">Session ID</label>
+				<input id="sessionId" type="password" autocomplete="off" placeholder="Same ID used in dock.html?session=...">
 
-		<div id="capabilityText" class="capability">SSApp source controls unavailable until capabilities are received.</div>
-	</section>
+				<div class="actions">
+					<button id="testConnection" type="button">Test Connection</button>
+					<button id="showSession" class="secondary" type="button">Show ID</button>
+				</div>
+
+				<details>
+					<summary>Advanced connection settings</summary>
+					<div class="details-body">
+						<label for="apiHost">API host</label>
+						<input id="apiHost" type="text" placeholder="io.socialstream.ninja">
+
+						<div class="row">
+							<div>
+								<label for="inChannel">Listen channel</label>
+								<input id="inChannel" type="number" min="1" step="1" placeholder="2">
+							</div>
+							<div>
+								<label for="outChannel">Send channel</label>
+								<input id="outChannel" type="number" min="1" step="1" placeholder="1">
+							</div>
+						</div>
+						<div class="hint">Default Stream Deck remote control sends on channel 1 and listens for callbacks on channel 2.</div>
+
+						<label class="checkline">
+							<input id="useTls" type="checkbox" checked>
+							Use TLS
+						</label>
+						<label class="checkline">
+							<input id="httpFallback" type="checkbox" checked>
+							Allow HTTP fallback
+						</label>
+					</div>
+				</details>
+
+				<div id="capabilityText" class="capability">SSApp source controls unavailable until capabilities are received.</div>
+			</section>
+		</div>
+	</details>
 
 	<section id="statusSettings" class="panel hidden">
 		<h2>Status Key</h2>
@@ -377,6 +385,8 @@
 		let actionSettings = {};
 		let capabilities = null;
 		let currentState = "missing-session";
+		let globalSettingsLoaded = false;
+		let setupDetailsInitialized = false;
 		const commandGroups = [
 			{
 				label: "Overlay and queue",
@@ -456,6 +466,7 @@
 				const message = JSON.parse(event.data);
 				if (message.event === "didReceiveGlobalSettings") {
 					globalSettings = message.payload && message.payload.settings ? message.payload.settings : {};
+					globalSettingsLoaded = true;
 					renderGlobalSettings();
 				} else if (message.event === "didReceiveSettings") {
 					actionSettings = message.payload && message.payload.settings ? message.payload.settings : {};
@@ -488,6 +499,7 @@
 			byId("useTls").checked = globalSettings.useTls !== false;
 			byId("httpFallback").checked = globalSettings.httpFallback !== false;
 			renderSetupSteps();
+			initializeSetupDetails();
 		}
 
 		function ssappAvailable() {
@@ -604,13 +616,26 @@
 				byId("customAwaitResponse").checked = actionSettings.awaitResponse === true;
 			}
 			renderSetupSteps();
+			initializeSetupDetails();
+		}
+
+		function hasSessionId() {
+			const sessionInput = byId("sessionId");
+			const sessionValue = sessionInput ? sessionInput.value : globalSettings.sessionId;
+			return !!(sessionValue && String(sessionValue).trim());
+		}
+
+		function initializeSetupDetails() {
+			if (!globalSettingsLoaded || setupDetailsInitialized) {
+				return;
+			}
+			const details = byId("setupDetails");
+			details.open = actionUuid === "ninja.socialstream.streamdeck.connection" || !hasSessionId();
+			setupDetailsInitialized = true;
 		}
 
 		function renderSetupSteps() {
-			const sessionInput = byId("sessionId");
-			const sessionValue = sessionInput ? sessionInput.value : globalSettings.sessionId;
-			const hasSession = !!(sessionValue && String(sessionValue).trim());
-			byId("stepSession").classList.toggle("done", hasSession);
+			byId("stepSession").classList.toggle("done", hasSessionId());
 			byId("stepConnect").classList.toggle("done", currentState === "connected");
 			byId("stepAction").classList.toggle("done", actionUuid === "ninja.socialstream.streamdeck.command" || actionUuid === "ninja.socialstream.streamdeck.custom-command");
 		}

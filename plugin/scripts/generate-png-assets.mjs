@@ -33,13 +33,6 @@ const assets = {
 		fg2: [255, 241, 202],
 		mark: "bolt"
 	},
-	plugin: {
-		bgA: [18, 24, 34],
-		bgB: [34, 44, 60],
-		fg: [88, 166, 255],
-		fg2: [75, 214, 185],
-		mark: "broadcast"
-	},
 	"state-neutral": {
 		bgA: [31, 36, 48],
 		bgB: [42, 48, 63],
@@ -55,11 +48,21 @@ const assets = {
 		mark: "check"
 	}
 };
+const pluginAsset = {
+	bgA: [18, 24, 34],
+	bgB: [34, 44, 60],
+	fg: [88, 166, 255],
+	fg2: [75, 214, 185],
+	mark: "broadcast"
+};
 
 for (const [name, config] of Object.entries(assets)) {
 	await writePng(join(process.cwd(), "imgs", name + ".png"), renderAsset(config, BASE_SIZE), BASE_SIZE, BASE_SIZE);
 	await writePng(join(process.cwd(), "imgs", name + "@2x.png"), renderAsset(config, BASE_SIZE * 2), BASE_SIZE * 2, BASE_SIZE * 2);
 }
+
+await writePng(join(process.cwd(), "imgs", "plugin.png"), renderAsset(pluginAsset, 256), 256, 256);
+await writePng(join(process.cwd(), "imgs", "plugin@2x.png"), renderAsset(pluginAsset, 512), 512, 512);
 
 function renderAsset(config, outputSize) {
 	const canvas = createCanvas(outputSize * SUPERSAMPLE, outputSize * SUPERSAMPLE);
