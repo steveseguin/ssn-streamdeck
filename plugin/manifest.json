@@ -31,8 +31,8 @@
 	"Actions": [
 		{
 			"UUID": "ninja.socialstream.streamdeck.connection",
-			"Name": "Setup / Status",
-			"Tooltip": "Guided setup for Social Stream Ninja and live API connection status.",
+			"Name": "Setup",
+			"Tooltip": "Enter the Social Stream Ninja session ID and test the plugin connection.",
 			"Icon": "imgs/actions/connection",
 			"Controllers": ["Keypad"],
 			"DisableAutomaticStates": true,

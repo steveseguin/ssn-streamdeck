@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeCustomCommandSettings, normalizeGlobalSettings, normalizeSsnCommandSettings } from "./settings.js";
+import { normalizeCustomCommandSettings, normalizeGlobalSettings, normalizeSessionId, normalizeSsnCommandSettings } from "./settings.js";
 
 describe("settings normalization", () => {
 	it("uses safe global defaults", () => {
@@ -22,6 +22,13 @@ describe("settings normalization", () => {
 			title: "",
 			awaitResponse: false
 		});
+	});
+
+	it("extracts session IDs from Social Stream Ninja URLs", () => {
+		expect(normalizeSessionId("https://beta.socialstream.ninja/dock.html?session=T86DpkdGAw&v=3.50.4&branded")).toBe("T86DpkdGAw");
+		expect(normalizeSessionId("?session=abc123&showviewercount")).toBe("abc123");
+		expect(normalizeGlobalSettings({ sessionId: "session=rawSession&v=1" }).sessionId).toBe("rawSession");
+		expect(normalizeSessionId("plainSession")).toBe("plainSession");
 	});
 
 	it("parses custom command booleans and JSON-looking values", () => {

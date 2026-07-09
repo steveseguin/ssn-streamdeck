@@ -98,14 +98,14 @@ export class SsnClient {
 		});
 		this.socket.on("message", data => this.handleMessage(data.toString()));
 		this.socket.on("close", () => {
-			this.rejectPendingRequests(new Error("Social Stream API WebSocket closed"));
+			this.rejectPendingRequests(new Error("Social Stream Ninja API WebSocket closed"));
 			this.setCapabilities(null);
 			if (this.settings.sessionId) {
 				this.setState("disconnected");
 			}
 		});
 		this.socket.on("error", () => {
-			this.rejectPendingRequests(new Error("Social Stream API WebSocket error"));
+			this.rejectPendingRequests(new Error("Social Stream Ninja API WebSocket error"));
 			this.setCapabilities(null);
 			this.setState("error");
 		});
@@ -130,12 +130,12 @@ export class SsnClient {
 			return command;
 		}
 		if (isSsappCommand(command)) {
-			throw new Error("SSApp source controls require the Social Stream API WebSocket connection");
+			throw new Error("SSApp source controls require the Social Stream Ninja API WebSocket connection");
 		}
 		if (this.settings.httpFallback !== false) {
 			return this.sendHttp(command, options.awaitResponse === true);
 		}
-		throw new Error("Social Stream API WebSocket is not connected");
+		throw new Error("Social Stream Ninja API WebSocket is not connected");
 	}
 
 	async requestCapabilities(): Promise<StreamDeckCapabilities | null> {
@@ -157,7 +157,7 @@ export class SsnClient {
 		return new Promise((resolve, reject) => {
 			const timeout = setTimeout(() => {
 				this.pendingRequests.delete(get);
-				reject(new Error(`Social Stream API request timed out: ${payload.action}`));
+				reject(new Error(`Social Stream Ninja API request timed out: ${payload.action}`));
 			}, this.settings.requestTimeoutMs || 5000);
 			this.pendingRequests.set(get, { resolve, reject, timeout });
 			try {
@@ -172,16 +172,16 @@ export class SsnClient {
 
 	private async sendHttp(payload: SsnCommandPayload, awaitResponse: boolean): Promise<unknown> {
 		if (!this.settings.sessionId) {
-			throw new Error("Missing Social Stream session ID");
+			throw new Error("Missing Social Stream Ninja session ID");
 		}
 		if (hasComplexHttpPathSegment(payload.target) || hasComplexHttpPathSegment(payload.value)) {
-			throw new Error("Social Stream API HTTP fallback supports only primitive target/value fields; use the WebSocket connection for JSON payloads");
+			throw new Error("Social Stream Ninja API HTTP fallback supports only primitive target/value fields; use the WebSocket connection for JSON payloads");
 		}
 		const response = await fetch(this.buildHttpUrl(payload));
 		const text = await response.text();
 		if (!response.ok) {
 			this.setState("error");
-			throw new Error(`Social Stream API HTTP request failed with ${response.status}`);
+			throw new Error(`Social Stream Ninja API HTTP request failed with ${response.status}`);
 		}
 		if (!awaitResponse) {
 			return text;
@@ -195,7 +195,7 @@ export class SsnClient {
 
 	private sendRaw(payload: object): void {
 		if (!this.isSocketOpen() || !this.socket) {
-			throw new Error("Social Stream API WebSocket is not connected");
+			throw new Error("Social Stream Ninja API WebSocket is not connected");
 		}
 		this.socket.send(JSON.stringify(payload));
 	}
@@ -224,7 +224,7 @@ export class SsnClient {
 		if (!this.socket) {
 			return;
 		}
-		this.rejectPendingRequests(new Error("Social Stream API WebSocket disconnected"));
+		this.rejectPendingRequests(new Error("Social Stream Ninja API WebSocket disconnected"));
 		const socket = this.socket;
 		this.socket = null;
 		socket.removeAllListeners();
@@ -293,7 +293,7 @@ export class SsnClient {
 		}
 		if (isRecord(result) && result.ok === false) {
 			const error = isRecord(result.error) ? result.error : {};
-			pending.reject(new Error(typeof error.message === "string" ? error.message : "Social Stream API request failed"));
+			pending.reject(new Error(typeof error.message === "string" ? error.message : "Social Stream Ninja API request failed"));
 			return;
 		}
 		pending.resolve(result);

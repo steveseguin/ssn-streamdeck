@@ -21,20 +21,20 @@ The plugin uses the official Stream Deck SDK, TypeScript source, generated icon 
 Current workspace capabilities:
 
 - Guided setup in the property inspector with a short Social Stream Ninja explanation.
-- Connection Status action.
+- Setup action for entering the session ID and testing the plugin connection.
 - Preset Command action with SSN remote controls and capability-aware SSApp source controls.
 - Custom Command action.
 - Global session/API configuration in the property inspector.
 - WebSocket client for `wss://io.socialstream.ninja`.
 - Optional HTTP fallback for simple request/response commands.
 - A command registry seeded with common SSN commands from `../api.md`, including dock pinning, waitlist, chat, poll, queue, and SSApp source presets.
-- Capability-aware SSApp source controls when Social Stream advertises SSApp support.
+- Capability-aware SSApp source controls when Social Stream Ninja advertises SSApp support.
 
 ## Suggested Actions
 
 | Action | Purpose | Starting commands |
 | --- | --- | --- |
-| Setup / Status | Configure session ID and show API connection state | WebSocket send channel 1, listen channel 2 |
+| Setup | Enter the session ID and test the plugin connection | WebSocket send channel 1, listen channel 2 |
 | Preset Command | Button presets for common remote controls and advertised SSApp source controls | `clearOverlay`, `nextInQueue`, `resetleaderboard`, `pin`, `unpin`, `nextPinned`, `resetwaitlist`, `startentries`, `downloadwaitlist`, `selectwinner`, `startSource`, `stopSource` |
 | Custom Command | Send any `{ action, target, value }` payload | Power-user and development testing |
 
@@ -49,7 +49,7 @@ Based on `../api.md`:
 - Chat-listener channel: channel 4, if the user enables chat message relay
 - Simple command shape: `{ "action": "clearOverlay" }`
 - Value command shape: `{ "action": "sendChat", "value": "Hello" }`
-- SSApp controls use the same Social Stream API socket; the plugin does not connect to SSApp directly.
+- SSApp controls use the same Social Stream Ninja API socket; the plugin does not connect to SSApp directly.
 
 ## Requirements
 

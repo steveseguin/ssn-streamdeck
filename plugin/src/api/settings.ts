@@ -4,7 +4,7 @@ export const DEFAULT_API_HOST = "io.socialstream.ninja";
 
 export function normalizeGlobalSettings(settings: Partial<GlobalSettings> | undefined): GlobalSettings {
 	return {
-		sessionId: stringOrEmpty(settings?.sessionId),
+		sessionId: normalizeSessionId(settings?.sessionId),
 		apiHost: stringOrEmpty(settings?.apiHost) || DEFAULT_API_HOST,
 		useTls: settings?.useTls !== false,
 		httpFallback: settings?.httpFallback !== false,
@@ -12,6 +12,15 @@ export function normalizeGlobalSettings(settings: Partial<GlobalSettings> | unde
 		outChannel: positiveInteger(settings?.outChannel, 1),
 		requestTimeoutMs: positiveInteger(settings?.requestTimeoutMs, 5000)
 	};
+}
+
+export function normalizeSessionId(value: unknown): string {
+	const raw = stringOrEmpty(value);
+	if (!raw) {
+		return "";
+	}
+	const session = extractQueryValue(raw, "session");
+	return session || raw;
 }
 
 export function normalizeSsnCommandSettings(settings: Partial<SsnCommandSettings> | undefined): SsnCommandSettings {
@@ -36,6 +45,27 @@ export function normalizeCustomCommandSettings(settings: Partial<CustomCommandSe
 
 function stringOrEmpty(value: unknown): string {
 	return typeof value === "string" ? value.trim() : "";
+}
+
+function extractQueryValue(value: string, key: string): string {
+	try {
+		const url = new URL(value);
+		const fromUrl = url.searchParams.get(key);
+		if (fromUrl) {
+			return fromUrl.trim();
+		}
+	} catch {
+		// Not a full URL; fall through to query-fragment parsing.
+	}
+	const match = value.match(new RegExp("(?:^|[?&#])" + key + "=([^&#\\s]+)", "i"));
+	if (!match) {
+		return "";
+	}
+	try {
+		return decodeURIComponent(match[1]).trim();
+	} catch {
+		return match[1].trim();
+	}
 }
 
 function positiveInteger(value: unknown, fallback: number): number {

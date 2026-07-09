@@ -58,6 +58,16 @@ describe("property inspector", () => {
 			}
 		});
 	});
+
+	it("uses the session value when a full overlay URL is pasted", () => {
+		const inspector = createPropertyInspector();
+		inspector.run(`
+			byId("sessionId").value = "https://beta.socialstream.ninja/dock.html?session=T86DpkdGAw&v=3.50.4&branded";
+			normalizeSessionInput();
+		`);
+
+		expect(inspector.element("sessionId").value).toBe("T86DpkdGAw");
+	});
 });
 
 function createPropertyInspector() {

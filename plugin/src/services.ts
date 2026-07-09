@@ -36,8 +36,6 @@ function registerPropertyInspectorMessages(): void {
 			await sendInspectorStatus();
 		} else if (payload.type === "testConnection") {
 			await testConnection();
-		} else if (payload.type === "openUrl" && typeof payload.url === "string") {
-			await openTrustedUrl(payload.url);
 		}
 	});
 }
@@ -73,13 +71,6 @@ function statusMessage(state: ConnectionStateName): string {
 		return "The Social Stream Ninja API connection reported an error.";
 	}
 	return "Disconnected from Social Stream Ninja.";
-}
-
-async function openTrustedUrl(url: string): Promise<void> {
-	if (!url.startsWith("https://socialstream.ninja")) {
-		return;
-	}
-	await streamDeck.system.openUrl(url);
 }
 
 function isJsonObject(value: JsonValue): value is JsonObject {

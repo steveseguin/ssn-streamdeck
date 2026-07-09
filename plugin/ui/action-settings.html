@@ -97,19 +97,6 @@
 			border-radius: 8px;
 			background: var(--panel);
 		}
-		.hero {
-			position: relative;
-			overflow: hidden;
-			border-color: #40506a;
-			background:
-				linear-gradient(135deg, rgba(88, 166, 255, .20), rgba(71, 214, 182, .12)),
-				linear-gradient(180deg, #2b3241, #20242d);
-		}
-		.hero p {
-			position: relative;
-			margin-top: 7px;
-			color: var(--soft);
-		}
 		.status {
 			display: flex;
 			align-items: flex-start;
@@ -232,60 +219,18 @@
 		<div class="dot"></div>
 		<div>
 			<div id="statusText" class="status-title">Enter a Social Stream Ninja session ID.</div>
-			<div id="statusNote" class="status-note">Use the same session ID as your Social Stream dock, overlay, or desktop app.</div>
+			<div id="statusNote" class="status-note">Use the same session ID as your Social Stream Ninja dock, overlay, or desktop app.</div>
 		</div>
 	</div>
 
 	<details id="setupDetails" class="setup-details">
 		<summary>Setup and connection</summary>
 		<div class="details-body">
-			<section class="panel hero">
-				<h1>Social Stream Ninja</h1>
-				<p>Collect live chat from multiple platforms and control overlays, queues, polls, docks, and SSApp sources from Stream Deck keys.</p>
-				<div class="actions">
-					<button type="button" data-url="https://socialstream.ninja/">Open Social Stream</button>
-					<button class="secondary" type="button" data-url="https://socialstream.ninja/docs/commands.html#streamdeck-companion">Help</button>
-				</div>
-			</section>
-
 			<section class="panel">
-				<h2>Setup Guide</h2>
-				<div class="steps">
-					<div id="stepOpen" class="step done">
-						<div class="step-badge">1</div>
-						<div>
-							<div class="step-title">Open Social Stream Ninja</div>
-							<div class="step-text">Run the browser version or the SSApp desktop app before using Stream Deck actions.</div>
-						</div>
-					</div>
-					<div id="stepSession" class="step">
-						<div class="step-badge">2</div>
-						<div>
-							<div class="step-title">Paste your session ID</div>
-							<div class="step-text">This is the private ID used in URLs such as <span class="inline-code">dock.html?session=...</span>.</div>
-						</div>
-					</div>
-					<div id="stepConnect" class="step">
-						<div class="step-badge">3</div>
-						<div>
-							<div class="step-title">Test the connection</div>
-							<div class="step-text">The status key turns online when the Social Stream API socket joins your session.</div>
-						</div>
-					</div>
-					<div id="stepAction" class="step">
-						<div class="step-badge">4</div>
-						<div>
-							<div class="step-title">Choose an action</div>
-							<div class="step-text">Start with a preset command, then use Custom Command only for advanced payloads.</div>
-						</div>
-					</div>
-				</div>
-			</section>
-
-			<section class="panel">
-				<h2>Connection</h2>
-				<label for="sessionId">Session ID</label>
-				<input id="sessionId" type="password" autocomplete="off" placeholder="Same ID used in dock.html?session=...">
+				<h2>Connect Social Stream Ninja</h2>
+				<label for="sessionId">Session ID or overlay URL</label>
+				<input id="sessionId" type="password" autocomplete="off" placeholder="Paste session ID or dock.html?session=... URL">
+				<div class="hint">Paste the full dock/overlay URL if that is easier. The plugin will use only the session value.</div>
 
 				<div class="actions">
 					<button id="testConnection" type="button">Test Connection</button>
@@ -323,15 +268,42 @@
 
 				<div id="capabilityText" class="capability">SSApp source controls unavailable until capabilities are received.</div>
 			</section>
+
+			<section class="panel">
+				<h2>Checklist</h2>
+				<div class="steps">
+					<div id="stepOpen" class="step done">
+						<div class="step-badge">1</div>
+						<div>
+							<div class="step-title">Open Social Stream Ninja</div>
+							<div class="step-text">Keep the browser version, SSApp desktop app, dock, or overlay running.</div>
+						</div>
+					</div>
+					<div id="stepSession" class="step">
+						<div class="step-badge">2</div>
+						<div>
+							<div class="step-title">Use the matching session ID</div>
+							<div class="step-text">This is the private ID from URLs such as <span class="inline-code">dock.html?session=...</span>.</div>
+						</div>
+					</div>
+					<div id="stepConnect" class="step">
+						<div class="step-badge">3</div>
+						<div>
+							<div class="step-title">Test the connection</div>
+							<div class="step-text">The top message changes to online when the Social Stream Ninja API joins your session.</div>
+						</div>
+					</div>
+					<div id="stepAction" class="step">
+						<div class="step-badge">4</div>
+						<div>
+							<div class="step-title">Add command keys</div>
+							<div class="step-text">Drag Preset Command for normal controls, or Custom Command for advanced payloads.</div>
+						</div>
+					</div>
+				</div>
+			</section>
 		</div>
 	</details>
-
-	<section id="statusSettings" class="panel hidden">
-		<h2>Status Key</h2>
-		<label for="statusTitle">Title override</label>
-		<input id="statusTitle" type="text" placeholder="Optional">
-		<div class="hint">Leave blank to let the key show Setup, Connecting, Online, or Offline.</div>
-	</section>
 
 	<section id="commandSettings" class="panel hidden">
 		<h2>Preset Command</h2>
@@ -351,7 +323,7 @@
 			<input id="commandAwaitResponse" type="checkbox">
 			Wait for response
 		</label>
-		<div id="commandHint" class="hint">Preset commands use the documented Social Stream remote-control API.</div>
+		<div id="commandHint" class="hint">Preset commands use the documented Social Stream Ninja remote-control API.</div>
 	</section>
 
 	<section id="customSettings" class="panel hidden">
@@ -532,7 +504,7 @@
 				byId("capabilityText").innerHTML = "<strong>Browser mode detected.</strong> Core SSN commands are available. SSApp source controls stay hidden.";
 				return;
 			}
-			byId("capabilityText").textContent = "SSApp source controls will appear here after Social Stream advertises them.";
+			byId("capabilityText").textContent = "SSApp source controls will appear here after Social Stream Ninja advertises them.";
 		}
 
 		function renderCommandOptions() {
@@ -586,19 +558,15 @@
 			awaitResponse.checked = requiresResponse || actionSettings.awaitResponse === true;
 			awaitResponse.disabled = requiresResponse;
 			const baseHint = isSsapp
-				? "SSApp commands are still sent to Social Stream. Social Stream decides how to route them."
-				: "Preset commands use the documented Social Stream remote-control API.";
+				? "SSApp commands are still sent to Social Stream Ninja. Social Stream Ninja decides how to route them."
+				: "Preset commands use the documented Social Stream Ninja remote-control API.";
 			byId("commandHint").textContent = requiresResponse ? baseHint + " This command waits for the result." : baseHint;
 		}
 
 		function renderActionSettings() {
-			byId("statusSettings").classList.toggle("hidden", actionUuid !== "ninja.socialstream.streamdeck.connection");
 			byId("commandSettings").classList.toggle("hidden", actionUuid !== "ninja.socialstream.streamdeck.command");
 			byId("customSettings").classList.toggle("hidden", actionUuid !== "ninja.socialstream.streamdeck.custom-command");
 			renderCapabilities();
-			if (actionUuid === "ninja.socialstream.streamdeck.connection") {
-				byId("statusTitle").value = actionSettings.title || "";
-			}
 			if (actionUuid === "ninja.socialstream.streamdeck.command") {
 				renderCommandOptions();
 				byId("command").value = actionSettings.command || "nextInQueue";
@@ -621,7 +589,7 @@
 
 		function hasSessionId() {
 			const sessionInput = byId("sessionId");
-			const sessionValue = sessionInput ? sessionInput.value : globalSettings.sessionId;
+			const sessionValue = sessionInput ? extractSessionId(sessionInput.value) : globalSettings.sessionId;
 			return !!(sessionValue && String(sessionValue).trim());
 		}
 
@@ -641,8 +609,9 @@
 		}
 
 		function saveGlobalSettings() {
+			const sessionId = normalizeSessionInput();
 			globalSettings = {
-				sessionId: byId("sessionId").value.trim(),
+				sessionId: sessionId,
 				apiHost: byId("apiHost").value.trim() || "io.socialstream.ninja",
 				inChannel: Number(byId("inChannel").value || 2),
 				outChannel: Number(byId("outChannel").value || 1),
@@ -654,12 +623,36 @@
 			setTimeout(requestStatus, 250);
 		}
 
+		function normalizeSessionInput() {
+			const input = byId("sessionId");
+			const sessionId = extractSessionId(input.value);
+			if (sessionId && sessionId !== input.value.trim()) {
+				input.value = sessionId;
+			}
+			return sessionId;
+		}
+
+		function extractSessionId(value) {
+			const raw = String(value || "").trim();
+			if (!raw) return "";
+			try {
+				const url = new URL(raw);
+				const session = url.searchParams.get("session");
+				if (session) return session.trim();
+			} catch (error) {
+				// Not a full URL; fall through to query-fragment parsing.
+			}
+			const match = raw.match(/(?:^|[?&#])session=([^&#\s]+)/i);
+			if (!match) return raw;
+			try {
+				return decodeURIComponent(match[1]).trim();
+			} catch (error) {
+				return match[1].trim();
+			}
+		}
+
 		function saveActionSettings() {
-			if (actionUuid === "ninja.socialstream.streamdeck.connection") {
-				actionSettings = {
-					title: byId("statusTitle").value.trim()
-				};
-			} else if (actionUuid === "ninja.socialstream.streamdeck.command") {
+			if (actionUuid === "ninja.socialstream.streamdeck.command") {
 				const option = selectedCommandOption();
 				actionSettings = {
 					command: byId("command").value,
@@ -728,7 +721,20 @@
 			return value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[char]));
 		}
 
-		["sessionId", "apiHost", "inChannel", "outChannel"].forEach(id => {
+		byId("sessionId").addEventListener("change", saveGlobalSettings);
+		byId("sessionId").addEventListener("input", function() {
+			if (/\bsession=/i.test(byId("sessionId").value)) {
+				normalizeSessionInput();
+			}
+			renderSetupSteps();
+		});
+		byId("sessionId").addEventListener("paste", function() {
+			setTimeout(function() {
+				normalizeSessionInput();
+				renderSetupSteps();
+			}, 0);
+		});
+		["apiHost", "inChannel", "outChannel"].forEach(id => {
 			byId(id).addEventListener("change", saveGlobalSettings);
 			byId(id).addEventListener("input", renderSetupSteps);
 		});
@@ -736,7 +742,6 @@
 			byId(id).addEventListener("change", saveGlobalSettings);
 		});
 		[
-			"statusTitle",
 			"target", "value", "commandTitle", "commandAwaitResponse",
 			"customAction", "customTarget", "customValue", "customTitle", "customAwaitResponse"
 		].forEach(id => {
@@ -753,11 +758,6 @@
 			input.type = input.type === "password" ? "text" : "password";
 			byId("showSession").textContent = input.type === "password" ? "Show ID" : "Hide ID";
 		};
-		document.querySelectorAll("[data-url]").forEach(button => {
-			button.addEventListener("click", () => {
-				send({ event: "sendToPlugin", action: actionUuid, context: actionContext, payload: { type: "openUrl", url: button.getAttribute("data-url") } });
-			});
-		});
 	</script>
 </body>
 </html>
