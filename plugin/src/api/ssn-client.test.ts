@@ -60,6 +60,48 @@ describe("SsnClient", () => {
 		});
 	});
 
+	it("does not report connected when no Social Stream host answers", async () => {
+		const server = new WebSocketServer({ port: 0 });
+		await new Promise<void>(resolve => server.once("listening", resolve));
+		cleanup.push(() => server.close());
+		const address = server.address() as AddressInfo;
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+
+		client.configure({
+			sessionId: "missing-host",
+			apiHost: `127.0.0.1:${address.port}`,
+			useTls: false,
+			httpFallback: false,
+			requestTimeoutMs: 50
+		});
+
+		await waitFor(() => client.connectionState === "disconnected");
+		expect(client.getCapabilities()).toBeNull();
+	});
+
+	it("reconnects after the API WebSocket closes", async () => {
+		const { port, server, messages } = await createServer();
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+
+		client.configure({
+			sessionId: "session-reconnect",
+			apiHost: `127.0.0.1:${port}`,
+			useTls: false,
+			httpFallback: false,
+			requestTimeoutMs: 500
+		});
+
+		await waitFor(() => client.connectionState === "connected");
+		for (const socket of server.clients) {
+			socket.close();
+		}
+		await waitFor(() => messages.filter(message => message.join === "session-reconnect").length >= 2, 3000);
+		await waitFor(() => client.connectionState === "connected");
+	});
+
 	it("clears advertised capabilities when the session is removed", async () => {
 		const { port, server } = await createServer();
 		cleanup.push(() => server.close());
@@ -226,6 +268,25 @@ describe("SsnClient", () => {
 		await expect(client.sendCommand({ action: "startSource", target: "overlay", value: "source-1" })).resolves.toBe("ok");
 		expect(requests.some(request => request.url === "/session-8/startSource/overlay/source-1")).toBe(true);
 	});
+
+	it("times out stalled HTTP fallback requests", async () => {
+		const server = http.createServer(() => undefined);
+		await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+		cleanup.push(() => server.close());
+		const address = server.address() as AddressInfo;
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+
+		client.configure({
+			sessionId: "session-timeout",
+			apiHost: `127.0.0.1:${address.port}`,
+			useTls: false,
+			httpFallback: true,
+			requestTimeoutMs: 50
+		});
+
+		await expect(client.sendCommand({ action: "clearOverlay" })).rejects.toThrow("HTTP request timed out");
+	});
 });
 
 async function createServer(): Promise<{ server: WebSocketServer; port: number; messages: Record<string, unknown>[] }> {
@@ -240,10 +301,12 @@ async function createServer(): Promise<{ server: WebSocketServer; port: number; 
 				return;
 			}
 			if (message.action === "getCapabilities" && typeof message.get === "string") {
+				socket.send(JSON.stringify({ callback: { get: message.get, result: false } }));
 				socket.send(JSON.stringify({ callback: { get: message.get, result: capabilities } }));
 				return;
 			}
 			if (message.action === "startSource" && typeof message.get === "string") {
+				socket.send(JSON.stringify({ callback: { get: message.get } }));
 				socket.send(
 					JSON.stringify({
 						callback: {
@@ -262,6 +325,7 @@ async function createServer(): Promise<{ server: WebSocketServer; port: number; 
 				return;
 			}
 			if (message.action === "stopSource" && typeof message.get === "string") {
+				socket.send(JSON.stringify({ callback: { get: message.get, result: false } }));
 				socket.send(
 					JSON.stringify({
 						callback: {

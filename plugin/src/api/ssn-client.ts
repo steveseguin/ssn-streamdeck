@@ -17,12 +17,17 @@ const SSAPP_ACTIONS = new Set([
 	"toggleSourceMute",
 	"setSourceConnectionMode"
 ]);
+const RECONNECT_BASE_DELAY_MS = 500;
+const RECONNECT_MAX_DELAY_MS = 10000;
+const CAPABILITY_RETRY_DELAY_MS = 5000;
+const CAPABILITY_REFRESH_DELAY_MS = 30000;
 
 type Listener<T> = (payload: T) => void;
 type PendingRequest = {
 	resolve: (value: unknown) => void;
 	reject: (error: Error) => void;
 	timeout: NodeJS.Timeout;
+	accept?: (value: unknown) => boolean;
 };
 
 export class SsnClient {
@@ -31,6 +36,11 @@ export class SsnClient {
 	private state: ConnectionStateName = "missing-session";
 	private capabilities: StreamDeckCapabilities | null = null;
 	private pendingRequests = new Map<string, PendingRequest>();
+	private reconnectTimer: NodeJS.Timeout | null = null;
+	private capabilityTimer: NodeJS.Timeout | null = null;
+	private capabilityRequest: Promise<StreamDeckCapabilities | null> | null = null;
+	private reconnectAttempts = 0;
+	private shouldReconnect = false;
 	private listeners = {
 		state: new Set<Listener<ConnectionStateName>>(),
 		message: new Set<Listener<unknown>>(),
@@ -51,11 +61,11 @@ export class SsnClient {
 			next.outChannel !== this.settings.outChannel;
 		this.settings = next;
 		if (!next.sessionId) {
-			this.setCapabilities(null);
 			this.disconnect("missing-session");
 			return;
 		}
-		if (changed || !this.isSocketOpen()) {
+		this.shouldReconnect = true;
+		if (changed || !this.isSocketActive()) {
 			if (changed) {
 				this.setCapabilities(null);
 			}
@@ -80,38 +90,62 @@ export class SsnClient {
 	}
 
 	connect(): void {
+		this.clearReconnectTimer();
+		this.clearCapabilityTimer();
 		this.closeSocket();
 		if (!this.settings.sessionId) {
+			this.shouldReconnect = false;
 			this.setState("missing-session");
 			return;
 		}
+		this.shouldReconnect = true;
 		this.setState("connecting");
-		this.socket = new WebSocket(this.buildEndpoint(this.settings.useTls === false ? "ws" : "wss"));
-		this.socket.on("open", () => {
+		const socket = new WebSocket(this.buildEndpoint(this.settings.useTls === false ? "ws" : "wss"));
+		this.socket = socket;
+		socket.on("open", () => {
+			if (this.socket !== socket) {
+				return;
+			}
+			this.reconnectAttempts = 0;
 			this.sendRaw({
 				join: this.settings.sessionId || "",
 				in: this.settings.inChannel || 1,
 				out: this.settings.outChannel || 1
 			});
-			this.setState("connected");
-			this.requestCapabilities().catch(() => undefined);
+			this.setState("connecting");
+			this.probeCapabilities();
 		});
-		this.socket.on("message", data => this.handleMessage(data.toString()));
-		this.socket.on("close", () => {
+		socket.on("message", data => this.handleMessage(data.toString()));
+		socket.on("close", () => {
+			if (this.socket !== socket) {
+				return;
+			}
+			this.socket = null;
+			this.clearCapabilityTimer();
 			this.rejectPendingRequests(new Error("Social Stream Ninja API WebSocket closed"));
 			this.setCapabilities(null);
 			if (this.settings.sessionId) {
 				this.setState("disconnected");
+				this.scheduleReconnect();
 			}
 		});
-		this.socket.on("error", () => {
+		socket.on("error", () => {
+			if (this.socket !== socket) {
+				return;
+			}
 			this.rejectPendingRequests(new Error("Social Stream Ninja API WebSocket error"));
 			this.setCapabilities(null);
 			this.setState("error");
+			if (socket.readyState !== WebSocket.CLOSED) {
+				socket.terminate();
+			}
 		});
 	}
 
 	disconnect(state: ConnectionStateName = "disconnected"): void {
+		this.shouldReconnect = false;
+		this.clearReconnectTimer();
+		this.clearCapabilityTimer();
 		this.closeSocket();
 		this.setCapabilities(null);
 		this.setState(state);
@@ -124,7 +158,7 @@ export class SsnClient {
 		};
 		if (this.isSocketOpen()) {
 			if (options.awaitResponse === true || command.get) {
-				return this.sendSocketRequest(command);
+				return this.sendSocketRequest(command, isSsappCommand(command) ? isStructuredCommandResult : undefined);
 			}
 			this.sendRaw(command);
 			return command;
@@ -139,16 +173,17 @@ export class SsnClient {
 	}
 
 	async requestCapabilities(): Promise<StreamDeckCapabilities | null> {
-		const response = await this.sendCommand({ action: "getCapabilities" }, { awaitResponse: true });
+		const response = await this.sendSocketRequest({ action: "getCapabilities", apiid: this.settings.sessionId }, value => extractCapabilities(value) !== null);
 		const capabilities = extractCapabilities(response);
 		if (capabilities) {
 			this.setCapabilities(capabilities);
+			this.setState("connected");
 			return capabilities;
 		}
 		return null;
 	}
 
-	private sendSocketRequest(payload: SsnCommandPayload): Promise<unknown> {
+	private sendSocketRequest(payload: SsnCommandPayload, accept?: (value: unknown) => boolean): Promise<unknown> {
 		const get = typeof payload.get === "string" && payload.get ? payload.get : this.createRequestId(payload.action);
 		const request = {
 			...payload,
@@ -159,7 +194,7 @@ export class SsnClient {
 				this.pendingRequests.delete(get);
 				reject(new Error(`Social Stream Ninja API request timed out: ${payload.action}`));
 			}, this.settings.requestTimeoutMs || 5000);
-			this.pendingRequests.set(get, { resolve, reject, timeout });
+			this.pendingRequests.set(get, { resolve, reject, timeout, accept });
 			try {
 				this.sendRaw(request);
 			} catch (error) {
@@ -177,8 +212,21 @@ export class SsnClient {
 		if (hasComplexHttpPathSegment(payload.target) || hasComplexHttpPathSegment(payload.value)) {
 			throw new Error("Social Stream Ninja API HTTP fallback supports only primitive target/value fields; use the WebSocket connection for JSON payloads");
 		}
-		const response = await fetch(this.buildHttpUrl(payload));
-		const text = await response.text();
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), this.settings.requestTimeoutMs || 5000);
+		let response: Response;
+		let text: string;
+		try {
+			response = await fetch(this.buildHttpUrl(payload), { signal: controller.signal });
+			text = await response.text();
+		} catch (error) {
+			if (controller.signal.aborted) {
+				throw new Error(`Social Stream Ninja API HTTP request timed out: ${payload.action}`);
+			}
+			throw error;
+		} finally {
+			clearTimeout(timeout);
+		}
 		if (!response.ok) {
 			this.setState("error");
 			throw new Error(`Social Stream Ninja API HTTP request failed with ${response.status}`);
@@ -211,6 +259,7 @@ export class SsnClient {
 		const capabilities = extractCapabilities(message);
 		if (capabilities) {
 			this.setCapabilities(capabilities);
+			this.setState("connected");
 		}
 		this.resolveCallback(message);
 		this.emit("message", message);
@@ -218,6 +267,10 @@ export class SsnClient {
 
 	private isSocketOpen(): boolean {
 		return this.socket?.readyState === WebSocket.OPEN;
+	}
+
+	private isSocketActive(): boolean {
+		return this.socket?.readyState === WebSocket.OPEN || this.socket?.readyState === WebSocket.CONNECTING;
 	}
 
 	private closeSocket(): void {
@@ -233,6 +286,69 @@ export class SsnClient {
 			socket.close();
 		} else if (socket.readyState === WebSocket.CONNECTING) {
 			socket.terminate();
+		}
+	}
+
+	private probeCapabilities(): void {
+		if (this.capabilityRequest || !this.isSocketOpen()) {
+			return;
+		}
+		const request = this.requestCapabilities();
+		this.capabilityRequest = request;
+		request
+			.then(capabilities => {
+				this.scheduleCapabilityProbe(capabilities ? CAPABILITY_REFRESH_DELAY_MS : CAPABILITY_RETRY_DELAY_MS);
+			})
+			.catch(() => {
+				if (this.isSocketOpen()) {
+					this.setCapabilities(null);
+					this.setState("disconnected");
+					this.scheduleCapabilityProbe(CAPABILITY_RETRY_DELAY_MS);
+				}
+			})
+			.finally(() => {
+				if (this.capabilityRequest === request) {
+					this.capabilityRequest = null;
+				}
+			});
+	}
+
+	private scheduleCapabilityProbe(delay: number): void {
+		this.clearCapabilityTimer();
+		if (!this.shouldReconnect || !this.isSocketOpen()) {
+			return;
+		}
+		this.capabilityTimer = setTimeout(() => {
+			this.capabilityTimer = null;
+			this.probeCapabilities();
+		}, delay);
+	}
+
+	private scheduleReconnect(): void {
+		if (!this.shouldReconnect || !this.settings.sessionId || this.reconnectTimer) {
+			return;
+		}
+		const delay = Math.min(RECONNECT_BASE_DELAY_MS * 2 ** this.reconnectAttempts, RECONNECT_MAX_DELAY_MS);
+		this.reconnectAttempts += 1;
+		this.reconnectTimer = setTimeout(() => {
+			this.reconnectTimer = null;
+			if (this.shouldReconnect && this.settings.sessionId) {
+				this.connect();
+			}
+		}, delay);
+	}
+
+	private clearReconnectTimer(): void {
+		if (this.reconnectTimer) {
+			clearTimeout(this.reconnectTimer);
+			this.reconnectTimer = null;
+		}
+	}
+
+	private clearCapabilityTimer(): void {
+		if (this.capabilityTimer) {
+			clearTimeout(this.capabilityTimer);
+			this.capabilityTimer = null;
 		}
 	}
 
@@ -284,9 +400,12 @@ export class SsnClient {
 		if (!pending) {
 			return;
 		}
+		const result = callback.result;
+		if (pending.accept && !pending.accept(result)) {
+			return;
+		}
 		this.pendingRequests.delete(callback.get);
 		clearTimeout(pending.timeout);
-		const result = callback.result;
 		const capabilities = extractCapabilities(result);
 		if (capabilities) {
 			this.setCapabilities(capabilities);
@@ -350,7 +469,14 @@ function extractCapabilities(value: unknown): StreamDeckCapabilities | null {
 	if (isRecord(payload) && payload.type === "capabilities" && typeof payload.version === "number") {
 		return payload as unknown as StreamDeckCapabilities;
 	}
+	if (isRecord(payload)) {
+		return extractCapabilities(payload);
+	}
 	return null;
+}
+
+function isStructuredCommandResult(value: unknown): boolean {
+	return isRecord(value) && typeof value.ok === "boolean";
 }
 
 function isSsappCommand(payload: SsnCommandPayload): boolean {

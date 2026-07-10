@@ -6,7 +6,7 @@
 	"type": "module",
 	"scripts": {
 		"assets": "node scripts/generate-png-assets.mjs",
-		"build": "npm run assets && node scripts/clean-build.mjs && tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
+		"build": "npm run assets && node scripts/clean-build.mjs && tsc -p tsconfig.build.json --noEmit && node scripts/build-plugin.mjs && node scripts/copy-assets.mjs",
 		"check": "tsc -p tsconfig.json --noEmit",
 		"test": "vitest run",
 		"test:runtime": "node scripts/streamdeck-runtime-smoke.mjs",
@@ -19,6 +19,7 @@
 	"devDependencies": {
 		"@types/node": "^20.19.43",
 		"@types/ws": "^8.18.1",
+		"esbuild": "^0.28.1",
 		"typescript": "^5.8.3",
 		"vitest": "^3.2.4"
 	},

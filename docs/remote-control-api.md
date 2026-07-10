@@ -304,12 +304,13 @@ The plugin normalizes values before sending:
 - success shows green `OK`, failure shows red `Alert`.
 
 4. Incoming messages from socket are parsed as JSON when possible and stored as `lastMessage` in session state; UI updates can consume this later.
+5. The client reconnects after socket loss and periodically refreshes capabilities so SSN/SSApp restarts are detected.
 
 ### Current limitations worth calling out
 
-- Callback correlation (`get`) is currently parsed but not matched to a per-request pending promise in plugin.
 - Chat/listener feedback is not yet surfaced on dedicated key feedback.
-- `requestTimeoutMs` is defined in settings but not yet enforced in socket path.
+- Generic SSN requests use the first matching callback; capability and SSApp requests additionally reject unrelated same-channel replies.
+- `requestTimeoutMs` is enforced for both WebSocket callbacks and HTTP fallback requests.
 
 ## Transport and endpoint behavior
 

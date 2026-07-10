@@ -26,7 +26,9 @@ Current workspace capabilities:
 - Custom Command action.
 - Global session/API configuration in the property inspector.
 - WebSocket client for `wss://io.socialstream.ninja`.
+- Automatic WebSocket reconnect and capability refresh when SSN or SSApp restarts.
 - Optional HTTP fallback for simple request/response commands.
+- Self-contained plugin bundles that do not depend on the development `node_modules` folder.
 - A command registry seeded with common SSN commands from `../api.md`, including dock pinning, waitlist, chat, poll, queue, and SSApp source presets.
 - Capability-aware SSApp source controls when Social Stream Ninja advertises SSApp support.
 

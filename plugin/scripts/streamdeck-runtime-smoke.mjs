@@ -1,29 +1,34 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { readdir } from "node:fs/promises";
+import { cp, mkdtemp, readdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { WebSocketServer } from "ws";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pluginRoot = resolve(__dirname, "..");
-const sdPluginRoot = join(pluginRoot, "ninja.socialstream.streamdeck.sdPlugin");
-const pluginEntry = join(sdPluginRoot, "bin", "plugin.js");
+const builtPluginRoot = join(pluginRoot, "ninja.socialstream.streamdeck.sdPlugin");
+const builtPluginEntry = join(builtPluginRoot, "bin", "plugin.js");
 const pluginUuid = "runtime-plugin";
 const deviceId = "runtime-device";
 const commandContext = "runtime-command-context";
 const sessionId = "runtime-session";
 
-if (!existsSync(pluginEntry)) {
+if (!existsSync(builtPluginEntry)) {
 	throw new Error("Compiled plugin missing. Run `npm run build` before `npm run test:runtime`.");
 }
 
-const bundledTestFiles = await findBundledTestFiles(join(sdPluginRoot, "bin"));
+const bundledTestFiles = await findBundledTestFiles(join(builtPluginRoot, "bin"));
 if (bundledTestFiles.length) {
 	throw new Error(`Compiled test files should not be included in the Stream Deck bundle: ${bundledTestFiles.join(", ")}`);
 }
 
-const cleanup = [];
+const isolatedRoot = await mkdtemp(join(tmpdir(), "ssn-streamdeck-runtime-"));
+const sdPluginRoot = join(isolatedRoot, "ninja.socialstream.streamdeck.sdPlugin");
+await cp(builtPluginRoot, sdPluginRoot, { recursive: true });
+const pluginEntry = join(sdPluginRoot, "bin", "plugin.js");
+const cleanup = [() => rm(isolatedRoot, { recursive: true, force: true })];
 
 try {
 	const social = await createSocialStreamServer();
@@ -79,10 +84,7 @@ try {
 		],
 		{
 			cwd: sdPluginRoot,
-			env: {
-				...process.env,
-				NODE_PATH: join(pluginRoot, "node_modules")
-			},
+			env: process.env,
 			stdio: ["ignore", "pipe", "pipe"],
 			windowsHide: true
 		}
