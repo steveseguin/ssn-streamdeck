@@ -55,6 +55,22 @@ const pluginAsset = {
 	fg2: [75, 214, 185],
 	mark: "broadcast"
 };
+const encoderAssets = {
+	timer: {
+		bgA: [13, 25, 40],
+		bgB: [22, 55, 67],
+		fg: [56, 189, 248],
+		fg2: [45, 212, 191],
+		mark: "clock"
+	},
+	"chat-feed": {
+		bgA: [15, 27, 39],
+		bgB: [25, 57, 58],
+		fg: [45, 212, 191],
+		fg2: [186, 230, 253],
+		mark: "review"
+	}
+};
 
 for (const [name, config] of Object.entries(assets)) {
 	await writePng(join(process.cwd(), "imgs", name + ".png"), renderAsset(config, BASE_SIZE), BASE_SIZE, BASE_SIZE);
@@ -63,6 +79,11 @@ for (const [name, config] of Object.entries(assets)) {
 
 await writePng(join(process.cwd(), "imgs", "plugin.png"), renderAsset(pluginAsset, 256), 256, 256);
 await writePng(join(process.cwd(), "imgs", "plugin@2x.png"), renderAsset(pluginAsset, 512), 512, 512);
+
+for (const [name, config] of Object.entries(encoderAssets)) {
+	await writePng(join(process.cwd(), "imgs", name + ".png"), renderAsset(config, 72), 72, 72);
+	await writePng(join(process.cwd(), "imgs", name + "@2x.png"), renderAsset(config, 144), 144, 144);
+}
 
 function renderAsset(config, outputSize) {
 	const canvas = createCanvas(outputSize * SUPERSAMPLE, outputSize * SUPERSAMPLE);
@@ -166,6 +187,25 @@ function drawMark(canvas, config) {
 		drawLine(canvas, 34, 75, 62, 101, fg, 14);
 		drawLine(canvas, 62, 101, 112, 42, fg, 14);
 		drawCircle(canvas, 112, 42, 3, fg2);
+		return;
+	}
+
+	if (config.mark === "clock") {
+		drawRing(canvas, 72, 74, 44, 8, shadow, 0, 3);
+		drawRing(canvas, 72, 74, 44, 8, fg);
+		drawLine(canvas, 72, 74, 72, 45, fg2, 8);
+		drawLine(canvas, 72, 74, 94, 87, fg2, 8);
+		drawRoundedRect(canvas, 54, 18, 36, 10, 5, fg2);
+		return;
+	}
+
+	if (config.mark === "review") {
+		drawRoundedRect(canvas, 22, 28, 100, 72, 14, shadow, 0, 4);
+		drawRoundedRect(canvas, 22, 28, 100, 72, 14, fg);
+		drawPolygon(canvas, [[45, 98], [36, 120], [68, 98]], fg);
+		drawRoundedRect(canvas, 39, 48, 66, 8, 4, [12, 24, 36, 255]);
+		drawRoundedRect(canvas, 39, 70, 44, 8, 4, [12, 24, 36, 255]);
+		drawCircle(canvas, 104, 74, 5, fg2);
 		return;
 	}
 

@@ -1,5 +1,5 @@
 import { action, type KeyAction, type KeyDownEvent, SingletonAction, type WillAppearEvent } from "@elgato/streamdeck";
-import { buildSsnCommandPayload, getCommandDefinition } from "../api/command-registry.js";
+import { buildSsnCommandPayload, getCommandDefinition, isCommandSupported } from "../api/command-registry.js";
 import { normalizeSsnCommandSettings } from "../api/settings.js";
 import type { SsnCommandSettings } from "../api/types.js";
 import { ssnClient } from "../services.js";
@@ -16,6 +16,9 @@ export class SsnCommandAction extends SingletonAction<SsnCommandSettings> {
 		const settings = normalizeSsnCommandSettings(ev.payload.settings);
 		const definition = getCommandDefinition(settings.command);
 		try {
+			if (!isCommandSupported(definition, ssnClient.getCapabilities())) {
+				throw new Error(`${definition.label} is unavailable in the connected Social Stream runtime`);
+			}
 			await ssnClient.sendCommand(buildSsnCommandPayload(settings), {
 				awaitResponse: settings.awaitResponse === true || definition.defaultAwaitResponse === true
 			});

@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readdir, rm } from "node:fs/promises";
+import { copyFile, cp, mkdir, readdir, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 const files = [
@@ -32,3 +32,5 @@ for (const file of await readdir(sourceActionIconDir)) {
 		await copyFile(join(sourceActionIconDir, file), join(destinationActionIconDir, file));
 	}
 }
+
+await cp(join(process.cwd(), "layouts"), join(process.cwd(), "ninja.socialstream.streamdeck.sdPlugin", "layouts"), { recursive: true });

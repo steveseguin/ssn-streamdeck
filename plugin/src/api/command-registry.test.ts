@@ -61,9 +61,10 @@ describe("command registry", () => {
 		expect(uiCommands).toContain("resetleaderboard");
 		expect(uiCommands).toContain("pin");
 		expect(uiCommands).toContain("downloadwaitlist");
-		expect(uiCommands).not.toContain("openentries");
-		expect(uiCommands).not.toContain("resumeentries");
-		expect(uiCommands).not.toContain("setwaitlistmessage");
+		expect(uiCommands).toContain("openentries");
+		expect(uiCommands).toContain("resumeentries");
+		expect(uiCommands).toContain("setwaitlistmessage");
+		expect(uiCommands).toContain("toggletimer");
 	});
 
 	it("keeps property inspector response defaults aligned with required-response presets", () => {
@@ -92,6 +93,9 @@ describe("command registry", () => {
 		const expectedPaths = new Map<string, string[]>([
 			["getSources", ["sourceControls", "list"]],
 			["getSource", ["sourceControls", "get"]],
+			["addSource", ["sourceControls", "add"]],
+			["updateSource", ["sourceControls", "update"]],
+			["removeSource", ["sourceControls", "remove"]],
 			["startSource", ["sourceControls", "start"]],
 			["stopSource", ["sourceControls", "stop"]],
 			["restartSource", ["sourceControls", "restart"]],
@@ -102,7 +106,9 @@ describe("command registry", () => {
 			["toggleSourceMute", ["mute", "toggle"]],
 			["setSourceVisibility", ["visibility", "set"]],
 			["toggleSourceVisibility", ["visibility", "toggle"]],
-			["setSourceConnectionMode", ["connectionMode", "set"]]
+			["setSourceConnectionMode", ["connectionMode", "set"]],
+			["getSettings", ["settings", "get"]],
+			["updateSettings", ["settings", "update"]]
 		]);
 		const ssappCommands = Array.from(uiOptions).filter(([, option]) => option.scope === "ssapp").map(([command]) => command);
 		expect(ssappCommands).toEqual(Array.from(expectedPaths.keys()));

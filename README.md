@@ -31,6 +31,9 @@ Current workspace capabilities:
 - Self-contained plugin bundles that do not depend on the development `node_modules` folder.
 - A command registry seeded with common SSN commands from `../api.md`, including dock pinning, waitlist, chat, poll, queue, and SSApp source presets.
 - Capability-aware SSApp source controls when Social Stream Ninja advertises SSApp support.
+- Stream Deck + timer dial with live time/status feedback.
+- Stream Deck + chat review strip that listens only while visible, browses recent channel-4 chat, pins messages, and features pinned chat.
+- Per-command capability filtering with the detected SSApp and bridge version shown in setup.
 
 ## Suggested Actions
 
@@ -39,6 +42,8 @@ Current workspace capabilities:
 | Setup | Enter the session ID and test the plugin connection | WebSocket send channel 1, listen channel 2 |
 | Preset Command | Button presets for common remote controls and advertised SSApp source controls | `clearOverlay`, `nextInQueue`, `resetleaderboard`, `pin`, `unpin`, `nextPinned`, `resetwaitlist`, `startentries`, `downloadwaitlist`, `selectwinner`, `startSource`, `stopSource` |
 | Custom Command | Send any `{ action, target, value }` payload | Power-user and development testing |
+| Timer Dial | Stream Deck + timer display and control | Turn to adjust, press to start/pause, hold touch to reset |
+| Chat Review | Stream Deck + recent chat display and pin workflow | Turn to browse, press to pin, tap to feature, hold to unpin |
 
 ## API Assumptions
 
@@ -58,6 +63,8 @@ Based on `../api.md`:
 - Stream Deck desktop app 6.8 or newer.
 - Node.js 20+ for local development.
 - Social Stream Ninja session ID with remote API control enabled.
+
+SSApp users can open **Stream Deck Setup** in the app, or choose **File → Set Up Stream Deck**, to copy the active session ID. The same concise guide is available at `https://socialstream.ninja/streamdeck/`.
 
 ## Development
 
@@ -85,9 +92,8 @@ npx @elgato/cli@latest link ninja.socialstream.streamdeck.sdPlugin
 npx @elgato/cli@latest restart ninja.socialstream.streamdeck
 ```
 
-## Next Work
+## Device Notes
 
-- Add timer and additional overlay presets once command semantics are confirmed.
-- Add live feedback from channel 4 for last message, message counts, and active platform.
-- Add safer command grouping and second-press guards for destructive commands.
-- Add README screenshots once a real Stream Deck profile exists.
+- Key actions work on Stream Deck models with keys.
+- Timer Dial and Chat Review appear only for Stream Deck + encoders.
+- Chat Review requires **Send chat messages to API server** in Social Stream Ninja. No external link is needed during setup.

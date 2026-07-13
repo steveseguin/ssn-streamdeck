@@ -130,37 +130,8 @@
 			color: var(--muted);
 			font-size: 12px;
 		}
-		.steps {
-			display: grid;
-			gap: 8px;
-		}
-		.step {
-			display: grid;
-			grid-template-columns: 22px 1fr;
-			gap: 8px;
-			align-items: start;
-		}
-		.step-badge {
-			display: grid;
-			place-items: center;
-			width: 20px;
-			height: 20px;
-			border: 1px solid var(--border);
-			border-radius: 999px;
-			color: var(--muted);
-			background: #151922;
-			font-size: 11px;
-			font-weight: 800;
-		}
-		.step.done .step-badge {
-			border-color: rgba(53, 208, 127, .6);
-			background: rgba(53, 208, 127, .14);
-			color: #b7f7d1;
-		}
-		.step-title {
-			font-weight: 750;
-		}
-		.step-text {
+		.quick-start {
+			margin-top: 9px;
 			color: var(--muted);
 			font-size: 12px;
 		}
@@ -219,7 +190,7 @@
 		<div class="dot"></div>
 		<div>
 			<div id="statusText" class="status-title">Enter a Social Stream Ninja session ID.</div>
-			<div id="statusNote" class="status-note">Use the same session ID as your Social Stream Ninja dock, overlay, or desktop app.</div>
+			<div id="statusNote" class="status-note">In SSApp, open Stream Deck Setup and copy the session ID shown there.</div>
 		</div>
 	</div>
 
@@ -230,7 +201,7 @@
 				<h2>Connect Social Stream Ninja</h2>
 				<label for="sessionId">Session ID or overlay URL</label>
 				<input id="sessionId" type="password" autocomplete="off" placeholder="Paste session ID or dock.html?session=... URL">
-				<div class="hint">Paste the full dock/overlay URL if that is easier. The plugin will use only the session value.</div>
+				<div class="hint">SSApp: open Stream Deck Setup, click Copy, then paste here. Full dock/overlay URLs also work.</div>
 
 				<div class="actions">
 					<button id="testConnection" type="button">Test Connection</button>
@@ -269,39 +240,7 @@
 				<div id="capabilityText" class="capability">SSApp source controls unavailable until capabilities are received.</div>
 			</section>
 
-			<section class="panel">
-				<h2>Checklist</h2>
-				<div class="steps">
-					<div id="stepOpen" class="step done">
-						<div class="step-badge">1</div>
-						<div>
-							<div class="step-title">Open Social Stream Ninja</div>
-							<div class="step-text">Keep the browser version, SSApp desktop app, dock, or overlay running.</div>
-						</div>
-					</div>
-					<div id="stepSession" class="step">
-						<div class="step-badge">2</div>
-						<div>
-							<div class="step-title">Use the matching session ID</div>
-							<div class="step-text">This is the private ID from URLs such as <span class="inline-code">dock.html?session=...</span>.</div>
-						</div>
-					</div>
-					<div id="stepConnect" class="step">
-						<div class="step-badge">3</div>
-						<div>
-							<div class="step-title">Test the connection</div>
-							<div class="step-text">The top message changes to online when the Social Stream Ninja API joins your session.</div>
-						</div>
-					</div>
-					<div id="stepAction" class="step">
-						<div class="step-badge">4</div>
-						<div>
-							<div class="step-title">Add command keys</div>
-							<div class="step-text">Drag Preset Command for normal controls, or Custom Command for advanced payloads.</div>
-						</div>
-					</div>
-				</div>
-			</section>
+			<div class="quick-start">SSApp → Stream Deck Setup → Copy. Paste here and test once.</div>
 		</div>
 	</details>
 
@@ -313,7 +252,7 @@
 		<label id="targetLabel" for="target">Target</label>
 		<input id="target" type="text" placeholder="Optional">
 
-		<label for="value">Value</label>
+		<label id="valueLabel" for="value">Value</label>
 		<textarea id="value" placeholder="Optional"></textarea>
 
 		<label for="commandTitle">Title override</label>
@@ -347,6 +286,22 @@
 		<div class="hint">Custom Command is for payloads not yet exposed as presets.</div>
 	</section>
 
+	<section id="timerSettings" class="panel hidden">
+		<h2>Timer Dial</h2>
+		<label for="timerStep">Seconds per turn</label>
+		<input id="timerStep" type="number" min="1" step="1" value="10">
+		<label for="timerTitle">Display title</label>
+		<input id="timerTitle" type="text" placeholder="Stream Timer">
+		<div class="hint">Turn to adjust. Press to start or pause. Hold the touchscreen to reset.</div>
+	</section>
+
+	<section id="chatFeedSettings" class="panel hidden">
+		<h2>Chat Review</h2>
+		<label for="chatFeedTitle">Display title</label>
+		<input id="chatFeedTitle" type="text" placeholder="Chat Review">
+		<div class="hint">Turn to browse recent chat, press to pin, tap to feature the next pinned message, or hold to unpin. In Social Stream Ninja, enable “Send chat messages to API server”.</div>
+	</section>
+
 	<script>
 		let websocket = null;
 		let actionInfo = null;
@@ -365,6 +320,8 @@
 				options: [
 					{ value: "nextInQueue", label: "Next in queue", scope: "ssn" },
 					{ value: "clearOverlay", label: "Clear overlay", scope: "ssn" },
+					{ value: "clear", label: "Clear messages", scope: "ssn" },
+					{ value: "clearAll", label: "Clear all messages", scope: "ssn" },
 					{ value: "resetleaderboard", label: "Reset leaderboard", scope: "ssn" },
 					{ value: "getQueueSize", label: "Get queue size", scope: "ssn", defaultAwaitResponse: true }
 				]
@@ -372,8 +329,12 @@
 			{
 				label: "Chat and polls",
 				options: [
-					{ value: "sendChat", label: "Send chat", scope: "ssn", defaultValue: "Hello from Stream Deck", valueLabel: "Message" },
-					{ value: "sendEncodedChat", label: "Send encoded chat", scope: "ssn", defaultValue: "Hello%20from%20Stream%20Deck", valueLabel: "Encoded message" },
+					{ value: "sendChat", label: "Send chat", scope: "ssn", allowTarget: true, defaultValue: "Hello from Stream Deck", valueLabel: "Message" },
+					{ value: "sendEncodedChat", label: "Send encoded chat", scope: "ssn", allowTarget: true, defaultValue: "Hello%20from%20Stream%20Deck", valueLabel: "Encoded message" },
+					{ value: "loadpoll", label: "Load poll preset", scope: "ssn", valueLabel: "{\"pollId\":\"...\"}" },
+					{ value: "setpollsettings", label: "Set poll settings", scope: "ssn", valueLabel: "Poll settings JSON" },
+					{ value: "getpollpresets", label: "Get poll presets", scope: "ssn", defaultAwaitResponse: true },
+					{ value: "createpoll", label: "Create poll", scope: "ssn", valueLabel: "Poll definition JSON" },
 					{ value: "resetpoll", label: "Reset poll", scope: "ssn" },
 					{ value: "closepoll", label: "Close poll", scope: "ssn" }
 				]
@@ -381,9 +342,9 @@
 			{
 				label: "Dock messages",
 				options: [
-					{ value: "pin", label: "Pin message", scope: "ssn", valueLabel: "Message ID or JSON message" },
-					{ value: "unpin", label: "Unpin message", scope: "ssn", valueLabel: "Message ID" },
-					{ value: "nextPinned", label: "Next pinned message", scope: "ssn" }
+					{ value: "pin", label: "Pin message", scope: "ssn", allowTarget: true, valueLabel: "Message ID or JSON message" },
+					{ value: "unpin", label: "Unpin message", scope: "ssn", allowTarget: true, valueLabel: "Message ID" },
+					{ value: "nextPinned", label: "Next pinned message", scope: "ssn", allowTarget: true }
 				]
 			},
 			{
@@ -394,10 +355,29 @@
 					{ value: "resetwaitlist", label: "Reset waitlist", scope: "ssn" },
 					{ value: "stopentries", label: "Stop entries", scope: "ssn" },
 					{ value: "startentries", label: "Start entries", scope: "ssn" },
+					{ value: "openentries", label: "Open entries", scope: "ssn" },
+					{ value: "resumeentries", label: "Resume entries", scope: "ssn" },
 					{ value: "waitlistmessage", label: "Set waitlist message", scope: "ssn", defaultValue: "Type !join to enter!", valueLabel: "Message" },
+					{ value: "setwaitlistmessage", label: "Set waitlist message (legacy)", scope: "ssn", defaultValue: "Type !join to enter!", valueLabel: "Message" },
 					{ value: "downloadwaitlist", label: "Download waitlist", scope: "ssn" },
 					{ value: "selectwinner", label: "Select winner", scope: "ssn", defaultValue: "1", valueLabel: "Winner count" },
 					{ value: "drawmode", label: "Draw mode", scope: "ssn", defaultValue: "toggle", valueLabel: "true, false, or toggle" }
+				]
+			},
+			{
+				label: "Timer and map",
+				options: [
+					{ value: "starttimer", label: "Start timer", scope: "ssn" },
+					{ value: "pausetimer", label: "Pause timer", scope: "ssn" },
+					{ value: "toggletimer", label: "Toggle timer", scope: "ssn" },
+					{ value: "resettimer", label: "Reset timer", scope: "ssn" },
+					{ value: "timeradd", label: "Add timer time", scope: "ssn", defaultValue: "30", valueLabel: "Seconds" },
+					{ value: "timersubtract", label: "Subtract timer time", scope: "ssn", defaultValue: "30", valueLabel: "Seconds" },
+					{ value: "settimer", label: "Set timer", scope: "ssn", defaultValue: { seconds: 300 }, valueLabel: "Timer JSON" },
+					{ value: "gettimerstate", label: "Get timer state", scope: "ssn", defaultAwaitResponse: true },
+					{ value: "startmap", label: "Start map", scope: "ssn" },
+					{ value: "pausemap", label: "Pause map", scope: "ssn" },
+					{ value: "resetmap", label: "Reset map", scope: "ssn" }
 				]
 			},
 			{
@@ -405,6 +385,9 @@
 				options: [
 					{ value: "getSources", label: "List sources", scope: "ssapp", capabilityPath: ["sourceControls", "list"], defaultAwaitResponse: true },
 					{ value: "getSource", label: "Get source", scope: "ssapp", capabilityPath: ["sourceControls", "get"], defaultAwaitResponse: true },
+					{ value: "addSource", label: "Add source", scope: "ssapp", capabilityPath: ["sourceControls", "add"], valueLabel: "Source JSON", defaultAwaitResponse: true },
+					{ value: "updateSource", label: "Update source", scope: "ssapp", capabilityPath: ["sourceControls", "update"], valueLabel: "Source update JSON", defaultAwaitResponse: true },
+					{ value: "removeSource", label: "Remove source", scope: "ssapp", capabilityPath: ["sourceControls", "remove"], valueLabel: "Source ID + confirmation JSON", defaultAwaitResponse: true },
 					{ value: "startSource", label: "Start source", scope: "ssapp", capabilityPath: ["sourceControls", "start"], defaultAwaitResponse: true },
 					{ value: "stopSource", label: "Stop source", scope: "ssapp", capabilityPath: ["sourceControls", "stop"], defaultAwaitResponse: true },
 					{ value: "restartSource", label: "Restart source", scope: "ssapp", capabilityPath: ["sourceControls", "restart"], defaultAwaitResponse: true },
@@ -415,7 +398,9 @@
 					{ value: "toggleSourceMute", label: "Toggle source mute", scope: "ssapp", capabilityPath: ["mute", "toggle"], defaultAwaitResponse: true },
 					{ value: "setSourceVisibility", label: "Set source visibility", scope: "ssapp", capabilityPath: ["visibility", "set"], defaultAwaitResponse: true },
 					{ value: "toggleSourceVisibility", label: "Toggle source visibility", scope: "ssapp", capabilityPath: ["visibility", "toggle"], defaultAwaitResponse: true },
-					{ value: "setSourceConnectionMode", label: "Set connection mode", scope: "ssapp", capabilityPath: ["connectionMode", "set"], defaultAwaitResponse: true }
+					{ value: "setSourceConnectionMode", label: "Set connection mode", scope: "ssapp", capabilityPath: ["connectionMode", "set"], defaultAwaitResponse: true },
+					{ value: "getSettings", label: "Get settings", scope: "ssapp", capabilityPath: ["settings", "get"], defaultAwaitResponse: true },
+					{ value: "updateSettings", label: "Update settings", scope: "ssapp", capabilityPath: ["settings", "update"], valueLabel: "Settings JSON", defaultAwaitResponse: true }
 				]
 			}
 		];
@@ -490,18 +475,20 @@
 		}
 
 		function commandOptionAvailable(option) {
-			if (!option || option.scope !== "ssapp") return true;
-			return capabilityEnabled(option.capabilityPath);
+			if (!option || !capabilities) return true;
+			if (option.scope === "ssapp") return capabilityEnabled(option.capabilityPath);
+			return !!(capabilities.ssn && capabilities.ssn.actions && capabilities.ssn.actions[option.value] === true);
 		}
 
 		function renderCapabilities() {
 			if (ssappAvailable()) {
-				const runtime = capabilities.ssapp.runtime || capabilities.runtime || "SSApp";
-				byId("capabilityText").innerHTML = "<strong>SSApp source controls available.</strong> Runtime: " + escapeHtml(String(runtime)) + ".";
+				const version = capabilities.ssapp.version ? " " + escapeHtml(String(capabilities.ssapp.version)) : "";
+				const bridge = capabilities.ssapp.bridgeVersion ? " · bridge v" + escapeHtml(String(capabilities.ssapp.bridgeVersion)) : "";
+				byId("capabilityText").innerHTML = "<strong>SSApp" + version + " connected</strong>" + bridge + ". Compatible controls are enabled.";
 				return;
 			}
 			if (capabilities) {
-				byId("capabilityText").innerHTML = "<strong>Browser mode detected.</strong> Core SSN commands are available. SSApp source controls stay hidden.";
+				byId("capabilityText").innerHTML = "<strong>Browser mode</strong> · Social Stream controls only.";
 				return;
 			}
 			byId("capabilityText").textContent = "SSApp source controls will appear here after Social Stream Ninja advertises them.";
@@ -550,10 +537,14 @@
 			const option = selectedCommandOption();
 			const isSsapp = option && option.scope === "ssapp";
 			const valueLabel = option && option.valueLabel;
+			const hasValue = !!(option && (valueLabel || Object.prototype.hasOwnProperty.call(option, "defaultValue")));
 			const requiresResponse = !!(option && option.defaultAwaitResponse === true);
 			const awaitResponse = byId("commandAwaitResponse");
-			byId("targetLabel").classList.toggle("hidden", !!isSsapp);
-			byId("target").classList.toggle("hidden", !!isSsapp);
+			byId("targetLabel").classList.toggle("hidden", !option || option.allowTarget !== true || !!isSsapp);
+			byId("target").classList.toggle("hidden", !option || option.allowTarget !== true || !!isSsapp);
+			byId("valueLabel").classList.toggle("hidden", !hasValue);
+			byId("value").classList.toggle("hidden", !hasValue);
+			byId("valueLabel").textContent = valueLabel || "Value";
 			byId("value").placeholder = valueLabel || (isSsapp ? "Source ID or JSON" : "Optional");
 			awaitResponse.checked = requiresResponse || actionSettings.awaitResponse === true;
 			awaitResponse.disabled = requiresResponse;
@@ -566,6 +557,8 @@
 		function renderActionSettings() {
 			byId("commandSettings").classList.toggle("hidden", actionUuid !== "ninja.socialstream.streamdeck.command");
 			byId("customSettings").classList.toggle("hidden", actionUuid !== "ninja.socialstream.streamdeck.custom-command");
+			byId("timerSettings").classList.toggle("hidden", actionUuid !== "ninja.socialstream.streamdeck.timer-dial");
+			byId("chatFeedSettings").classList.toggle("hidden", actionUuid !== "ninja.socialstream.streamdeck.chat-feed");
 			renderCapabilities();
 			if (actionUuid === "ninja.socialstream.streamdeck.command") {
 				renderCommandOptions();
@@ -582,6 +575,13 @@
 				byId("customValue").value = actionSettings.value || "";
 				byId("customTitle").value = actionSettings.title || "";
 				byId("customAwaitResponse").checked = actionSettings.awaitResponse === true;
+			}
+			if (actionUuid === "ninja.socialstream.streamdeck.timer-dial") {
+				byId("timerStep").value = actionSettings.stepSeconds || "10";
+				byId("timerTitle").value = actionSettings.title || "";
+			}
+			if (actionUuid === "ninja.socialstream.streamdeck.chat-feed") {
+				byId("chatFeedTitle").value = actionSettings.title || "";
 			}
 			renderSetupSteps();
 			initializeSetupDetails();
@@ -603,9 +603,7 @@
 		}
 
 		function renderSetupSteps() {
-			byId("stepSession").classList.toggle("done", hasSessionId());
-			byId("stepConnect").classList.toggle("done", currentState === "connected");
-			byId("stepAction").classList.toggle("done", actionUuid === "ninja.socialstream.streamdeck.command" || actionUuid === "ninja.socialstream.streamdeck.custom-command");
+			// Connection status at the top is the onboarding progress indicator.
 		}
 
 		function saveGlobalSettings() {
@@ -669,6 +667,13 @@
 					title: byId("customTitle").value.trim(),
 					awaitResponse: byId("customAwaitResponse").checked
 				};
+			} else if (actionUuid === "ninja.socialstream.streamdeck.timer-dial") {
+				actionSettings = {
+					stepSeconds: Math.max(1, Number(byId("timerStep").value || 10)),
+					title: byId("timerTitle").value.trim()
+				};
+			} else if (actionUuid === "ninja.socialstream.streamdeck.chat-feed") {
+				actionSettings = { title: byId("chatFeedTitle").value.trim() };
 			} else {
 				return;
 			}
@@ -713,8 +718,8 @@
 			if (kind === "error") box.classList.add("error");
 			byId("statusText").textContent = text;
 			byId("statusNote").textContent = kind === "ok"
-				? "You can now add preset commands or SSApp controls if this runtime advertises them."
-				: "Check the session ID and make sure Social Stream Ninja is open with API remote control available.";
+				? "Ready. Only controls supported by this runtime are shown."
+				: "Open SSApp → Stream Deck Setup, copy its session ID, and keep Social Stream Ninja running.";
 		}
 
 		function escapeHtml(value) {
@@ -743,7 +748,8 @@
 		});
 		[
 			"target", "value", "commandTitle", "commandAwaitResponse",
-			"customAction", "customTarget", "customValue", "customTitle", "customAwaitResponse"
+			"customAction", "customTarget", "customValue", "customTitle", "customAwaitResponse",
+			"timerStep", "timerTitle", "chatFeedTitle"
 		].forEach(id => {
 			byId(id).addEventListener("change", saveActionSettings);
 			byId(id).addEventListener("input", saveActionSettings);

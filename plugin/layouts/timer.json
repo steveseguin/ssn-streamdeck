@@ -1,0 +1,11 @@
+{
+	"$schema": "https://schemas.elgato.com/streamdeck/plugins/layout.json",
+	"id": "ninja.socialstream.timer",
+	"items": [
+		{ "key": "title", "type": "text", "rect": [8, 3, 94, 16], "alignment": "left", "color": "#cbd5e1", "font": { "size": 11, "weight": 700 }, "text-overflow": "ellipsis" },
+		{ "key": "status", "type": "text", "rect": [106, 3, 86, 16], "alignment": "right", "color": "#5eead4", "font": { "size": 9, "weight": 700 }, "text-overflow": "ellipsis" },
+		{ "key": "value", "type": "text", "rect": [8, 20, 184, 44], "alignment": "center", "color": "#ffffff", "font": { "size": 30, "weight": 800 }, "text-overflow": "clip" },
+		{ "key": "progress", "type": "bar", "rect": [8, 68, 184, 8], "value": 0, "bar_bg_c": "#253247", "bar_fill_c": "0:#38bdf8,1:#2dd4bf" },
+		{ "key": "hint", "type": "text", "rect": [8, 80, 184, 14], "alignment": "center", "color": "#94a3b8", "font": { "size": 8, "weight": 600 }, "text-overflow": "ellipsis" }
+	]
+}

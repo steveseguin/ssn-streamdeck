@@ -1,17 +1,20 @@
 import streamDeck from "@elgato/streamdeck";
 import type { JsonObject, JsonValue } from "@elgato/utils";
+import { ChatFeedClient } from "./api/chat-feed-client.js";
 import { SsnClient } from "./api/ssn-client.js";
 import { normalizeGlobalSettings } from "./api/settings.js";
 import type { ConnectionStateName, GlobalSettings } from "./api/types.js";
 import { SessionStore } from "./state/session-store.js";
 
 export const ssnClient = new SsnClient();
+export const chatFeedClient = new ChatFeedClient();
 export const sessionStore = new SessionStore();
 
 export async function initializeServices(): Promise<void> {
 	const settings = normalizeGlobalSettings(await streamDeck.settings.getGlobalSettings<GlobalSettings>());
 	ssnClient.onState(state => sessionStore.setConnectionState(state));
 	ssnClient.onMessage(message => sessionStore.setLastMessage(message));
+	chatFeedClient.onMessage(message => sessionStore.addChatMessage(message));
 	ssnClient.onCapabilities(capabilities => {
 		streamDeck.ui.sendToPropertyInspector({
 			type: "capabilities",
@@ -19,10 +22,13 @@ export async function initializeServices(): Promise<void> {
 		});
 	});
 	ssnClient.configure(settings);
+	chatFeedClient.configure(settings);
 	registerPropertyInspectorMessages();
 
 	streamDeck.settings.onDidReceiveGlobalSettings<GlobalSettings>(ev => {
-		ssnClient.configure(normalizeGlobalSettings(ev.settings));
+		const next = normalizeGlobalSettings(ev.settings);
+		ssnClient.configure(next);
+		chatFeedClient.configure(next);
 	});
 }
 

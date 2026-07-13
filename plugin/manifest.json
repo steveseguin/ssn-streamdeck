@@ -5,7 +5,7 @@
 	"Author": "Social Stream Ninja",
 	"URL": "https://socialstream.ninja",
 	"Description": "Control Social Stream Ninja from Stream Deck keys: overlays, docks, queues, polls, chat actions, and SSApp source controls for live streams.",
-	"Version": "0.1.0.0",
+	"Version": "0.2.0.0",
 	"SDKVersion": 2,
 	"Software": {
 		"MinimumVersion": "6.8"
@@ -85,6 +85,44 @@
 				}
 			],
 			"UserTitleEnabled": false
+		},
+		{
+			"UUID": "ninja.socialstream.streamdeck.timer-dial",
+			"Name": "Timer Dial",
+			"Tooltip": "Adjust and monitor the Social Stream Ninja timer from a Stream Deck + dial.",
+			"Icon": "imgs/actions/timer",
+			"Controllers": ["Encoder"],
+			"States": [{ "Name": "Ready", "Image": "imgs/state-neutral", "ShowTitle": false }],
+			"Encoder": {
+				"Icon": "imgs/timer",
+				"StackColor": "#38BDF8",
+				"layout": "layouts/timer.json",
+				"TriggerDescription": {
+					"Rotate": "Adjust timer",
+					"Push": "Start or pause",
+					"Touch": "Refresh timer",
+					"LongTouch": "Reset timer"
+				}
+			}
+		},
+		{
+			"UUID": "ninja.socialstream.streamdeck.chat-feed",
+			"Name": "Chat Review",
+			"Tooltip": "Review recent channel-4 chat, pin a message, and feature the next pinned message.",
+			"Icon": "imgs/actions/chat-feed",
+			"Controllers": ["Encoder"],
+			"States": [{ "Name": "Ready", "Image": "imgs/state-neutral", "ShowTitle": false }],
+			"Encoder": {
+				"Icon": "imgs/chat-feed",
+				"StackColor": "#2DD4BF",
+				"layout": "layouts/chat-feed.json",
+				"TriggerDescription": {
+					"Rotate": "Browse recent chat",
+					"Push": "Pin displayed chat",
+					"Touch": "Feature next pinned",
+					"LongTouch": "Unpin displayed chat"
+				}
+			}
 		}
 	]
 }

@@ -5,6 +5,7 @@ type Listener = () => void;
 export class SessionStore {
 	private connectionState: ConnectionStateName = "missing-session";
 	private lastMessage: unknown = null;
+	private chatMessages: unknown[] = [];
 	private listeners = new Set<Listener>();
 
 	subscribe(listener: Listener): () => void {
@@ -28,6 +29,18 @@ export class SessionStore {
 
 	getLastMessage(): unknown {
 		return this.lastMessage;
+	}
+
+	addChatMessage(message: unknown): void {
+		this.chatMessages.unshift(message);
+		if (this.chatMessages.length > 50) {
+			this.chatMessages.length = 50;
+		}
+		this.emit();
+	}
+
+	getChatMessages(): readonly unknown[] {
+		return this.chatMessages;
 	}
 
 	private emit(): void {

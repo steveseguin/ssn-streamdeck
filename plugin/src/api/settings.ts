@@ -1,4 +1,4 @@
-import type { CustomCommandSettings, GlobalSettings, SsnCommandSettings } from "./types.js";
+import type { CustomCommandSettings, GlobalSettings, SsnCommandSettings, TimerDialSettings } from "./types.js";
 
 export const DEFAULT_API_HOST = "io.socialstream.ninja";
 
@@ -40,6 +40,13 @@ export function normalizeCustomCommandSettings(settings: Partial<CustomCommandSe
 		value: emptyToUndefined(settings?.value),
 		title: stringOrEmpty(settings?.title),
 		awaitResponse: settings?.awaitResponse === true
+	};
+}
+
+export function normalizeTimerDialSettings(settings: Partial<TimerDialSettings> | undefined): TimerDialSettings {
+	return {
+		title: stringOrEmpty(settings?.title) || "Stream Timer",
+		stepSeconds: positiveInteger(settings?.stepSeconds, 10)
 	};
 }
 

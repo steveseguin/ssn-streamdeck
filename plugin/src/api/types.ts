@@ -24,12 +24,17 @@ export interface SsappCapabilities extends JsonObject {
 	available?: boolean;
 	runtime?: string | null;
 	version?: string | null;
+	apiVersion?: string | null;
+	bridgeVersion?: number | null;
+	appControls?: JsonObject | boolean;
 	sourceControls?: JsonObject | boolean;
 	bulkControls?: JsonObject | boolean;
 	visibility?: JsonObject | boolean;
 	mute?: JsonObject | boolean;
 	connectionMode?: JsonObject | boolean;
 	sourceStatus?: JsonObject | boolean;
+	settings?: JsonObject | boolean;
+	platforms?: JsonObject;
 }
 
 export interface StreamDeckCapabilities extends JsonObject {
@@ -57,5 +62,14 @@ export interface CustomCommandSettings extends JsonObject {
 }
 
 export interface ConnectionStatusSettings extends JsonObject {
+	title?: string;
+}
+
+export interface TimerDialSettings extends JsonObject {
+	title?: string;
+	stepSeconds?: number;
+}
+
+export interface ChatFeedSettings extends JsonObject {
 	title?: string;
 }

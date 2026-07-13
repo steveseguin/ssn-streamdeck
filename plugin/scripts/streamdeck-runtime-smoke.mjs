@@ -13,6 +13,8 @@ const builtPluginEntry = join(builtPluginRoot, "bin", "plugin.js");
 const pluginUuid = "runtime-plugin";
 const deviceId = "runtime-device";
 const commandContext = "runtime-command-context";
+const timerContext = "runtime-timer-context";
+const chatContext = "runtime-chat-context";
 const sessionId = "runtime-session";
 
 if (!existsSync(builtPluginEntry)) {
@@ -168,6 +170,55 @@ try {
 	}
 	await streamDeck.waitForMessage(message => message.event === "showOk" && message.context === commandContext, "success feedback");
 
+	streamDeck.send({
+		event: "willAppear",
+		action: "ninja.socialstream.streamdeck.timer-dial",
+		context: timerContext,
+		device: deviceId,
+		payload: {
+			controller: "Encoder",
+			coordinates: { column: 0, row: 0 },
+			resources: {},
+			settings: { stepSeconds: 15, title: "Live Timer" }
+		}
+	});
+	await social.waitForMessage(message => message.action === "gettimerstate", "timer state request");
+	await streamDeck.waitForMessage(
+		message => message.event === "setFeedback" && message.context === timerContext && message.payload?.value === "5:00",
+		"timer dial feedback"
+	);
+	streamDeck.send({
+		event: "dialRotate",
+		action: "ninja.socialstream.streamdeck.timer-dial",
+		context: timerContext,
+		device: deviceId,
+		payload: { controller: "Encoder", coordinates: { column: 0, row: 0 }, resources: {}, settings: { stepSeconds: 15 }, pressed: false, ticks: 2 }
+	});
+	const timerAdjust = await social.waitForMessage(message => message.action === "timeradd", "timer dial adjustment");
+	if (timerAdjust.value !== 30) throw new Error(`Unexpected timer adjustment: ${JSON.stringify(timerAdjust)}`);
+
+	streamDeck.send({
+		event: "willAppear",
+		action: "ninja.socialstream.streamdeck.chat-feed",
+		context: chatContext,
+		device: deviceId,
+		payload: { controller: "Encoder", coordinates: { column: 1, row: 0 }, resources: {}, settings: {} }
+	});
+	await social.waitForMessage(message => message.join === sessionId && message.in === 4, "channel-4 chat listener");
+	await streamDeck.waitForMessage(
+		message => message.event === "setFeedback" && message.context === chatContext && message.payload?.name === "Chat Tester",
+		"chat dial feedback"
+	);
+	streamDeck.send({
+		event: "dialDown",
+		action: "ninja.socialstream.streamdeck.chat-feed",
+		context: chatContext,
+		device: deviceId,
+		payload: { controller: "Encoder", coordinates: { column: 1, row: 0 }, resources: {}, settings: {} }
+	});
+	const pin = await social.waitForMessage(message => message.action === "pin", "chat dial pin");
+	if (pin.value !== "chat-1") throw new Error(`Unexpected chat pin payload: ${JSON.stringify(pin)}`);
+
 	if (child.exitCode !== null) {
 		throw new Error(`Plugin exited early with code ${child.exitCode}\nstdout:\n${stdout}\nstderr:\n${stderr}`);
 	}
@@ -203,18 +254,19 @@ async function createStreamDeckServer({ globalSettings }) {
 				});
 			}
 			if (message.event === "getSettings") {
+				const meta = actionMeta(message.context);
 				send({
 					event: "didReceiveSettings",
-					action: "ninja.socialstream.streamdeck.command",
+					action: meta.action,
 					context: message.context,
 					id: message.id,
 					device: deviceId,
 					payload: {
-						controller: "Keypad",
+						controller: meta.controller,
 						coordinates: { column: 0, row: 0 },
 						isInMultiAction: false,
 						resources: {},
-						settings: {},
+						settings: meta.settings,
 						state: 0
 					}
 				});
@@ -229,6 +281,12 @@ async function createStreamDeckServer({ globalSettings }) {
 			throw new Error("Stream Deck plugin socket is not open");
 		}
 		socket.send(JSON.stringify(message));
+	}
+
+	function actionMeta(context) {
+		if (context === timerContext) return { action: "ninja.socialstream.streamdeck.timer-dial", controller: "Encoder", settings: { stepSeconds: 15, title: "Live Timer" } };
+		if (context === chatContext) return { action: "ninja.socialstream.streamdeck.chat-feed", controller: "Encoder", settings: {} };
+		return { action: "ninja.socialstream.streamdeck.command", controller: "Keypad", settings: {} };
 	}
 
 	return {
@@ -249,9 +307,13 @@ async function createSocialStreamServer() {
 	const server = new WebSocketServer({ host: "127.0.0.1", port: 0 });
 	await once(server, "listening");
 	server.on("connection", socket => {
-		socket.on("message", raw => {
+			socket.on("message", raw => {
 			const message = JSON.parse(raw.toString());
 			messages.push(message);
+			if (message.join && message.in === 4) {
+				socket.send(JSON.stringify({ id: "chat-1", chatname: "Chat Tester", chatmessage: "Dial feedback works", type: "youtube" }));
+				return;
+			}
 			if (message.action === "getCapabilities" && typeof message.get === "string") {
 				socket.send(
 					JSON.stringify({
@@ -262,11 +324,15 @@ async function createSocialStreamServer() {
 								version: 1,
 								runtime: "web",
 								ssapp: { available: false },
-								ssn: { actions: { removefromwaitlist: true } }
+								ssn: { actions: { removefromwaitlist: true, timeradd: true, timersubtract: true, toggletimer: true, resettimer: true, gettimerstate: true, pin: true, unpin: true, nextPinned: true } }
 							}
 						}
 					})
 				);
+				return;
+			}
+			if (message.action === "gettimerstate" && typeof message.get === "string") {
+				socket.send(JSON.stringify({ callback: { get: message.get, result: { mode: "countdown", durationMs: 300000, displayMs: 300000, running: false, done: false, overtime: false } } }));
 			}
 		});
 	});
