@@ -18,6 +18,7 @@ describe("settings normalization", () => {
 		expect(normalizeSsnCommandSettings({ command: "clearOverlay", value: " toggle " })).toEqual({
 			command: "clearOverlay",
 			target: "",
+			sourceId: "",
 			value: "toggle",
 			title: "",
 			awaitResponse: false

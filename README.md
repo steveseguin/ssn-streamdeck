@@ -56,6 +56,7 @@ Based on `../api.md`:
 - Chat-listener channel: channel 4, if the user enables chat message relay
 - Simple command shape: `{ "action": "clearOverlay" }`
 - Value command shape: `{ "action": "sendChat", "value": "Hello" }`
+- Targeted chat keys save the stable SSApp source ID, then resolve its current source type and tab ID when pressed. Source URLs are never returned to the plugin.
 - SSApp controls use the same Social Stream Ninja API socket; the plugin does not connect to SSApp directly.
 
 ## Requirements

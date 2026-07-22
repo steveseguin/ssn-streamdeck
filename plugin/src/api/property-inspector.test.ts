@@ -52,7 +52,47 @@ describe("property inspector", () => {
 			payload: {
 				command: "drawmode",
 				target: "",
+				sourceId: "",
 				value: "toggle",
+				title: "",
+				awaitResponse: false
+			}
+		});
+	});
+
+	it("lists only open SSApp sources and saves the stable source ID", () => {
+		const inspector = createPropertyInspector();
+		inspector.run(`
+			actionUuid = "ninja.socialstream.streamdeck.command";
+			actionContext = "command-context";
+			actionSettings = { command: "sendChat", sourceId: "youtube-source", value: "Hello" };
+			capabilities = {
+				type: "capabilities",
+				version: 1,
+				ssapp: { available: true },
+				ssn: { actions: { sendChat: true } }
+			};
+			availableSources = [
+				{ id: "youtube-source", target: "youtube", tabId: 42, status: "active", username: "Channel" },
+				{ id: "closed-source", target: "twitch", tabId: null, username: "Offline" }
+			];
+			websocket = { readyState: WebSocket.OPEN, send: message => sentMessages.push(JSON.parse(message)) };
+			renderActionSettings();
+			byId("sourceId").value = "youtube-source";
+			saveActionSettings();
+		`);
+
+		const sourceOptions = inspector.element("sourceId").children.map(option => option.value);
+		expect(sourceOptions).toContain("youtube-source");
+		expect(sourceOptions).not.toContain("closed-source");
+		expect(inspector.sentMessages).toContainEqual({
+			event: "setSettings",
+			context: "command-context",
+			payload: {
+				command: "sendChat",
+				target: "",
+				sourceId: "youtube-source",
+				value: "Hello",
 				title: "",
 				awaitResponse: false
 			}

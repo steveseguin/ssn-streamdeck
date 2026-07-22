@@ -18,6 +18,16 @@ export interface SsnCommandPayload extends JsonObject {
 	get?: string;
 	target?: JsonValue;
 	value?: JsonValue;
+	tabId?: number;
+}
+
+export interface SsappSourceSummary extends JsonObject {
+	id: string;
+	target: string;
+	tabId: number | null;
+	username?: string;
+	videoId?: string;
+	status?: string;
 }
 
 export interface SsappCapabilities extends JsonObject {
@@ -48,6 +58,7 @@ export interface StreamDeckCapabilities extends JsonObject {
 export interface SsnCommandSettings extends JsonObject {
 	command?: string;
 	target?: string;
+	sourceId?: string;
 	value?: string;
 	title?: string;
 	awaitResponse?: boolean;

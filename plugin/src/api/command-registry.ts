@@ -1,5 +1,5 @@
 import type { JsonValue } from "@elgato/utils";
-import type { CustomCommandSettings, SsnCommandPayload, SsnCommandSettings, StreamDeckCapabilities } from "./types.js";
+import type { CustomCommandSettings, SsappSourceSummary, SsnCommandPayload, SsnCommandSettings, StreamDeckCapabilities } from "./types.js";
 
 export type CommandDefinition = {
 	id: string;
@@ -119,6 +119,51 @@ export function buildSsnCommandPayload(settings: SsnCommandSettings): SsnCommand
 		payload.value = value;
 	}
 	return payload;
+}
+
+export function isSourceTargetedChat(settings: SsnCommandSettings): boolean {
+	return !!settings.sourceId && (settings.command === "sendChat" || settings.command === "sendEncodedChat");
+}
+
+export function extractSourceFromCommandResult(result: unknown): SsappSourceSummary | null {
+	if (!result || typeof result !== "object" || Array.isArray(result)) return null;
+	const payload = (result as Record<string, unknown>).payload;
+	if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+	const source = (payload as Record<string, unknown>).source;
+	if (!source || typeof source !== "object" || Array.isArray(source)) return null;
+	const candidate = source as Record<string, unknown>;
+	if (typeof candidate.id !== "string" || typeof candidate.target !== "string") return null;
+	const tabId = typeof candidate.tabId === "number" && Number.isInteger(candidate.tabId) && candidate.tabId > 0
+		? candidate.tabId
+		: null;
+	const normalized: SsappSourceSummary = { id: candidate.id, target: candidate.target, tabId };
+	for (const field of ["username", "videoId", "status"] as const) {
+		if (typeof candidate[field] === "string") normalized[field] = candidate[field];
+	}
+	return normalized;
+}
+
+export function extractSourcesFromCommandResult(result: unknown): SsappSourceSummary[] {
+	if (!result || typeof result !== "object" || Array.isArray(result)) return [];
+	const payload = (result as Record<string, unknown>).payload;
+	if (!payload || typeof payload !== "object" || Array.isArray(payload)) return [];
+	const sources = (payload as Record<string, unknown>).sources;
+	if (!Array.isArray(sources)) return [];
+	return sources.flatMap(source => {
+		const normalized = extractSourceFromCommandResult({ payload: { source } });
+		return normalized ? [normalized] : [];
+	});
+}
+
+export function targetChatPayloadToSource(payload: SsnCommandPayload, source: SsappSourceSummary): SsnCommandPayload {
+	if (!source.target || !source.tabId || (source.status && source.status !== "active")) {
+		throw new Error("The selected SSApp source is not open.");
+	}
+	return {
+		...payload,
+		target: source.target,
+		tabId: source.tabId
+	};
 }
 
 export function buildCustomCommandPayload(settings: CustomCommandSettings): SsnCommandPayload {

@@ -250,6 +250,7 @@ Stored under Stream Deck plugin global settings:
   apiid?: string;               // set by client
   target?: JsonValue;
   value?: JsonValue;
+  tabId?: number;               // optional exact source routing for chat
   get?: string;                 // for async callback correlation
 }
 ```
@@ -260,7 +261,7 @@ Stored under Stream Deck plugin global settings:
 {
   id: string,
   target: string,
-  url: string,
+  tabId: number | null,
   username: string,
   videoId: string,
   connectionMode: "classic" | "websocket" | "tiktok-websocket" | "tiktok-legacy",
@@ -272,6 +273,8 @@ Stored under Stream Deck plugin global settings:
   groupId?: string
 }
 ```
+
+Source URLs stay inside SSApp and must not be returned over the session WebSocket. Stream Deck stores `id`, then refreshes `getSource` when a key is pressed so a restarted source's new `tabId` is used.
 
 ## Data handling model in plugin code
 
@@ -456,6 +459,12 @@ Expected event:
 
 ```json
 { "action": "sendChat", "target": "twitch", "value": "hello", "apiid": "SESSION_ID" }
+```
+
+- `sendChat` for one open SSApp source:
+
+```json
+{ "action": "sendChat", "target": "twitch", "tabId": 42, "value": "hello", "apiid": "SESSION_ID" }
 ```
 
 - `sendEncodedChat`:

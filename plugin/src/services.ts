@@ -1,6 +1,7 @@
 import streamDeck from "@elgato/streamdeck";
 import type { JsonObject, JsonValue } from "@elgato/utils";
 import { ChatFeedClient } from "./api/chat-feed-client.js";
+import { extractSourcesFromCommandResult } from "./api/command-registry.js";
 import { SsnClient } from "./api/ssn-client.js";
 import { normalizeGlobalSettings } from "./api/settings.js";
 import type { ConnectionStateName, GlobalSettings } from "./api/types.js";
@@ -40,10 +41,28 @@ function registerPropertyInspectorMessages(): void {
 		}
 		if (payload.type === "requestStatus") {
 			await sendInspectorStatus();
+		} else if (payload.type === "requestSources") {
+			await sendInspectorSources();
 		} else if (payload.type === "testConnection") {
 			await testConnection();
 		}
 	});
+}
+
+async function sendInspectorSources(): Promise<void> {
+	try {
+		const result = await ssnClient.sendCommand({ action: "getSources", target: "ssapp" }, { awaitResponse: true });
+		await streamDeck.ui.sendToPropertyInspector({
+			type: "sources",
+			sources: extractSourcesFromCommandResult(result)
+		});
+	} catch (error) {
+		await streamDeck.ui.sendToPropertyInspector({
+			type: "sources",
+			sources: [],
+			error: error instanceof Error ? error.message : "Unable to load SSApp sources."
+		});
+	}
 }
 
 async function testConnection(): Promise<void> {

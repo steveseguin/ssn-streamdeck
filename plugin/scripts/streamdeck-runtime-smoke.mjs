@@ -148,6 +148,20 @@ try {
 		message => message.event === "sendToPropertyInspector" && message.context === commandContext && message.payload?.type === "status",
 		"property inspector status response"
 	);
+	streamDeck.send({
+		event: "sendToPlugin",
+		action: "ninja.socialstream.streamdeck.command",
+		context: commandContext,
+		payload: { type: "requestSources" }
+	});
+	await social.waitForMessage(message => message.action === "getSources", "SSApp source list request");
+	const sourceList = await streamDeck.waitForMessage(
+		message => message.event === "sendToPropertyInspector" && message.context === commandContext && message.payload?.type === "sources",
+		"property inspector source response"
+	);
+	if (sourceList.payload.sources[0]?.tabId !== 42 || "url" in sourceList.payload.sources[0]) {
+		throw new Error(`Unexpected property inspector source summary: ${JSON.stringify(sourceList)}`);
+	}
 
 	streamDeck.send({
 		event: "keyDown",
@@ -169,6 +183,26 @@ try {
 		throw new Error(`Unexpected preset command payload: ${JSON.stringify(command)}`);
 	}
 	await streamDeck.waitForMessage(message => message.event === "showOk" && message.context === commandContext, "success feedback");
+
+	streamDeck.send({
+		event: "keyDown",
+		action: "ninja.socialstream.streamdeck.command",
+		context: commandContext,
+		device: deviceId,
+		payload: {
+			controller: "Keypad",
+			coordinates: { column: 0, row: 0 },
+			isInMultiAction: false,
+			resources: {},
+			settings: { command: "sendChat", sourceId: "youtube-source", value: "Targeted hello" },
+			state: 0
+		}
+	});
+	await social.waitForMessage(message => message.action === "getSource" && message.value === "youtube-source", "selected source refresh");
+	const targetedChat = await social.waitForMessage(message => message.action === "sendChat" && message.value === "Targeted hello", "targeted chat command");
+	if (targetedChat.target !== "youtube" || targetedChat.tabId !== 42 || "sourceId" in targetedChat || "url" in targetedChat) {
+		throw new Error(`Unexpected targeted chat payload: ${JSON.stringify(targetedChat)}`);
+	}
 
 	streamDeck.send({
 		event: "willAppear",
@@ -323,12 +357,36 @@ async function createSocialStreamServer() {
 								type: "capabilities",
 								version: 1,
 								runtime: "web",
-								ssapp: { available: false },
-								ssn: { actions: { removefromwaitlist: true, timeradd: true, timersubtract: true, toggletimer: true, resettimer: true, gettimerstate: true, pin: true, unpin: true, nextPinned: true } }
-							}
+				ssapp: { available: true, sourceControls: { list: true, get: true } },
+				ssn: { actions: { removefromwaitlist: true, sendChat: true, timeradd: true, timersubtract: true, toggletimer: true, resettimer: true, gettimerstate: true, pin: true, unpin: true, nextPinned: true } }
+			}
 						}
 					})
 				);
+				return;
+			}
+			if (message.action === "getSources" && typeof message.get === "string") {
+				socket.send(JSON.stringify({
+					callback: {
+						get: message.get,
+						result: {
+							ok: true,
+							payload: { sources: [{ id: "youtube-source", target: "youtube", tabId: 42, status: "active", username: "Channel" }] }
+						}
+					}
+				}));
+				return;
+			}
+			if (message.action === "getSource" && typeof message.get === "string") {
+				socket.send(JSON.stringify({
+					callback: {
+						get: message.get,
+						result: {
+							ok: true,
+							payload: { source: { id: "youtube-source", target: "youtube", tabId: 42, status: "active", username: "Channel" } }
+						}
+					}
+				}));
 				return;
 			}
 			if (message.action === "gettimerstate" && typeof message.get === "string") {

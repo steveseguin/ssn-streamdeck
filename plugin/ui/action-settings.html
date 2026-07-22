@@ -252,6 +252,10 @@
 		<label id="targetLabel" for="target">Target</label>
 		<input id="target" type="text" placeholder="Optional">
 
+		<label id="sourceIdLabel" class="hidden" for="sourceId">Open SSApp source</label>
+		<select id="sourceId" class="hidden"></select>
+		<button id="refreshSources" class="secondary hidden" type="button">Refresh open sources</button>
+
 		<label id="valueLabel" for="value">Value</label>
 		<textarea id="value" placeholder="Optional"></textarea>
 
@@ -311,6 +315,7 @@
 		let globalSettings = {};
 		let actionSettings = {};
 		let capabilities = null;
+		let availableSources = [];
 		let currentState = "missing-session";
 		let globalSettingsLoaded = false;
 		let setupDetailsInitialized = false;
@@ -448,6 +453,10 @@
 			send({ event: "sendToPlugin", action: actionUuid, context: actionContext, payload: { type: "requestStatus" } });
 		}
 
+		function requestSources() {
+			send({ event: "sendToPlugin", action: actionUuid, context: actionContext, payload: { type: "requestSources" } });
+		}
+
 		function renderGlobalSettings() {
 			byId("sessionId").value = globalSettings.sessionId || "";
 			byId("apiHost").value = globalSettings.apiHost || "io.socialstream.ninja";
@@ -536,22 +545,54 @@
 		function renderCommandFields() {
 			const option = selectedCommandOption();
 			const isSsapp = option && option.scope === "ssapp";
+			const supportsSourceSelection = !!(option && (option.value === "sendChat" || option.value === "sendEncodedChat") && ssappAvailable());
 			const valueLabel = option && option.valueLabel;
 			const hasValue = !!(option && (valueLabel || Object.prototype.hasOwnProperty.call(option, "defaultValue")));
 			const requiresResponse = !!(option && option.defaultAwaitResponse === true);
 			const awaitResponse = byId("commandAwaitResponse");
 			byId("targetLabel").classList.toggle("hidden", !option || option.allowTarget !== true || !!isSsapp);
 			byId("target").classList.toggle("hidden", !option || option.allowTarget !== true || !!isSsapp);
+			byId("sourceIdLabel").classList.toggle("hidden", !supportsSourceSelection);
+			byId("sourceId").classList.toggle("hidden", !supportsSourceSelection);
+			byId("refreshSources").classList.toggle("hidden", !supportsSourceSelection);
+			if (supportsSourceSelection) renderSourceOptions();
 			byId("valueLabel").classList.toggle("hidden", !hasValue);
 			byId("value").classList.toggle("hidden", !hasValue);
 			byId("valueLabel").textContent = valueLabel || "Value";
 			byId("value").placeholder = valueLabel || (isSsapp ? "Source ID or JSON" : "Optional");
 			awaitResponse.checked = requiresResponse || actionSettings.awaitResponse === true;
 			awaitResponse.disabled = requiresResponse;
-			const baseHint = isSsapp
+			const baseHint = supportsSourceSelection
+				? "Select one open SSApp source to reply there only. The source is resolved again when the key is pressed, so restarts are safe."
+				: isSsapp
 				? "SSApp commands are still sent to Social Stream Ninja. Social Stream Ninja decides how to route them."
 				: "Preset commands use the documented Social Stream Ninja remote-control API.";
 			byId("commandHint").textContent = requiresResponse ? baseHint + " This command waits for the result." : baseHint;
+		}
+
+		function renderSourceOptions() {
+			const select = byId("sourceId");
+			const selected = actionSettings.sourceId || select.value || "";
+			select.innerHTML = "";
+			const allOption = document.createElement("option");
+			allOption.value = "";
+			allOption.textContent = "All sources / use target";
+			select.appendChild(allOption);
+			let selectedFound = !selected;
+			availableSources.filter(source => source.status === "active" && Number.isInteger(source.tabId) && source.tabId > 0).forEach(source => {
+				const item = document.createElement("option");
+				item.value = source.id;
+				item.textContent = source.target + ": " + (source.username || source.videoId || source.id);
+				select.appendChild(item);
+				if (source.id === selected) selectedFound = true;
+			});
+			if (selected && !selectedFound) {
+				const unavailable = document.createElement("option");
+				unavailable.value = selected;
+				unavailable.textContent = selected + " (not open)";
+				select.appendChild(unavailable);
+			}
+			select.value = selected;
 		}
 
 		function renderActionSettings() {
@@ -564,6 +605,7 @@
 				renderCommandOptions();
 				byId("command").value = actionSettings.command || "nextInQueue";
 				byId("target").value = actionSettings.target || "";
+				byId("sourceId").value = actionSettings.sourceId || "";
 				byId("value").value = actionSettings.value || "";
 				byId("commandTitle").value = actionSettings.title || "";
 				byId("commandAwaitResponse").checked = actionSettings.awaitResponse === true;
@@ -655,6 +697,7 @@
 				actionSettings = {
 					command: byId("command").value,
 					target: byId("target").value.trim(),
+					sourceId: byId("sourceId").value,
 					value: byId("value").value.trim(),
 					title: byId("commandTitle").value.trim(),
 					awaitResponse: !!(option && option.defaultAwaitResponse === true) || byId("commandAwaitResponse").checked
@@ -704,9 +747,14 @@
 				}
 				currentState = payload.state || currentState;
 				updateStatus(payload.ok === true ? "ok" : payload.state === "missing-session" ? "warn" : "error", payload.message || "Status updated.");
+				if (payload.ok === true) requestSources();
 			} else if (payload.type === "capabilities") {
 				capabilities = payload.capabilities || null;
 				renderActionSettings();
+				if (ssappAvailable()) requestSources();
+			} else if (payload.type === "sources") {
+				availableSources = Array.isArray(payload.sources) ? payload.sources : [];
+				renderSourceOptions();
 			}
 			renderSetupSteps();
 		}
@@ -747,7 +795,7 @@
 			byId(id).addEventListener("change", saveGlobalSettings);
 		});
 		[
-			"target", "value", "commandTitle", "commandAwaitResponse",
+			"target", "sourceId", "value", "commandTitle", "commandAwaitResponse",
 			"customAction", "customTarget", "customValue", "customTitle", "customAwaitResponse",
 			"timerStep", "timerTitle", "chatFeedTitle"
 		].forEach(id => {
@@ -755,6 +803,7 @@
 			byId(id).addEventListener("input", saveActionSettings);
 		});
 		byId("command").addEventListener("change", handleCommandChange);
+		byId("refreshSources").onclick = requestSources;
 		byId("testConnection").onclick = function() {
 			saveGlobalSettings();
 			send({ event: "sendToPlugin", action: actionUuid, context: actionContext, payload: { type: "testConnection" } });

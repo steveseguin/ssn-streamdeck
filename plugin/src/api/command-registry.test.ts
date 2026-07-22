@@ -1,7 +1,17 @@
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
-import { COMMANDS, buildCustomCommandPayload, buildSsnCommandPayload, getCommandDefinition, parseValue } from "./command-registry.js";
+import {
+	COMMANDS,
+	buildCustomCommandPayload,
+	buildSsnCommandPayload,
+	extractSourceFromCommandResult,
+	extractSourcesFromCommandResult,
+	getCommandDefinition,
+	isSourceTargetedChat,
+	parseValue,
+	targetChatPayloadToSource
+} from "./command-registry.js";
 
 describe("command registry", () => {
 	it("builds simple preset commands", () => {
@@ -125,6 +135,61 @@ describe("command registry", () => {
 			action: "sendChat",
 			value: "Hello"
 		});
+	});
+
+	it("targets chat using only the selected source type and current tab ID", () => {
+		const source = extractSourceFromCommandResult({
+			ok: true,
+			payload: {
+				source: {
+					id: "youtube-source",
+					target: "youtube",
+					tabId: 42,
+					status: "active",
+					username: "tester",
+					url: "https://example.test/chat?token=SECRET"
+				}
+			}
+		});
+			expect(source).toEqual({
+			id: "youtube-source",
+			target: "youtube",
+			tabId: 42,
+			status: "active",
+			username: "tester"
+		});
+		expect(JSON.stringify(source)).not.toContain("SECRET");
+		expect(targetChatPayloadToSource({ action: "sendChat", value: "Hello" }, source!)).toEqual({
+			action: "sendChat",
+			value: "Hello",
+			target: "youtube",
+			tabId: 42
+		});
+		expect(isSourceTargetedChat({ command: "sendChat", sourceId: "youtube-source" })).toBe(true);
+		expect(isSourceTargetedChat({ command: "sendChat" })).toBe(false);
+	});
+
+	it("rejects inactive sources and ignores malformed source summaries", () => {
+		expect(() => targetChatPayloadToSource(
+			{ action: "sendChat", value: "Hello" },
+			{ id: "youtube-source", target: "youtube", tabId: null }
+		)).toThrow("not open");
+		expect(() => targetChatPayloadToSource(
+			{ action: "sendChat", value: "Hello" },
+			{ id: "youtube-source", target: "youtube", tabId: 42, status: "activating" }
+		)).toThrow("not open");
+		expect(extractSourcesFromCommandResult({
+			payload: {
+				sources: [
+					{ id: "open", target: "twitch", tabId: 7 },
+					{ id: "closed", target: "youtube", tabId: null },
+					{ id: "bad", tabId: 9 }
+				]
+			}
+		})).toEqual([
+			{ id: "open", target: "twitch", tabId: 7 },
+			{ id: "closed", target: "youtube", tabId: null }
+		]);
 	});
 
 	it("builds SSApp source commands through the same payload shape", () => {

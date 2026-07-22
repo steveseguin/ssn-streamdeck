@@ -1,5 +1,12 @@
 import { action, type KeyAction, type KeyDownEvent, SingletonAction, type WillAppearEvent } from "@elgato/streamdeck";
-import { buildSsnCommandPayload, getCommandDefinition, isCommandSupported } from "../api/command-registry.js";
+import {
+	buildSsnCommandPayload,
+	extractSourceFromCommandResult,
+	getCommandDefinition,
+	isCommandSupported,
+	isSourceTargetedChat,
+	targetChatPayloadToSource
+} from "../api/command-registry.js";
 import { normalizeSsnCommandSettings } from "../api/settings.js";
 import type { SsnCommandSettings } from "../api/types.js";
 import { ssnClient } from "../services.js";
@@ -19,7 +26,20 @@ export class SsnCommandAction extends SingletonAction<SsnCommandSettings> {
 			if (!isCommandSupported(definition, ssnClient.getCapabilities())) {
 				throw new Error(`${definition.label} is unavailable in the connected Social Stream runtime`);
 			}
-			await ssnClient.sendCommand(buildSsnCommandPayload(settings), {
+			let payload = buildSsnCommandPayload(settings);
+			if (isSourceTargetedChat(settings)) {
+				const result = await ssnClient.sendCommand({
+					action: "getSource",
+					target: "ssapp",
+					value: settings.sourceId
+				}, { awaitResponse: true });
+				const source = extractSourceFromCommandResult(result);
+				if (!source) {
+					throw new Error("The selected SSApp source is unavailable.");
+				}
+				payload = targetChatPayloadToSource(payload, source);
+			}
+			await ssnClient.sendCommand(payload, {
 				awaitResponse: settings.awaitResponse === true || definition.defaultAwaitResponse === true
 			});
 			await ev.action.showOk();

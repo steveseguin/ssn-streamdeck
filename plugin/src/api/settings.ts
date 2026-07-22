@@ -27,6 +27,7 @@ export function normalizeSsnCommandSettings(settings: Partial<SsnCommandSettings
 	return {
 		command: stringOrEmpty(settings?.command) || "nextInQueue",
 		target: stringOrEmpty(settings?.target),
+		sourceId: stringOrEmpty(settings?.sourceId),
 		value: stringOrEmpty(settings?.value),
 		title: stringOrEmpty(settings?.title),
 		awaitResponse: settings?.awaitResponse === true
