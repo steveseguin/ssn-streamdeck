@@ -95,7 +95,7 @@ npx @elgato/cli@latest restart ninja.socialstream.streamdeck
 
 ## Releases
 
-GitHub Actions builds and publishes the installable `.streamDeckPlugin` file when a matching version tag is pushed. The tag must match `plugin/package.json`; for example, version `0.2.1` uses tag `v0.2.1`. The workflow also supports a manual rerun for an existing tag.
+GitHub Actions builds and publishes the installable `.streamDeckPlugin` file after every commit to `main`. Each release gets a unique build version, such as `v0.2.1.12`, and the workflow can also be run manually.
 
 ## Device Notes
 

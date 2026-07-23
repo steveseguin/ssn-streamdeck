@@ -2,14 +2,9 @@ name: Build and release Stream Deck plugin
 
 on:
     push:
-        tags:
-            - "v*"
+        branches:
+            - main
     workflow_dispatch:
-        inputs:
-            tag:
-                description: Existing version tag to release (for example, v0.2.1)
-                required: true
-                type: string
 
 permissions:
     contents: write
@@ -23,41 +18,12 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - name: Resolve release tag
+            - name: Check out release commit
+              uses: actions/checkout@v4
+
+            - name: Resolve release version
               id: release
               shell: bash
-              env:
-                  INPUT_TAG: ${{ inputs.tag }}
-              run: |
-                  if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
-                    tag="${INPUT_TAG}"
-                  else
-                    tag="${GITHUB_REF_NAME}"
-                  fi
-
-                  if [[ ! "${tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
-                    echo "Invalid release tag: ${tag}" >&2
-                    exit 1
-                  fi
-
-                  echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
-
-            - name: Check out release tag
-              uses: actions/checkout@v4
-              with:
-                  ref: ${{ steps.release.outputs.tag }}
-
-            - name: Set up Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 20
-                  cache: npm
-                  cache-dependency-path: plugin/package-lock.json
-
-            - name: Verify release version
-              shell: bash
-              env:
-                  RELEASE_TAG: ${{ steps.release.outputs.tag }}
               run: |
                   package_version="$(node -p "require('./plugin/package.json').version")"
                   manifest_version="$(node -p "require('./plugin/manifest.json').Version")"
@@ -67,10 +33,29 @@ jobs:
                     exit 1
                   fi
 
-                  if [[ "${RELEASE_TAG}" != "v${package_version}" ]]; then
-                    echo "Release tag ${RELEASE_TAG} does not match plugin version v${package_version}." >&2
-                    exit 1
-                  fi
+                  version="${package_version}.${GITHUB_RUN_NUMBER}"
+                  echo "tag=v${version}" >> "${GITHUB_OUTPUT}"
+                  echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+            - name: Stamp build version
+              shell: bash
+              env:
+                  RELEASE_VERSION: ${{ steps.release.outputs.version }}
+              run: |
+                  node -e '
+                    const fs = require("fs");
+                    const path = "./plugin/manifest.json";
+                    const manifest = JSON.parse(fs.readFileSync(path, "utf8"));
+                    manifest.Version = process.env.RELEASE_VERSION;
+                    fs.writeFileSync(path, JSON.stringify(manifest, null, "\t") + "\n");
+                  '
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: npm
+                  cache-dependency-path: plugin/package-lock.json
 
             - name: Install dependencies
               working-directory: plugin
@@ -120,6 +105,8 @@ jobs:
                   else
                     gh release create "${RELEASE_TAG}" plugin/release/*.streamDeckPlugin \
                       --repo "${GITHUB_REPOSITORY}" \
+                      --target "${GITHUB_SHA}" \
                       --title "Social Stream Ninja Stream Deck ${RELEASE_TAG}" \
-                      --generate-notes
+                      --generate-notes \
+                      --latest
                   fi
