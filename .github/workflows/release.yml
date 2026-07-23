@@ -1,0 +1,125 @@
+name: Build and release Stream Deck plugin
+
+on:
+    push:
+        tags:
+            - "v*"
+    workflow_dispatch:
+        inputs:
+            tag:
+                description: Existing version tag to release (for example, v0.2.1)
+                required: true
+                type: string
+
+permissions:
+    contents: write
+
+concurrency:
+    group: streamdeck-release-${{ github.ref }}
+    cancel-in-progress: false
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Resolve release tag
+              id: release
+              shell: bash
+              env:
+                  INPUT_TAG: ${{ inputs.tag }}
+              run: |
+                  if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+                    tag="${INPUT_TAG}"
+                  else
+                    tag="${GITHUB_REF_NAME}"
+                  fi
+
+                  if [[ ! "${tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+                    echo "Invalid release tag: ${tag}" >&2
+                    exit 1
+                  fi
+
+                  echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+
+            - name: Check out release tag
+              uses: actions/checkout@v4
+              with:
+                  ref: ${{ steps.release.outputs.tag }}
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: npm
+                  cache-dependency-path: plugin/package-lock.json
+
+            - name: Verify release version
+              shell: bash
+              env:
+                  RELEASE_TAG: ${{ steps.release.outputs.tag }}
+              run: |
+                  package_version="$(node -p "require('./plugin/package.json').version")"
+                  manifest_version="$(node -p "require('./plugin/manifest.json').Version")"
+
+                  if [[ "${manifest_version}" != "${package_version}.0" ]]; then
+                    echo "package.json (${package_version}) and manifest.json (${manifest_version}) do not match." >&2
+                    exit 1
+                  fi
+
+                  if [[ "${RELEASE_TAG}" != "v${package_version}" ]]; then
+                    echo "Release tag ${RELEASE_TAG} does not match plugin version v${package_version}." >&2
+                    exit 1
+                  fi
+
+            - name: Install dependencies
+              working-directory: plugin
+              run: npm ci
+
+            - name: Run unit tests
+              working-directory: plugin
+              run: npm test
+
+            - name: Run type check
+              working-directory: plugin
+              run: npm run check
+
+            - name: Build plugin
+              working-directory: plugin
+              run: npm run build
+
+            - name: Run runtime smoke test
+              working-directory: plugin
+              run: npm run test:runtime
+
+            - name: Validate plugin bundle
+              working-directory: plugin
+              run: npx --yes @elgato/cli@1.7.4 validate ninja.socialstream.streamdeck.sdPlugin --no-update-check
+
+            - name: Package plugin
+              working-directory: plugin
+              run: npx --yes @elgato/cli@1.7.4 pack ninja.socialstream.streamdeck.sdPlugin --output release --force --no-update-check
+
+            - name: Upload workflow artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: social-stream-ninja-streamdeck-${{ steps.release.outputs.tag }}
+                  path: plugin/release/*.streamDeckPlugin
+                  if-no-files-found: error
+
+            - name: Create or update GitHub Release
+              shell: bash
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  RELEASE_TAG: ${{ steps.release.outputs.tag }}
+              run: |
+                  if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+                    gh release upload "${RELEASE_TAG}" plugin/release/*.streamDeckPlugin \
+                      --repo "${GITHUB_REPOSITORY}" \
+                      --clobber
+                  else
+                    gh release create "${RELEASE_TAG}" plugin/release/*.streamDeckPlugin \
+                      --repo "${GITHUB_REPOSITORY}" \
+                      --title "Social Stream Ninja Stream Deck ${RELEASE_TAG}" \
+                      --generate-notes
+                  fi

@@ -40,7 +40,7 @@ Current workspace capabilities:
 | Action | Purpose | Starting commands |
 | --- | --- | --- |
 | Setup | Enter the session ID and test the plugin connection | WebSocket send channel 1, listen channel 2 |
-| Preset Command | Button presets for common remote controls and advertised SSApp source controls | `clearOverlay`, `nextInQueue`, `resetleaderboard`, `pin`, `unpin`, `nextPinned`, `resetwaitlist`, `startentries`, `downloadwaitlist`, `selectwinner`, `startSource`, `stopSource` |
+| Preset Command | Button presets for common remote controls and advertised SSApp source controls | `clearOverlay`, `clearDock`, `clearHistory`, `nextInQueue`, `resetleaderboard`, `pin`, `unpin`, `nextPinned`, `resetwaitlist`, `startentries`, `downloadwaitlist`, `selectwinner`, `startSource`, `stopSource` |
 | Custom Command | Send any `{ action, target, value }` payload | Power-user and development testing |
 | Timer Dial | Stream Deck + timer display and control | Turn to adjust, press to start/pause, hold touch to reset |
 | Chat Review | Stream Deck + recent chat display and pin workflow | Turn to browse, press to pin, tap to feature, hold to unpin |
@@ -92,6 +92,10 @@ npm run build
 npx @elgato/cli@latest link ninja.socialstream.streamdeck.sdPlugin
 npx @elgato/cli@latest restart ninja.socialstream.streamdeck
 ```
+
+## Releases
+
+GitHub Actions builds and publishes the installable `.streamDeckPlugin` file when a matching version tag is pushed. The tag must match `plugin/package.json`; for example, version `0.2.1` uses tag `v0.2.1`. The workflow also supports a manual rerun for an existing tag.
 
 ## Device Notes
 

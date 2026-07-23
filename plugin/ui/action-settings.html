@@ -325,8 +325,10 @@
 				options: [
 					{ value: "nextInQueue", label: "Next in queue", scope: "ssn" },
 					{ value: "clearOverlay", label: "Clear overlay", scope: "ssn" },
+					{ value: "clearDock", label: "Clear dock messages", scope: "ssn", allowTarget: true },
 					{ value: "clear", label: "Clear messages", scope: "ssn" },
 					{ value: "clearAll", label: "Clear all messages", scope: "ssn" },
+					{ value: "clearHistory", label: "Clear saved history", scope: "ssn", allowTarget: true, defaultValue: "confirm", valueLabel: "Type confirm", defaultAwaitResponse: true },
 					{ value: "resetleaderboard", label: "Reset leaderboard", scope: "ssn" },
 					{ value: "getQueueSize", label: "Get queue size", scope: "ssn", defaultAwaitResponse: true }
 				]

@@ -21,6 +21,14 @@ describe("command registry", () => {
 		expect(buildSsnCommandPayload({ command: "resetleaderboard" })).toEqual({
 			action: "resetleaderboard"
 		});
+		expect(buildSsnCommandPayload({ command: "clearDock", target: "producer" })).toEqual({
+			action: "clearDock",
+			target: "producer"
+		});
+		expect(buildSsnCommandPayload({ command: "clearHistory" })).toEqual({
+			action: "clearHistory",
+			value: "confirm"
+		});
 	});
 
 	it("builds preset commands with values", () => {
@@ -69,6 +77,8 @@ describe("command registry", () => {
 		const registryCommands = new Set(COMMANDS.map(command => command.id));
 		expect(uiCommands.filter(command => !registryCommands.has(command))).toEqual([]);
 		expect(uiCommands).toContain("resetleaderboard");
+		expect(uiCommands).toContain("clearDock");
+		expect(uiCommands).toContain("clearHistory");
 		expect(uiCommands).toContain("pin");
 		expect(uiCommands).toContain("downloadwaitlist");
 		expect(uiCommands).toContain("openentries");

@@ -14,8 +14,10 @@ export type CommandDefinition = {
 export const SSN_COMMANDS: CommandDefinition[] = [
 	{ id: "nextInQueue", label: "Next In Queue", scope: "ssn" },
 	{ id: "clearOverlay", label: "Clear Overlay", scope: "ssn" },
+	{ id: "clearDock", label: "Clear Dock Messages", scope: "ssn" },
 	{ id: "clear", label: "Clear Messages", scope: "ssn" },
 	{ id: "clearAll", label: "Clear All Messages", scope: "ssn" },
+	{ id: "clearHistory", label: "Clear Saved History", scope: "ssn", defaultValue: "confirm", valueLabel: "Type confirm", defaultAwaitResponse: true },
 	{ id: "resetleaderboard", label: "Reset Leaderboard", scope: "ssn" },
 	{ id: "getQueueSize", label: "Queue Size", scope: "ssn", defaultAwaitResponse: true },
 	{ id: "sendChat", label: "Send Chat", scope: "ssn", defaultValue: "Hello from Stream Deck", valueLabel: "Message" },
