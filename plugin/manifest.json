@@ -4,7 +4,7 @@
 	"Name": "Social Stream Ninja",
 	"Author": "Social Stream Ninja",
 	"URL": "https://socialstream.ninja",
-	"Description": "Control Social Stream Ninja from Stream Deck keys: overlays, docks, queues, polls, chat actions, and SSApp source controls for live streams.",
+	"Description": "Control Social Stream Ninja from Stream Deck keys: overlays, docks, queues, polls, chat actions, and desktop app source controls for live streams.",
 	"Version": "0.2.1.0",
 	"SDKVersion": 2,
 	"Software": {

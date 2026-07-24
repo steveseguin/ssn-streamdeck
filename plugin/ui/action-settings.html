@@ -190,7 +190,7 @@
 		<div class="dot"></div>
 		<div>
 			<div id="statusText" class="status-title">Enter a Social Stream Ninja session ID.</div>
-			<div id="statusNote" class="status-note">In SSApp, open Stream Deck Setup and copy the session ID shown there.</div>
+			<div id="statusNote" class="status-note">Desktop app: open Stream Deck Setup. Chrome extension: open Settings and copy your unique session ID.</div>
 		</div>
 	</div>
 
@@ -201,7 +201,7 @@
 				<h2>Connect Social Stream Ninja</h2>
 				<label for="sessionId">Session ID or overlay URL</label>
 				<input id="sessionId" type="password" autocomplete="off" placeholder="Paste session ID or dock.html?session=... URL">
-				<div class="hint">SSApp: open Stream Deck Setup, click Copy, then paste here. Full dock/overlay URLs also work.</div>
+				<div class="hint">Copy your session ID from Stream Deck Setup in the desktop app or Settings in the Chrome extension. Full dock/overlay URLs also work.</div>
 
 				<div class="actions">
 					<button id="testConnection" type="button">Test Connection</button>
@@ -237,10 +237,10 @@
 					</div>
 				</details>
 
-				<div id="capabilityText" class="capability">SSApp source controls unavailable until capabilities are received.</div>
+				<div id="capabilityText" class="capability">Desktop app source controls are unavailable until capabilities are received.</div>
 			</section>
 
-			<div class="quick-start">SSApp → Stream Deck Setup → Copy. Paste here and test once.</div>
+			<div class="quick-start">Desktop app: Stream Deck Setup. Chrome extension: Settings. Copy the session ID, paste it here, and test once.</div>
 		</div>
 	</details>
 
@@ -252,7 +252,7 @@
 		<label id="targetLabel" for="target">Target</label>
 		<input id="target" type="text" placeholder="Optional">
 
-		<label id="sourceIdLabel" class="hidden" for="sourceId">Open SSApp source</label>
+		<label id="sourceIdLabel" class="hidden" for="sourceId">Open desktop app source</label>
 		<select id="sourceId" class="hidden"></select>
 		<button id="refreshSources" class="secondary hidden" type="button">Refresh open sources</button>
 
@@ -388,7 +388,7 @@
 				]
 			},
 			{
-				label: "SSApp sources",
+				label: "Desktop app sources",
 				options: [
 					{ value: "getSources", label: "List sources", scope: "ssapp", capabilityPath: ["sourceControls", "list"], defaultAwaitResponse: true },
 					{ value: "getSource", label: "Get source", scope: "ssapp", capabilityPath: ["sourceControls", "get"], defaultAwaitResponse: true },
@@ -495,14 +495,14 @@
 			if (ssappAvailable()) {
 				const version = capabilities.ssapp.version ? " " + escapeHtml(String(capabilities.ssapp.version)) : "";
 				const bridge = capabilities.ssapp.bridgeVersion ? " · bridge v" + escapeHtml(String(capabilities.ssapp.bridgeVersion)) : "";
-				byId("capabilityText").innerHTML = "<strong>SSApp" + version + " connected</strong>" + bridge + ". Compatible controls are enabled.";
+				byId("capabilityText").innerHTML = "<strong>Desktop app" + version + " connected</strong>" + bridge + ". Compatible controls are enabled.";
 				return;
 			}
 			if (capabilities) {
 				byId("capabilityText").innerHTML = "<strong>Browser mode</strong> · Social Stream controls only.";
 				return;
 			}
-			byId("capabilityText").textContent = "SSApp source controls will appear here after Social Stream Ninja advertises them.";
+			byId("capabilityText").textContent = "Desktop app source controls will appear here after Social Stream Ninja advertises them.";
 		}
 
 		function renderCommandOptions() {
@@ -565,9 +565,9 @@
 			awaitResponse.checked = requiresResponse || actionSettings.awaitResponse === true;
 			awaitResponse.disabled = requiresResponse;
 			const baseHint = supportsSourceSelection
-				? "Select one open SSApp source to reply there only. The source is resolved again when the key is pressed, so restarts are safe."
+				? "Select one open desktop app source to reply there only. The source is resolved again when the key is pressed, so restarts are safe."
 				: isSsapp
-				? "SSApp commands are still sent to Social Stream Ninja. Social Stream Ninja decides how to route them."
+				? "Desktop app commands are still sent through Social Stream Ninja, which decides how to route them."
 				: "Preset commands use the documented Social Stream Ninja remote-control API.";
 			byId("commandHint").textContent = requiresResponse ? baseHint + " This command waits for the result." : baseHint;
 		}
@@ -769,7 +769,7 @@
 			byId("statusText").textContent = text;
 			byId("statusNote").textContent = kind === "ok"
 				? "Ready. Only controls supported by this runtime are shown."
-				: "Open SSApp → Stream Deck Setup, copy its session ID, and keep Social Stream Ninja running.";
+				: "Copy the session ID from the Social Stream Ninja desktop app or Chrome extension, then keep it running.";
 		}
 
 		function escapeHtml(value) {

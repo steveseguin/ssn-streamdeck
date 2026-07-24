@@ -60,7 +60,7 @@ async function sendInspectorSources(): Promise<void> {
 		await streamDeck.ui.sendToPropertyInspector({
 			type: "sources",
 			sources: [],
-			error: error instanceof Error ? error.message : "Unable to load SSApp sources."
+			error: error instanceof Error ? error.message : "Unable to load desktop app sources."
 		});
 	}
 }

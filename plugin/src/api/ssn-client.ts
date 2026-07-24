@@ -164,7 +164,7 @@ export class SsnClient {
 			return command;
 		}
 		if (isSsappCommand(command)) {
-			throw new Error("SSApp source controls require the Social Stream Ninja API WebSocket connection");
+			throw new Error("Desktop app source controls require the Social Stream Ninja API WebSocket connection");
 		}
 		if (this.settings.httpFallback !== false) {
 			return this.sendHttp(command, options.awaitResponse === true);

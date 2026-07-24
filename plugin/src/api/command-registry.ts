@@ -57,8 +57,8 @@ export const SSN_COMMANDS: CommandDefinition[] = [
 ];
 
 export const SSAPP_COMMANDS: CommandDefinition[] = [
-	{ id: "getSources", label: "SSApp Sources", scope: "ssapp", capabilityPath: ["sourceControls", "list"], defaultAwaitResponse: true },
-	{ id: "getSource", label: "SSApp Source", scope: "ssapp", capabilityPath: ["sourceControls", "get"], valueLabel: "Source ID", defaultAwaitResponse: true },
+	{ id: "getSources", label: "Desktop App Sources", scope: "ssapp", capabilityPath: ["sourceControls", "list"], defaultAwaitResponse: true },
+	{ id: "getSource", label: "Desktop App Source", scope: "ssapp", capabilityPath: ["sourceControls", "get"], valueLabel: "Source ID", defaultAwaitResponse: true },
 	{ id: "addSource", label: "Add Source", scope: "ssapp", capabilityPath: ["sourceControls", "add"], valueLabel: "Source JSON", defaultAwaitResponse: true },
 	{ id: "updateSource", label: "Update Source", scope: "ssapp", capabilityPath: ["sourceControls", "update"], valueLabel: "{\"sourceId\":\"...\",\"updates\":{...}}", defaultAwaitResponse: true },
 	{ id: "removeSource", label: "Remove Source", scope: "ssapp", capabilityPath: ["sourceControls", "remove"], valueLabel: "{\"sourceId\":\"...\",\"confirm\":true}", defaultAwaitResponse: true },
@@ -73,8 +73,8 @@ export const SSAPP_COMMANDS: CommandDefinition[] = [
 	{ id: "setSourceVisibility", label: "Set Source Visibility", scope: "ssapp", capabilityPath: ["visibility", "set"], valueLabel: "{\"sourceId\":\"...\",\"isVisible\":false}", defaultAwaitResponse: true },
 	{ id: "toggleSourceVisibility", label: "Toggle Source Visibility", scope: "ssapp", capabilityPath: ["visibility", "toggle"], valueLabel: "Source ID", defaultAwaitResponse: true },
 	{ id: "setSourceConnectionMode", label: "Set Connection Mode", scope: "ssapp", capabilityPath: ["connectionMode", "set"], valueLabel: "{\"sourceId\":\"...\",\"mode\":\"websocket\"}", defaultAwaitResponse: true },
-	{ id: "getSettings", label: "SSApp Settings", scope: "ssapp", capabilityPath: ["settings", "get"], defaultAwaitResponse: true },
-	{ id: "updateSettings", label: "Update SSApp Settings", scope: "ssapp", capabilityPath: ["settings", "update"], valueLabel: "Settings JSON", defaultAwaitResponse: true }
+	{ id: "getSettings", label: "Desktop App Settings", scope: "ssapp", capabilityPath: ["settings", "get"], defaultAwaitResponse: true },
+	{ id: "updateSettings", label: "Update Desktop App Settings", scope: "ssapp", capabilityPath: ["settings", "update"], valueLabel: "Settings JSON", defaultAwaitResponse: true }
 ];
 
 export const COMMANDS: CommandDefinition[] = [...SSN_COMMANDS, ...SSAPP_COMMANDS];
@@ -159,7 +159,7 @@ export function extractSourcesFromCommandResult(result: unknown): SsappSourceSum
 
 export function targetChatPayloadToSource(payload: SsnCommandPayload, source: SsappSourceSummary): SsnCommandPayload {
 	if (!source.target || !source.tabId || (source.status && source.status !== "active")) {
-		throw new Error("The selected SSApp source is not open.");
+		throw new Error("The selected desktop app source is not open.");
 	}
 	return {
 		...payload,

@@ -35,7 +35,7 @@ export class SsnCommandAction extends SingletonAction<SsnCommandSettings> {
 				}, { awaitResponse: true });
 				const source = extractSourceFromCommandResult(result);
 				if (!source) {
-					throw new Error("The selected SSApp source is unavailable.");
+					throw new Error("The selected desktop app source is unavailable.");
 				}
 				payload = targetChatPayloadToSource(payload, source);
 			}

@@ -191,7 +191,7 @@ describe("SsnClient", () => {
 		});
 
 		await expect(client.sendCommand({ action: "startSource", target: "ssapp", value: "source-1" }, { awaitResponse: true })).rejects.toThrow(
-			"SSApp source controls require"
+			"Desktop app source controls require"
 		);
 		expect(requests).toEqual([]);
 	});
