@@ -311,7 +311,7 @@
 		let actionInfo = null;
 		let actionUuid = "";
 		let actionContext = "";
-		let pluginUuid = "";
+		let propertyInspectorContext = "";
 		let globalSettings = {};
 		let actionSettings = {};
 		let capabilities = null;
@@ -414,7 +414,7 @@
 		const commandOptions = commandGroups.flatMap(group => group.options);
 
 		window.connectElgatoStreamDeckSocket = function(port, uuid, registerEvent, info, actionInfoJson) {
-			pluginUuid = uuid;
+			propertyInspectorContext = uuid;
 			actionInfo = JSON.parse(actionInfoJson);
 			actionUuid = actionInfo.action || "";
 			actionContext = actionInfo.context || "";
@@ -422,7 +422,7 @@
 			websocket = new WebSocket("ws://127.0.0.1:" + port);
 			websocket.onopen = function() {
 				send({ event: registerEvent, uuid: uuid });
-				send({ event: "getGlobalSettings", context: pluginUuid });
+				send({ event: "getGlobalSettings", context: propertyInspectorContext });
 				renderActionSettings();
 				requestStatus();
 			};
@@ -452,11 +452,11 @@
 		}
 
 		function requestStatus() {
-			send({ event: "sendToPlugin", action: actionUuid, context: actionContext, payload: { type: "requestStatus" } });
+			send({ event: "sendToPlugin", action: actionUuid, context: propertyInspectorContext, payload: { type: "requestStatus" } });
 		}
 
 		function requestSources() {
-			send({ event: "sendToPlugin", action: actionUuid, context: actionContext, payload: { type: "requestSources" } });
+			send({ event: "sendToPlugin", action: actionUuid, context: propertyInspectorContext, payload: { type: "requestSources" } });
 		}
 
 		function renderGlobalSettings() {
@@ -660,7 +660,7 @@
 				useTls: byId("useTls").checked,
 				httpFallback: byId("httpFallback").checked
 			};
-			send({ event: "setGlobalSettings", context: pluginUuid, payload: globalSettings });
+			send({ event: "setGlobalSettings", context: propertyInspectorContext, payload: globalSettings });
 			renderSetupSteps();
 			setTimeout(requestStatus, 250);
 		}
@@ -722,7 +722,7 @@
 			} else {
 				return;
 			}
-			send({ event: "setSettings", context: actionContext, payload: actionSettings });
+			send({ event: "setSettings", action: actionUuid, context: propertyInspectorContext, payload: actionSettings });
 			if (actionUuid === "ninja.socialstream.streamdeck.command") {
 				renderCommandFields();
 			}
@@ -808,7 +808,7 @@
 		byId("refreshSources").onclick = requestSources;
 		byId("testConnection").onclick = function() {
 			saveGlobalSettings();
-			send({ event: "sendToPlugin", action: actionUuid, context: actionContext, payload: { type: "testConnection" } });
+			send({ event: "sendToPlugin", action: actionUuid, context: propertyInspectorContext, payload: { type: "testConnection" } });
 		};
 		byId("showSession").onclick = function() {
 			const input = byId("sessionId");

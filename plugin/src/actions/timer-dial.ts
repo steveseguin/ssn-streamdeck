@@ -3,9 +3,11 @@ import {
 	type DialAction,
 	type DialDownEvent,
 	type DialRotateEvent,
+	type DialUpEvent,
 	SingletonAction,
 	type TouchTapEvent,
-	type WillAppearEvent
+	type WillAppearEvent,
+	type WillDisappearEvent
 } from "@elgato/streamdeck";
 import { isCommandSupported } from "../api/command-registry.js";
 import { normalizeTimerDialSettings } from "../api/settings.js";
@@ -23,11 +25,15 @@ type TimerState = {
 	receivedAt: number;
 };
 
+const TRAILING_ROTATION_SUPPRESSION_MS = 200;
+
 @action({ UUID: "ninja.socialstream.streamdeck.timer-dial" })
 export class TimerDialAction extends SingletonAction<TimerDialSettings> {
 	private state: TimerState | null = null;
 	private refreshing = false;
 	private ticks = 0;
+	private readonly dialPresses = new Map<string, { rotated: boolean }>();
+	private readonly suppressUnpressedRotationUntil = new Map<string, number>();
 
 	constructor() {
 		super();
@@ -47,18 +53,44 @@ export class TimerDialAction extends SingletonAction<TimerDialSettings> {
 
 	override async onDialRotate(ev: DialRotateEvent<TimerDialSettings>): Promise<void> {
 		if (!ev.payload.ticks) return;
+		const press = this.dialPresses.get(ev.action.id);
+		if (ev.payload.pressed) {
+			if (press) press.rotated = true;
+			else this.dialPresses.set(ev.action.id, { rotated: true });
+		} else {
+			if (press?.rotated) return;
+			const suppressUntil = this.suppressUnpressedRotationUntil.get(ev.action.id) || 0;
+			this.suppressUnpressedRotationUntil.delete(ev.action.id);
+			if (Date.now() <= suppressUntil) return;
+		}
 		const settings = normalizeTimerDialSettings(ev.payload.settings);
 		const seconds = Math.abs(ev.payload.ticks) * (settings.stepSeconds || 10) * (ev.payload.pressed ? 6 : 1);
 		await this.run(ev.action, ev.payload.ticks > 0 ? "timeradd" : "timersubtract", seconds);
 	}
 
-	override async onDialDown(ev: DialDownEvent<TimerDialSettings>): Promise<void> {
+	override onDialDown(ev: DialDownEvent<TimerDialSettings>): void {
+		this.dialPresses.set(ev.action.id, { rotated: false });
+		this.suppressUnpressedRotationUntil.delete(ev.action.id);
+	}
+
+	override async onDialUp(ev: DialUpEvent<TimerDialSettings>): Promise<void> {
+		const press = this.dialPresses.get(ev.action.id);
+		this.dialPresses.delete(ev.action.id);
+		if (press?.rotated) {
+			this.suppressUnpressedRotationUntil.set(ev.action.id, Date.now() + TRAILING_ROTATION_SUPPRESSION_MS);
+			return;
+		}
 		await this.run(ev.action, "toggletimer");
 	}
 
 	override async onTouchTap(ev: TouchTapEvent<TimerDialSettings>): Promise<void> {
 		if (ev.payload.hold) await this.run(ev.action, "resettimer");
 		else await this.refreshState();
+	}
+
+	override onWillDisappear(ev: WillDisappearEvent<TimerDialSettings>): void {
+		this.dialPresses.delete(ev.action.id);
+		this.suppressUnpressedRotationUntil.delete(ev.action.id);
 	}
 
 	private async run(actionContext: DialAction<TimerDialSettings>, actionName: string, value?: number): Promise<void> {

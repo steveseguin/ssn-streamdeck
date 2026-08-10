@@ -3,6 +3,54 @@ import { createContext, runInContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 
 describe("property inspector", () => {
+	it("uses the PI context for inspector commands", () => {
+		const inspector = createPropertyInspector();
+		inspector.run(`
+			window.connectElgatoStreamDeckSocket(
+				1234,
+				"property-inspector-context",
+				"registerPropertyInspector",
+				"{}",
+				JSON.stringify({
+					context: "action-context",
+					action: "ninja.socialstream.streamdeck.command",
+					payload: { settings: { command: "nextInQueue" } }
+				})
+			);
+			websocket = { readyState: WebSocket.OPEN, send: message => sentMessages.push(JSON.parse(message)) };
+			requestStatus();
+			requestSources();
+			byId("command").value = "nextInQueue";
+			saveActionSettings();
+		`);
+
+		expect(inspector.sentMessages).toContainEqual({
+			event: "sendToPlugin",
+			action: "ninja.socialstream.streamdeck.command",
+			context: "property-inspector-context",
+			payload: { type: "requestStatus" }
+		});
+		expect(inspector.sentMessages).toContainEqual({
+			event: "sendToPlugin",
+			action: "ninja.socialstream.streamdeck.command",
+			context: "property-inspector-context",
+			payload: { type: "requestSources" }
+		});
+		expect(inspector.sentMessages).toContainEqual({
+			event: "setSettings",
+			action: "ninja.socialstream.streamdeck.command",
+			context: "property-inspector-context",
+			payload: {
+				command: "nextInQueue",
+				target: "",
+				sourceId: "",
+				value: "",
+				title: "",
+				awaitResponse: false
+			}
+		});
+	});
+
 	it("filters SSApp presets by advertised capabilities", () => {
 		const inspector = createPropertyInspector();
 		inspector.run(`
@@ -40,6 +88,7 @@ describe("property inspector", () => {
 		inspector.run(`
 			actionUuid = "ninja.socialstream.streamdeck.command";
 			actionContext = "command-context";
+			propertyInspectorContext = "property-inspector-context";
 			websocket = { readyState: WebSocket.OPEN, send: message => sentMessages.push(JSON.parse(message)) };
 			byId("command").value = "drawmode";
 			handleCommandChange();
@@ -48,7 +97,8 @@ describe("property inspector", () => {
 		expect(inspector.element("value").value).toBe("toggle");
 		expect(inspector.sentMessages).toContainEqual({
 			event: "setSettings",
-			context: "command-context",
+			action: "ninja.socialstream.streamdeck.command",
+			context: "property-inspector-context",
 			payload: {
 				command: "drawmode",
 				target: "",
@@ -65,6 +115,7 @@ describe("property inspector", () => {
 		inspector.run(`
 			actionUuid = "ninja.socialstream.streamdeck.command";
 			actionContext = "command-context";
+			propertyInspectorContext = "property-inspector-context";
 			actionSettings = { command: "sendChat", sourceId: "youtube-source", value: "Hello" };
 			capabilities = {
 				type: "capabilities",
@@ -87,7 +138,8 @@ describe("property inspector", () => {
 		expect(sourceOptions).not.toContain("closed-source");
 		expect(inspector.sentMessages).toContainEqual({
 			event: "setSettings",
-			context: "command-context",
+			action: "ninja.socialstream.streamdeck.command",
+			context: "property-inspector-context",
 			payload: {
 				command: "sendChat",
 				target: "",

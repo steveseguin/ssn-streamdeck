@@ -34,6 +34,7 @@ This document is the single source of truth for how the Stream Deck plugin shoul
 - Outside SSApp, `available` is false and SSApp command support is empty or false.
 - Stream Deck uses the advertised capabilities as the source of truth for which actions to show.
 - Stream Deck still sends every command to `social_stream`.
+- The SSApp capability object is projected by `social_stream` for remote use. SSApp's broader local API and internal bridge capabilities are not the Stream Deck contract.
 
 ```json
 {
@@ -44,19 +45,18 @@ This document is the single source of truth for how the Stream Deck plugin shoul
     "available": true,
     "runtime": "electron",
     "version": "1.0.0",
+    "appControls": false,
     "sourceControls": {
       "list": true,
       "get": true,
+      "add": true,
+      "remove": true,
+      "update": true,
       "start": true,
       "stop": true,
       "restart": true
     },
-    "bulkControls": {
-      "startAll": true,
-      "stopAll": true,
-      "restartAll": true,
-      "filters": ["all", "target", "groupId", "status"]
-    },
+    "bulkControls": {},
     "visibility": {
       "get": true,
       "set": true,
@@ -75,7 +75,8 @@ This document is the single source of truth for how the Stream Deck plugin shoul
     "sourceStatus": {
       "get": true,
       "values": ["inactive", "activating", "active", "error"]
-    }
+    },
+    "settings": false
   },
   "ssn": {
     "actions": {
@@ -122,7 +123,9 @@ When `social_stream` is not running inside SSApp:
     "visibility": false,
     "mute": false,
     "connectionMode": false,
-    "sourceStatus": false
+    "sourceStatus": false,
+    "settings": false,
+    "platforms": {}
   }
 }
 ```
@@ -198,11 +201,13 @@ Current plugin command coverage:
 - `closepoll`
 - advertised SSApp source commands when available:
   - `getSources`, `getSource`
+  - `addSource`, `updateSource`, `removeSource`
   - `startSource`, `stopSource`, `restartSource`
-  - `startAllSources`, `stopAllSources`, `restartAllSources`
   - `setSourceVisibility`, `toggleSourceVisibility`
   - `setSourceMute`, `toggleSourceMute`
   - `setSourceConnectionMode`
+
+The command registry is a capability-gated superset for compatibility. Definitions for local-only or legacy commands are hidden when their capability is not advertised, and `social_stream` rejects attempts to send them remotely.
 
 ### Social Stream Ninja extension/API (`social_stream`)
 
@@ -215,14 +220,17 @@ Observed action handlers support more than the plugin currently exposes:
 - Timer: `starttimer`, `pausetimer`, `toggletimer`, `resettimer`, `timeradd`, `timersubtract`, `settimer`, `gettimerstate`
 - Runtime state: `drawmode`, `emoteonly`, `getHype`
 
-### SSApp command surface
+### Remote SSApp command surface
 
 - Source list/status/control for the SSApp runtime:
-  - `getSources`, `getSource`, `startSource`, `stopSource`, `restartSource`
-  - `startAllSources`, `stopAllSources`, `restartAllSources`
+  - `getSources`, `getSource`
+  - `addSource`, `updateSource`, `removeSource`
+  - `startSource`, `stopSource`, `restartSource`
   - `setSourceVisibility`, `toggleSourceVisibility`
   - `setSourceMute`, `toggleSourceMute`
   - `setSourceConnectionMode`
+
+Bulk source operations, SSApp settings, and app lifecycle operations are local-only. They remain available to same-machine automation through SSApp's local `/api/v1` and MCP interfaces but are not advertised or accepted through the Stream Deck remote route.
 
 ## Core message structures
 
@@ -647,6 +655,26 @@ Expected callback result:
 { "action": "getSource", "target": "ssapp", "value": "source-id-123", "get": "source-1", "apiid": "SESSION_ID" }
 ```
 
+- `addSource`:
+
+```json
+{ "action": "addSource", "target": "ssapp", "value": { "target": "twitch", "username": "channel_name", "connectionMode": "websocket", "isVisible": true, "isMuted": true, "autoActivate": false, "idempotencyKey": "deck-source-1" }, "get": "add-source-1", "apiid": "SESSION_ID" }
+```
+
+- `updateSource`:
+
+```json
+{ "action": "updateSource", "target": "ssapp", "value": { "sourceId": "source-id-123", "updates": { "username": "new_channel_name", "connectionMode": "classic" } }, "get": "update-source-1", "apiid": "SESSION_ID" }
+```
+
+- `removeSource`:
+
+```json
+{ "action": "removeSource", "target": "ssapp", "value": { "sourceId": "source-id-123" }, "get": "remove-source-1", "apiid": "SESSION_ID" }
+```
+
+Remote source creation accepts `target`, `username`, `videoId`, `url`, `connectionMode`, `isVisible`, `isMuted`, `autoActivate`, and `idempotencyKey`. Remote updates accept `url`, `username`, `videoId`, `connectionMode`, `isVisible`, `isMuted`, and `autoActivate`. URLs are intentionally not restricted to a matching host or domain, including loopback hosts; they must be valid HTTP(S) URLs and must not embed sign-in credentials.
+
 - `startSource`:
 
 ```json
@@ -663,24 +691,6 @@ Expected callback result:
 
 ```json
 { "action": "restartSource", "target": "ssapp", "value": "source-id-123", "apiid": "SESSION_ID" }
-```
-
-- `startAllSources`:
-
-```json
-{ "action": "startAllSources", "target": "ssapp", "value": { "target": "twitch", "groupId": "team-1" }, "apiid": "SESSION_ID" }
-```
-
-- `stopAllSources`:
-
-```json
-{ "action": "stopAllSources", "target": "ssapp", "value": { "confirm": true }, "apiid": "SESSION_ID" }
-```
-
-- `restartAllSources`:
-
-```json
-{ "action": "restartAllSources", "target": "ssapp", "value": { "target": "tiktok" }, "apiid": "SESSION_ID" }
 ```
 
 - `setSourceVisibility`:
@@ -733,7 +743,7 @@ The property inspector may pass strings. The plugin currently converts:
 
 ### Error and safety policy
 
-- Use confirmation flow for destructive and bulk actions (`clearOverlay`, `resetwaitlist`, stop/restart all sources).
+- Use confirmation flow for destructive SSN actions such as `clearOverlay` and `resetwaitlist`.
 - Show explicit feedback on each key event (OK/Alert) regardless of callback presence.
 - Never hard-code session IDs.
 
@@ -753,10 +763,4 @@ Stream Deck UI -> plugin settings/press event -> SsnClient.sendCommand -> social
 ## Open implementation gaps
 
 - `value` typing in command registry should be stricter when writing presets that use nested fields.
-- Stream Deck UI should provide a safer filter editor for `startAllSources`, `stopAllSources`, and `restartAllSources`.
 - Last-message visibility could be used by a future feedback action.
-
-## Open questions before hardening
-
-- For source filters, do we want target-only, group-only, or status-only targeting for bulk commands?
-- Should bulk source actions require explicit confirmation payloads from client or trust button-level UX?
