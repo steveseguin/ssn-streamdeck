@@ -176,7 +176,7 @@ describe("SsnClient", () => {
 		await expect(client.sendCommand({ action: "stopSource", value: "source-1" }, { awaitResponse: true })).rejects.toThrow("SSApp unavailable");
 	});
 
-	it("does not fall back to HTTP for SSApp source controls", async () => {
+	it("falls back to HTTP for SSApp source controls when the socket is not verified", async () => {
 		const { server, port, requests } = await createHttpServer();
 		cleanup.push(() => server.close());
 		const client = new SsnClient();
@@ -190,10 +190,8 @@ describe("SsnClient", () => {
 			requestTimeoutMs: 500
 		});
 
-		await expect(client.sendCommand({ action: "startSource", target: "ssapp", value: "source-1" }, { awaitResponse: true })).rejects.toThrow(
-			"Desktop app source controls require"
-		);
-		expect(requests).toEqual([]);
+		await expect(client.sendCommand({ action: "startSource", target: "ssapp", value: "source-1" }, { awaitResponse: true })).resolves.toBe("ok");
+		expect(requests.some(request => request.url === "/session-4/startSource/ssapp/source-1")).toBe(true);
 	});
 
 	it("keeps HTTP fallback for ordinary SSN commands", async () => {
@@ -232,7 +230,7 @@ describe("SsnClient", () => {
 		expect(requests.some(request => request.url === "/session-6/removefromwaitlist/null/1")).toBe(true);
 	});
 
-	it("does not fall back to HTTP for JSON payload values", async () => {
+	it("JSON-encodes structured HTTP fallback values", async () => {
 		const { server, port, requests } = await createHttpServer("ok");
 		cleanup.push(() => server.close());
 		const client = new SsnClient();
@@ -247,8 +245,49 @@ describe("SsnClient", () => {
 		});
 
 		const value = { id: "external-1", chatname: "User", chatmessage: "Pinned note", type: "api" };
-		await expect(client.sendCommand({ action: "pin", value })).rejects.toThrow("HTTP fallback supports only primitive");
-		expect(requests).toEqual([]);
+		await expect(client.sendCommand({ action: "pin", value })).resolves.toBe("ok");
+		expect(requests.some(request => decodeURIComponent(request.url || "") === `/session-7/pin/null/${JSON.stringify(value)}`)).toBe(true);
+	});
+
+	it("uses HTTP capabilities and commands when an open WebSocket never answers", async () => {
+		const { server, wsServer, port, requests } = await createSilentWebSocketHttpServer();
+		cleanup.push(() => {
+			for (const socket of wsServer.clients) socket.terminate();
+			wsServer.close();
+			server.close();
+		});
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+
+		client.configure({
+			sessionId: "session-http-capabilities",
+			apiHost: `127.0.0.1:${port}`,
+			useTls: false,
+			httpFallback: true,
+			requestTimeoutMs: 50
+		});
+
+		await waitFor(() => client.connectionState === "connected", 1000);
+		expect(client.getCapabilities()?.ssapp?.available).toBe(true);
+		await expect(client.sendCommand({ action: "getSources", target: "ssapp" }, { awaitResponse: true })).resolves.toMatchObject({
+			ok: true,
+			payload: { sources: [] }
+		});
+		expect(requests).toContain("/session-http-capabilities/getCapabilities");
+		expect(requests).toContain("/session-http-capabilities/getSources/ssapp");
+	});
+
+	it("rejects structured HTTP command errors", async () => {
+		const body = JSON.stringify({ ok: false, error: { code: "SOURCE_NOT_FOUND", message: "Source was not found." } });
+		const { server, port } = await createHttpServer(body);
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+		client.configure({ sessionId: "session-http-error", apiHost: `127.0.0.1:${port}`, useTls: false, httpFallback: true });
+
+		await expect(client.sendCommand({ action: "getSource", target: "ssapp", value: "missing" }, { awaitResponse: true })).rejects.toThrow(
+			"Source was not found."
+		);
 	});
 
 	it("keeps targeted custom commands compatible even when action names overlap SSApp", async () => {
@@ -357,6 +396,28 @@ async function createHttpServer(body = "ok"): Promise<{ server: http.Server; por
 	await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
 	const address = server.address() as AddressInfo;
 	return { server, port: address.port, requests };
+}
+
+async function createSilentWebSocketHttpServer(): Promise<{
+	server: http.Server;
+	wsServer: WebSocketServer;
+	port: number;
+	requests: string[];
+}> {
+	const requests: string[] = [];
+	const server = http.createServer((req, res) => {
+		requests.push(req.url || "");
+		res.writeHead(200, { "Content-Type": "application/json" });
+		if (req.url?.endsWith("/getCapabilities")) {
+			res.end(JSON.stringify(capabilities));
+			return;
+		}
+		res.end(JSON.stringify({ ok: true, payload: { sources: [] } }));
+	});
+	const wsServer = new WebSocketServer({ server });
+	await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+	const address = server.address() as AddressInfo;
+	return { server, wsServer, port: address.port, requests };
 }
 
 async function waitFor(predicate: () => boolean, timeoutMs = 1000): Promise<void> {

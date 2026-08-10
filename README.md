@@ -25,9 +25,9 @@ Current workspace capabilities:
 - Preset Command action with Social Stream Ninja remote controls and capability-aware desktop app source controls.
 - Custom Command action.
 - Global session/API configuration in the property inspector.
-- WebSocket client for `wss://io.socialstream.ninja`.
+- WebSocket client for `wss://io.socialstream.ninja`, with automatic HTTP capability and command fallback when the hosted socket opens but does not relay responses.
 - Automatic WebSocket reconnect and capability refresh when Social Stream Ninja restarts.
-- Optional HTTP fallback for simple request/response commands.
+- HTTP fallback supports capability discovery, desktop-app controls, primitive values, and URL-encoded structured values.
 - Self-contained plugin bundles that do not depend on the development `node_modules` folder.
 - A command registry seeded with common Social Stream Ninja commands from `../api.md`, including dock pinning, waitlist, chat, poll, queue, and desktop app source presets.
 - Capability-aware desktop app source controls when Social Stream Ninja advertises support.

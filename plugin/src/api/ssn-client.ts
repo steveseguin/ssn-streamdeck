@@ -39,6 +39,7 @@ export class SsnClient {
 	private reconnectTimer: NodeJS.Timeout | null = null;
 	private capabilityTimer: NodeJS.Timeout | null = null;
 	private capabilityRequest: Promise<StreamDeckCapabilities | null> | null = null;
+	private socketVerified = false;
 	private reconnectAttempts = 0;
 	private shouldReconnect = false;
 	private listeners = {
@@ -100,6 +101,7 @@ export class SsnClient {
 		}
 		this.shouldReconnect = true;
 		this.setState("connecting");
+		this.socketVerified = false;
 		const socket = new WebSocket(this.buildEndpoint(this.settings.useTls === false ? "ws" : "wss"));
 		this.socket = socket;
 		socket.on("open", () => {
@@ -156,15 +158,12 @@ export class SsnClient {
 			...payload,
 			apiid: this.settings.sessionId || payload.apiid
 		};
-		if (this.isSocketOpen()) {
+		if (this.isSocketOpen() && this.socketVerified) {
 			if (options.awaitResponse === true || command.get) {
 				return this.sendSocketRequest(command, isSsappCommand(command) ? isStructuredCommandResult : undefined);
 			}
 			this.sendRaw(command);
 			return command;
-		}
-		if (isSsappCommand(command)) {
-			throw new Error("Desktop app source controls require the Social Stream Ninja API WebSocket connection");
 		}
 		if (this.settings.httpFallback !== false) {
 			return this.sendHttp(command, options.awaitResponse === true);
@@ -176,6 +175,7 @@ export class SsnClient {
 		const response = await this.sendSocketRequest({ action: "getCapabilities", apiid: this.settings.sessionId }, value => extractCapabilities(value) !== null);
 		const capabilities = extractCapabilities(response);
 		if (capabilities) {
+			this.socketVerified = true;
 			this.setCapabilities(capabilities);
 			this.setState("connected");
 			return capabilities;
@@ -209,9 +209,6 @@ export class SsnClient {
 		if (!this.settings.sessionId) {
 			throw new Error("Missing Social Stream Ninja session ID");
 		}
-		if (hasComplexHttpPathSegment(payload.target) || hasComplexHttpPathSegment(payload.value)) {
-			throw new Error("Social Stream Ninja API HTTP fallback supports only primitive target/value fields; use the WebSocket connection for JSON payloads");
-		}
 		const controller = new AbortController();
 		const timeout = setTimeout(() => controller.abort(), this.settings.requestTimeoutMs || 5000);
 		let response: Response;
@@ -234,11 +231,17 @@ export class SsnClient {
 		if (!awaitResponse) {
 			return text;
 		}
+		let result: unknown;
 		try {
-			return JSON.parse(text) as unknown;
+			result = JSON.parse(text) as unknown;
 		} catch {
 			return text;
 		}
+		if (isRecord(result) && result.ok === false) {
+			const error = isRecord(result.error) ? result.error : {};
+			throw new Error(typeof error.message === "string" ? error.message : "Social Stream Ninja API request failed");
+		}
+		return result;
 	}
 
 	private sendRaw(payload: object): void {
@@ -258,6 +261,7 @@ export class SsnClient {
 		}
 		const capabilities = extractCapabilities(message);
 		if (capabilities) {
+			this.socketVerified = true;
 			this.setCapabilities(capabilities);
 			this.setState("connected");
 		}
@@ -280,6 +284,7 @@ export class SsnClient {
 		this.rejectPendingRequests(new Error("Social Stream Ninja API WebSocket disconnected"));
 		const socket = this.socket;
 		this.socket = null;
+		this.socketVerified = false;
 		socket.removeAllListeners();
 		socket.on("error", () => undefined);
 		if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CLOSING) {
@@ -293,24 +298,42 @@ export class SsnClient {
 		if (this.capabilityRequest || !this.isSocketOpen()) {
 			return;
 		}
-		const request = this.requestCapabilities();
+		const request = this.requestCapabilitiesWithFallback();
 		this.capabilityRequest = request;
 		request
 			.then(capabilities => {
 				this.scheduleCapabilityProbe(capabilities ? CAPABILITY_REFRESH_DELAY_MS : CAPABILITY_RETRY_DELAY_MS);
 			})
 			.catch(() => {
-				if (this.isSocketOpen()) {
-					this.setCapabilities(null);
-					this.setState("disconnected");
-					this.scheduleCapabilityProbe(CAPABILITY_RETRY_DELAY_MS);
-				}
+				this.setCapabilities(null);
+				this.setState("disconnected");
+				this.scheduleCapabilityProbe(CAPABILITY_RETRY_DELAY_MS);
 			})
 			.finally(() => {
 				if (this.capabilityRequest === request) {
 					this.capabilityRequest = null;
 				}
 			});
+	}
+
+	private async requestCapabilitiesWithFallback(): Promise<StreamDeckCapabilities | null> {
+		try {
+			return await this.requestCapabilities();
+		} catch (socketError) {
+			this.socketVerified = false;
+			if (this.settings.httpFallback === false) {
+				throw socketError;
+			}
+		}
+
+		const response = await this.sendHttp({ action: "getCapabilities", apiid: this.settings.sessionId }, true);
+		const capabilities = extractCapabilities(response);
+		if (!capabilities) {
+			throw new Error("Social Stream Ninja API HTTP capability response was invalid");
+		}
+		this.setCapabilities(capabilities);
+		this.setState("connected");
+		return capabilities;
 	}
 
 	private scheduleCapabilityProbe(delay: number): void {
@@ -496,9 +519,8 @@ function formatHttpPathSegment(value: unknown): string {
 	if (value === null || typeof value === "undefined") {
 		return "null";
 	}
+	if (typeof value === "object") {
+		return JSON.stringify(value);
+	}
 	return String(value);
-}
-
-function hasComplexHttpPathSegment(value: unknown): boolean {
-	return !!value && typeof value === "object";
 }
