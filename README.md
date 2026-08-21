@@ -29,7 +29,7 @@ Current workspace capabilities:
 - Automatic WebSocket reconnect and capability refresh when Social Stream Ninja restarts.
 - HTTP fallback supports capability discovery, desktop-app controls, primitive values, and URL-encoded structured values.
 - Self-contained plugin bundles that do not depend on the development `node_modules` folder.
-- A command registry seeded with common Social Stream Ninja commands from `../api.md`, including dock pinning, waitlist, chat, poll, queue, and desktop app source presets.
+- A command registry seeded with common Social Stream Ninja commands from `../api.md`, including credits, dock pinning, waitlist, chat, poll, queue, and desktop app source presets.
 - Capability-aware desktop app source controls when Social Stream Ninja advertises support.
 - Stream Deck + timer dial with live time/status feedback.
 - Stream Deck + chat review strip that listens only while visible, browses recent channel-4 chat, pins messages, and features pinned chat.
@@ -40,7 +40,7 @@ Current workspace capabilities:
 | Action | Purpose | Starting commands |
 | --- | --- | --- |
 | Setup | Enter the session ID and test the plugin connection | WebSocket send channel 1, listen channel 2 |
-| Preset Command | Button presets for common remote controls and advertised desktop app source controls | `clearOverlay`, `clearDock`, `clearHistory`, `nextInQueue`, `resetleaderboard`, `pin`, `unpin`, `nextPinned`, `resetwaitlist`, `startentries`, `downloadwaitlist`, `selectwinner`, `startSource`, `stopSource` |
+| Preset Command | Button presets for common remote controls and advertised desktop app source controls | `creditsStart`, `creditsPreview`, `creditsTest`, `creditsReset`, `clearOverlay`, `clearDock`, `nextInQueue`, `resetwaitlist`, `startSource`, `stopSource` |
 | Custom Command | Send any `{ action, target, value }` payload | Power-user and development testing |
 | Timer Dial | Stream Deck + timer display and control | Turn to adjust, press to start/pause, hold touch to reset |
 | Chat Review | Stream Deck + recent chat display and pin workflow | Turn to browse, press to pin, tap to feature, hold to unpin |

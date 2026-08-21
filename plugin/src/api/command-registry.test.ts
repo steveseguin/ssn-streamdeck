@@ -29,6 +29,9 @@ describe("command registry", () => {
 			action: "clearHistory",
 			value: "confirm"
 		});
+		expect(buildSsnCommandPayload({ command: "creditsStart" })).toEqual({
+			action: "creditsStart"
+		});
 	});
 
 	it("builds preset commands with values", () => {
@@ -85,6 +88,10 @@ describe("command registry", () => {
 		expect(uiCommands).toContain("resumeentries");
 		expect(uiCommands).toContain("setwaitlistmessage");
 		expect(uiCommands).toContain("toggletimer");
+		expect(uiCommands).toContain("creditsStart");
+		expect(uiCommands).toContain("creditsPreview");
+		expect(uiCommands).toContain("creditsTest");
+		expect(uiCommands).toContain("creditsReset");
 	});
 
 	it("keeps property inspector response defaults aligned with required-response presets", () => {
