@@ -1,5 +1,6 @@
 import {
 	action,
+	type DidReceiveSettingsEvent,
 	type DialAction,
 	type DialDownEvent,
 	type DialRotateEvent,
@@ -10,30 +11,69 @@ import {
 } from "@elgato/streamdeck";
 import type { JsonValue } from "@elgato/utils";
 import type { ChatFeedSettings } from "../api/types.js";
-import { chatFeedClient, sessionStore, ssnClient } from "../services.js";
+import { translate } from "../i18n.js";
+import { chatFeedClient, recordPluginError, sessionStore, ssnClient } from "../services.js";
 
 @action({ UUID: "ninja.socialstream.streamdeck.chat-feed" })
 export class ChatFeedAction extends SingletonAction<ChatFeedSettings> {
 	private offsets = new Map<string, number>();
+	private readonly settings = new Map<string, ChatFeedSettings>();
+	private connectionState = sessionStore.getConnectionState();
+	private chatCount = sessionStore.getChatMessages().length;
+	private chatRevision = sessionStore.getChatRevision();
+	private refreshTimer: NodeJS.Timeout | null = null;
+	private refreshRunning = false;
+	private refreshPending = false;
+	private lastRefreshAt = 0;
 
 	constructor() {
 		super();
 		sessionStore.subscribe(() => {
-			for (const context of this.offsets.keys()) this.offsets.set(context, 0);
-			void this.refreshVisible();
+			const nextConnectionState = sessionStore.getConnectionState();
+			const nextChatCount = sessionStore.getChatMessages().length;
+			const nextChatRevision = sessionStore.getChatRevision();
+			let shouldRefresh = false;
+			if (nextConnectionState !== this.connectionState) {
+				for (const context of this.offsets.keys()) this.offsets.set(context, 0);
+				shouldRefresh = true;
+			} else if (nextChatRevision > this.chatRevision) {
+				const added = nextChatRevision - this.chatRevision;
+				for (const [context, offset] of this.offsets) {
+					if (offset > 0) this.offsets.set(context, Math.min(offset + added, nextChatCount - 1));
+				}
+				shouldRefresh = true;
+			}
+			this.connectionState = nextConnectionState;
+			this.chatCount = nextChatCount;
+			this.chatRevision = nextChatRevision;
+			if (shouldRefresh) this.requestRefresh();
 		});
 	}
 
 	override async onWillAppear(ev: WillAppearEvent<ChatFeedSettings>): Promise<void> {
 		if (!ev.action.isDial()) return;
 		this.offsets.set(ev.action.id, 0);
+		this.settings.set(ev.action.id, ev.payload.settings);
 		chatFeedClient.setActive(ev.action.id, true);
+		await this.render(ev.action, ev.payload.settings);
+		this.lastRefreshAt = Date.now();
+	}
+
+	override async onDidReceiveSettings(ev: DidReceiveSettingsEvent<ChatFeedSettings>): Promise<void> {
+		if (!ev.action.isDial()) return;
+		this.settings.set(ev.action.id, ev.payload.settings);
 		await this.render(ev.action, ev.payload.settings);
 	}
 
 	override onWillDisappear(ev: WillDisappearEvent<ChatFeedSettings>): void {
 		this.offsets.delete(ev.action.id);
+		this.settings.delete(ev.action.id);
 		chatFeedClient.setActive(ev.action.id, false);
+		if (this.offsets.size === 0 && this.refreshTimer) {
+			clearTimeout(this.refreshTimer);
+			this.refreshTimer = null;
+			this.refreshPending = false;
+		}
 	}
 
 	override async onDialRotate(ev: DialRotateEvent<ChatFeedSettings>): Promise<void> {
@@ -51,7 +91,8 @@ export class ChatFeedAction extends SingletonAction<ChatFeedSettings> {
 		}
 		try {
 			await ssnClient.sendCommand({ action: "pin", value: pinValue(entry) });
-		} catch {
+		} catch (error) {
+			recordPluginError("chat-review.pin", error);
 			await ev.action.showAlert();
 		}
 	}
@@ -66,7 +107,8 @@ export class ChatFeedAction extends SingletonAction<ChatFeedSettings> {
 			} else {
 				await ssnClient.sendCommand({ action: "nextPinned" });
 			}
-		} catch {
+		} catch (error) {
+			recordPluginError(ev.payload.hold ? "chat-review.unpin" : "chat-review.feature", error);
 			await ev.action.showAlert();
 		}
 	}
@@ -78,8 +120,26 @@ export class ChatFeedAction extends SingletonAction<ChatFeedSettings> {
 	private async refreshVisible(): Promise<void> {
 		for (const visible of this.actions) {
 			if (!visible.isDial()) continue;
-			await this.render(visible, await visible.getSettings<ChatFeedSettings>());
+			await this.render(visible, this.settings.get(visible.id));
 		}
+	}
+
+	private requestRefresh(): void {
+		if (this.offsets.size === 0) return;
+		this.refreshPending = true;
+		if (this.refreshTimer || this.refreshRunning) return;
+		const delay = Math.max(0, 100 - (Date.now() - this.lastRefreshAt));
+		this.refreshTimer = setTimeout(() => {
+			this.refreshTimer = null;
+			this.refreshPending = false;
+			this.refreshRunning = true;
+			this.lastRefreshAt = Date.now();
+			void this.refreshVisible().finally(() => {
+				this.refreshRunning = false;
+				if (this.refreshPending) this.requestRefresh();
+			});
+		}, delay);
+		this.refreshTimer.unref();
 	}
 
 	private async render(actionContext: DialAction<ChatFeedSettings>, settings?: ChatFeedSettings): Promise<void> {
@@ -89,11 +149,16 @@ export class ChatFeedAction extends SingletonAction<ChatFeedSettings> {
 		const entry = entries[offset];
 		const chat = normalizeChat(entry);
 		await actionContext.setFeedback({
-			title: settings?.title || "Chat Review",
-			platform: chat ? chat.platform : "CHANNEL 4",
-			name: chat ? chat.name : "Waiting for chat",
-			message: chat ? chat.message : "Enable “Send chat messages to API server” in Social Stream Ninja.",
-			hint: chat ? `${offset + 1}/${entries.length}  TURN: browse  PRESS: pin` : "TURN: browse"
+			title: settings?.title || translate("deviceChatTitle", "Chat Review"),
+			platform: chat ? chat.platform : translate("deviceChatChannel", "CH 4"),
+			name: chat ? chat.name : translate("deviceChatWaiting", "Waiting for chat"),
+			message: chat ? chat.message : translate("deviceChatEnableRelay", "Enable “Send chat messages to API server” in Social Stream Ninja."),
+			hint: chat
+				? translate("deviceChatHint", "{position}/{count}  TURN browse  PRESS pin", { position: offset + 1, count: entries.length })
+				: translate("deviceChatBrowseHint", "TURN browse"),
+			touchHint: chat
+				? translate("deviceChatTouchHint", "TAP feature  HOLD unpin")
+				: translate("deviceChatFeatureHint", "TAP feature")
 		});
 	}
 }
@@ -106,12 +171,12 @@ function normalizeChat(value: unknown): { raw: Record<string, unknown>; name: st
 	const raw = unwrapMessage(value);
 	if (!raw) return null;
 	const name = plainText(raw.chatname);
-	const message = plainText(raw.chatmessage) || (raw.contentimg ? "Shared an image" : "");
+	const message = plainText(raw.chatmessage) || (raw.contentimg ? translate("deviceChatSharedImage", "Shared an image") : "");
 	if (!name && !message) return null;
 	return {
 		raw,
-		name: name || "Anonymous",
-		message: message || "Message",
+		name: name || translate("deviceChatAnonymous", "Anonymous"),
+		message: message || translate("deviceChatMessage", "Message"),
 		platform: plainText(raw.platform || raw.type).toUpperCase() || "CHAT"
 	};
 }

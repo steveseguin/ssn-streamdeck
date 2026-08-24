@@ -5,7 +5,7 @@ describe("Stream Deck + layouts", () => {
 	for (const name of ["timer", "chat-feed"]) {
 		it(`${name} covers the default Stream Deck placeholder`, () => {
 			const layout = JSON.parse(readFileSync(new URL(`../layouts/${name}.json`, import.meta.url), "utf8")) as {
-				items: Array<{ key?: string; rect?: number[]; background?: string; zOrder?: number }>;
+				items: Array<{ key?: string; rect?: number[]; background?: string; zOrder?: number; font?: { size?: number } }>;
 			};
 			const background = layout.items.find(item => item.key === "background");
 
@@ -15,6 +15,10 @@ describe("Stream Deck + layouts", () => {
 				zOrder: 0
 			});
 			expect(layout.items.filter(item => item.key !== "background").every(item => (item.zOrder || 0) > 0)).toBe(true);
+			expect(layout.items.filter(item => item.font).every(item => (item.font?.size || 0) >= 10)).toBe(true);
+			if (name === "chat-feed") {
+				expect(layout.items.some(item => item.key === "touchHint")).toBe(true);
+			}
 		});
 	}
 });

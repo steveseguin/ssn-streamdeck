@@ -14,7 +14,50 @@ concurrency:
     cancel-in-progress: false
 
 jobs:
+    verify:
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest, macos-latest]
+        runs-on: ${{ matrix.os }}
+
+        steps:
+            - name: Check out source
+              uses: actions/checkout@v4
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: npm
+                  cache-dependency-path: plugin/package-lock.json
+
+            - name: Install dependencies
+              working-directory: plugin
+              run: npm ci
+
+            - name: Run unit tests
+              working-directory: plugin
+              run: npm test
+
+            - name: Run type check
+              working-directory: plugin
+              run: npm run check
+
+            - name: Build plugin and starter profiles
+              working-directory: plugin
+              run: npm run build
+
+            - name: Run exhaustive runtime action tests
+              working-directory: plugin
+              run: npm run test:runtime
+
+            - name: Validate plugin bundle
+              working-directory: plugin
+              run: npx --yes @elgato/cli@1.9.0 validate ninja.socialstream.streamdeck.sdPlugin --no-update-check
+
     release:
+        needs: verify
         runs-on: ubuntu-latest
 
         steps:
@@ -61,29 +104,17 @@ jobs:
               working-directory: plugin
               run: npm ci
 
-            - name: Run unit tests
-              working-directory: plugin
-              run: npm test
-
-            - name: Run type check
-              working-directory: plugin
-              run: npm run check
-
             - name: Build plugin
               working-directory: plugin
               run: npm run build
 
-            - name: Run runtime smoke test
-              working-directory: plugin
-              run: npm run test:runtime
-
             - name: Validate plugin bundle
               working-directory: plugin
-              run: npx --yes @elgato/cli@1.7.4 validate ninja.socialstream.streamdeck.sdPlugin --no-update-check
+              run: npx --yes @elgato/cli@1.9.0 validate ninja.socialstream.streamdeck.sdPlugin --no-update-check
 
             - name: Package plugin
               working-directory: plugin
-              run: npx --yes @elgato/cli@1.7.4 pack ninja.socialstream.streamdeck.sdPlugin --output release --force --no-update-check
+              run: npx --yes @elgato/cli@1.9.0 pack ninja.socialstream.streamdeck.sdPlugin --output release --force --no-update-check
 
             - name: Upload workflow artifact
               uses: actions/upload-artifact@v4

@@ -16,6 +16,7 @@ export interface SsnCommandPayload extends JsonObject {
 	action: string;
 	apiid?: string;
 	get?: string;
+	protocol?: number;
 	target?: JsonValue;
 	value?: JsonValue;
 	tabId?: number;

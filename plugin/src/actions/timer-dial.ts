@@ -1,5 +1,6 @@
 import {
 	action,
+	type DidReceiveSettingsEvent,
 	type DialAction,
 	type DialDownEvent,
 	type DialRotateEvent,
@@ -12,7 +13,8 @@ import {
 import { isCommandSupported } from "../api/command-registry.js";
 import { normalizeTimerDialSettings } from "../api/settings.js";
 import type { TimerDialSettings } from "../api/types.js";
-import { sessionStore, ssnClient } from "../services.js";
+import { translate } from "../i18n.js";
+import { recordPluginError, sessionStore, ssnClient } from "../services.js";
 
 type TimerState = {
 	mode: "countup" | "countdown";
@@ -32,6 +34,7 @@ export class TimerDialAction extends SingletonAction<TimerDialSettings> {
 	private state: TimerState | null = null;
 	private refreshing = false;
 	private ticks = 0;
+	private readonly settings = new Map<string, TimerDialSettings>();
 	private readonly dialPresses = new Map<string, { rotated: boolean }>();
 	private readonly suppressUnpressedRotationUntil = new Map<string, number>();
 
@@ -47,8 +50,15 @@ export class TimerDialAction extends SingletonAction<TimerDialSettings> {
 
 	override async onWillAppear(ev: WillAppearEvent<TimerDialSettings>): Promise<void> {
 		if (!ev.action.isDial()) return;
+		this.settings.set(ev.action.id, ev.payload.settings);
 		await this.render(ev.action, ev.payload.settings);
 		await this.refreshState();
+	}
+
+	override async onDidReceiveSettings(ev: DidReceiveSettingsEvent<TimerDialSettings>): Promise<void> {
+		if (!ev.action.isDial()) return;
+		this.settings.set(ev.action.id, ev.payload.settings);
+		await this.render(ev.action, ev.payload.settings);
 	}
 
 	override async onDialRotate(ev: DialRotateEvent<TimerDialSettings>): Promise<void> {
@@ -91,15 +101,22 @@ export class TimerDialAction extends SingletonAction<TimerDialSettings> {
 	override onWillDisappear(ev: WillDisappearEvent<TimerDialSettings>): void {
 		this.dialPresses.delete(ev.action.id);
 		this.suppressUnpressedRotationUntil.delete(ev.action.id);
+		this.settings.delete(ev.action.id);
 	}
 
 	private async run(actionContext: DialAction<TimerDialSettings>, actionName: string, value?: number): Promise<void> {
 		try {
 			if (sessionStore.getConnectionState() !== "connected") throw new Error("Social Stream is not connected");
 			if (!isCommandSupported(actionName, ssnClient.getCapabilities())) throw new Error("Timer control unavailable");
-			await ssnClient.sendCommand(typeof value === "number" ? { action: actionName, value } : { action: actionName });
+			const payload = typeof value === "number"
+				? { action: actionName, value }
+				: actionName === "resettimer"
+					? { action: actionName, value: { confirm: true } }
+					: { action: actionName };
+			await ssnClient.sendCommand(payload);
 			await this.refreshState();
-		} catch {
+		} catch (error) {
+			recordPluginError(`timer-dial.${actionName}`, error);
 			await actionContext.showAlert();
 		}
 	}
@@ -131,7 +148,7 @@ export class TimerDialAction extends SingletonAction<TimerDialSettings> {
 	private async renderVisible(): Promise<void> {
 		for (const visible of this.actions) {
 			if (!visible.isDial()) continue;
-			await this.render(visible, await visible.getSettings<TimerDialSettings>());
+			await this.render(visible, this.settings.get(visible.id));
 		}
 	}
 
@@ -143,24 +160,28 @@ export class TimerDialAction extends SingletonAction<TimerDialSettings> {
 		const displayMs = state ? liveDisplayMs(state) : 0;
 		const progress = state && state.durationMs > 0 ? clamp((displayMs / state.durationMs) * 100, 0, 100) : 0;
 		await actionContext.setFeedback({
-			title: settings.title || "Stream Timer",
+			title: settings.title || translate("deviceTimerTitle", "Stream Timer"),
 			status: timerStatus(connection, supported, state),
-			value: connection === "missing-session" ? "SETUP" : state ? formatDuration(displayMs) : "--:--",
+			value: connection === "missing-session" ? translate("deviceTimerSetupValue", "SETUP") : state ? formatDuration(displayMs) : "--:--",
 			progress,
 			hint: connection === "missing-session"
-				? "Add Setup to a key and enter your session ID"
-				: `TURN ±${settings.stepSeconds || 10}s  PRESS start/pause  HOLD reset`
+				? translate("deviceTimerSetupHint", "Add Setup key + session ID")
+				: translate("deviceTimerHint", "TURN ±{seconds}s  PUSH ⇄  HOLD ↻", { seconds: settings.stepSeconds || 10 })
 		});
 	}
 }
 
 function timerStatus(connection: string, supported: boolean, state: TimerState | null): string {
-	if (connection === "missing-session") return "SETUP REQUIRED";
-	if (connection === "connecting") return "CONNECTING";
-	if (connection !== "connected") return "OFFLINE";
-	if (!supported) return "UNAVAILABLE";
-	if (!state) return "LOADING";
-	return state.done ? "DONE" : state.running ? "RUNNING" : "PAUSED";
+	if (connection === "missing-session") return translate("deviceTimerSetupRequired", "SETUP NEEDED");
+	if (connection === "connecting") return translate("deviceTimerConnecting", "CONNECTING");
+	if (connection !== "connected") return translate("deviceTimerOffline", "OFFLINE");
+	if (!supported) return translate("deviceTimerUnavailable", "UNAVAILABLE");
+	if (!state) return translate("deviceTimerLoading", "LOADING");
+	return state.done
+		? translate("deviceTimerDone", "DONE")
+		: state.running
+			? translate("deviceTimerRunning", "RUNNING")
+			: translate("deviceTimerPaused", "PAUSED");
 }
 
 function parseTimerState(value: unknown): TimerState | null {

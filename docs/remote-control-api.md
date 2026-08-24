@@ -315,7 +315,8 @@ The plugin normalizes values before sending:
 - success shows green `OK`, failure shows red `Alert`.
 
 4. Incoming messages from socket are parsed as JSON when possible and stored as `lastMessage` in session state; UI updates can consume this later.
-5. The client reconnects after socket loss and periodically refreshes capabilities so SSN/SSApp restarts are detected.
+5. The client reconnects after socket loss or system wake and periodically refreshes capabilities so SSN/SSApp restarts are detected.
+6. Support diagnostics expose only versions, connection state, runtime, protocol, and a sanitized error; they never include the session ID.
 
 ### Current limitations worth calling out
 

@@ -10,13 +10,23 @@ import { SessionStore } from "./state/session-store.js";
 export const ssnClient = new SsnClient();
 export const chatFeedClient = new ChatFeedClient();
 export const sessionStore = new SessionStore();
+const serviceLogger = streamDeck.logger.createScope("services");
 
 export async function initializeServices(): Promise<void> {
 	const settings = normalizeGlobalSettings(await streamDeck.settings.getGlobalSettings<GlobalSettings>());
-	ssnClient.onState(state => sessionStore.setConnectionState(state));
+	ssnClient.onState(state => {
+		serviceLogger.info(`Connection state: ${state}`);
+		sessionStore.setConnectionState(state);
+	});
 	ssnClient.onMessage(message => sessionStore.setLastMessage(message));
 	chatFeedClient.onMessage(message => sessionStore.addChatMessage(message));
+	chatFeedClient.onError(error => recordPluginError("chat-feed.transport", error));
 	ssnClient.onCapabilities(capabilities => {
+		if (capabilities) {
+			serviceLogger.info(`Capabilities received: protocol ${capabilities.version}, runtime ${capabilities.runtime || "unknown"}`);
+		} else {
+			serviceLogger.debug("Capabilities cleared");
+		}
 		streamDeck.ui.sendToPropertyInspector({
 			type: "capabilities",
 			capabilities
@@ -24,12 +34,27 @@ export async function initializeServices(): Promise<void> {
 	});
 	ssnClient.configure(settings);
 	chatFeedClient.configure(settings);
+	streamDeck.system.onSystemDidWakeUp(() => {
+		serviceLogger.info("System resumed; reconnecting Social Stream transports");
+		ssnClient.reconnect();
+		chatFeedClient.reconnect();
+	});
 	registerPropertyInspectorMessages();
 
 	streamDeck.settings.onDidReceiveGlobalSettings<GlobalSettings>(ev => {
 		const next = normalizeGlobalSettings(ev.settings);
 		ssnClient.configure(next);
 		chatFeedClient.configure(next);
+	});
+}
+
+export function recordPluginError(scope: string, error: unknown): void {
+	const message = sanitizeDiagnosticMessage(error instanceof Error ? error.message : String(error || "Unknown error"));
+	streamDeck.logger.createScope(scope).error(message);
+	sessionStore.setLastError({
+		scope,
+		message,
+		timestamp: new Date().toISOString()
 	});
 }
 
@@ -57,6 +82,7 @@ async function sendInspectorSources(): Promise<void> {
 			sources: extractSourcesFromCommandResult(result)
 		});
 	} catch (error) {
+		recordPluginError("property-inspector.sources", error);
 		await streamDeck.ui.sendToPropertyInspector({
 			type: "sources",
 			sources: [],
@@ -68,7 +94,19 @@ async function sendInspectorSources(): Promise<void> {
 async function testConnection(): Promise<void> {
 	const settings = normalizeGlobalSettings(await streamDeck.settings.getGlobalSettings<GlobalSettings>());
 	ssnClient.configure(settings);
-	await sendInspectorStatus(settings.sessionId ? "Connection requested." : "Enter a session ID first.");
+	if (!settings.sessionId) {
+		await sendInspectorStatus("Enter a session ID first.");
+		return;
+	}
+	try {
+		await ssnClient.verifyConnection();
+		sessionStore.setLastError(null);
+		await sendInspectorStatus("Connection verified.");
+	} catch (error) {
+		recordPluginError("property-inspector.connection-test", error);
+		const message = error instanceof Error ? error.message : "Unable to verify the connection.";
+		await sendInspectorStatus(`Connection test failed: ${message}`);
+	}
 }
 
 async function sendInspectorStatus(message?: string): Promise<void> {
@@ -78,8 +116,25 @@ async function sendInspectorStatus(message?: string): Promise<void> {
 		ok: state === "connected",
 		state,
 		message: message || statusMessage(state),
-		capabilities: ssnClient.getCapabilities()
+		capabilities: ssnClient.getCapabilities(),
+		diagnostics: diagnosticSummary(state)
 	});
+}
+
+function diagnosticSummary(state: ConnectionStateName): JsonObject {
+	const capabilities = ssnClient.getCapabilities();
+	const lastError = sessionStore.getLastError();
+	return {
+		pluginVersion: streamDeck.info.plugin.version,
+		streamDeckVersion: streamDeck.info.application.version,
+		platform: streamDeck.info.application.platform,
+		state,
+		runtime: capabilities?.runtime || "unknown",
+		protocolVersion: capabilities?.version || 0,
+		lastError: lastError
+			? `${lastError.timestamp} [${lastError.scope}] ${lastError.message}`
+			: ""
+	};
 }
 
 function statusMessage(state: ConnectionStateName): string {
@@ -100,4 +155,11 @@ function statusMessage(state: ConnectionStateName): string {
 
 function isJsonObject(value: JsonValue): value is JsonObject {
 	return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function sanitizeDiagnosticMessage(value: string): string {
+	return value
+		.replace(/([?&](?:session|apiid)=)[^&#\s]+/gi, "$1[redacted]")
+		.replace(/\b(session|apiid)\s*[:=]\s*[^\s,;]+/gi, "$1=[redacted]")
+		.slice(0, 500);
 }

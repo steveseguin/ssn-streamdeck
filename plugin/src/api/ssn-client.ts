@@ -144,6 +144,14 @@ export class SsnClient {
 		});
 	}
 
+	reconnect(): void {
+		if (!this.settings.sessionId) {
+			this.disconnect("missing-session");
+			return;
+		}
+		this.connect();
+	}
+
 	disconnect(state: ConnectionStateName = "disconnected"): void {
 		this.shouldReconnect = false;
 		this.clearReconnectTimer();
@@ -154,13 +162,20 @@ export class SsnClient {
 	}
 
 	async sendCommand(payload: SsnCommandPayload, options: { awaitResponse?: boolean } = {}): Promise<unknown> {
-		const command = {
+		let command: SsnCommandPayload = {
 			...payload,
 			apiid: this.settings.sessionId || payload.apiid
 		};
 		if (this.isSocketOpen() && this.socketVerified) {
-			if (options.awaitResponse === true || command.get) {
-				return this.sendSocketRequest(command, isSsappCommand(command) ? isStructuredCommandResult : undefined);
+			const verifiedProtocol = this.getVerifiedCommandProtocol(command);
+			if (verifiedProtocol !== null) {
+				command = { ...command, protocol: verifiedProtocol };
+			}
+			if (options.awaitResponse === true || command.get || verifiedProtocol !== null) {
+				return this.sendSocketRequest(
+					command,
+					isSsappCommand(command) || verifiedProtocol !== null ? isStructuredCommandResult : undefined
+				);
 			}
 			this.sendRaw(command);
 			return command;
@@ -169,6 +184,33 @@ export class SsnClient {
 			return this.sendHttp(command, options.awaitResponse === true);
 		}
 		throw new Error("Social Stream Ninja API WebSocket is not connected");
+	}
+
+	async verifyConnection(): Promise<StreamDeckCapabilities> {
+		if (!this.settings.sessionId) {
+			throw new Error("Missing Social Stream Ninja session ID");
+		}
+		try {
+			if (!this.isSocketActive()) {
+				this.connect();
+			}
+			if (!this.isSocketOpen()) {
+				await this.waitForSocketOpen();
+			}
+			const capabilities = await (
+				this.socketVerified
+					? this.requestCapabilitiesWithFallback()
+					: this.capabilityRequest || this.requestCapabilitiesWithFallback()
+			);
+			if (!capabilities) {
+				throw new Error("Social Stream Ninja capability response was invalid");
+			}
+			return capabilities;
+		} catch (error) {
+			this.setCapabilities(null);
+			this.setState("error");
+			throw error;
+		}
 	}
 
 	async requestCapabilities(): Promise<StreamDeckCapabilities | null> {
@@ -275,6 +317,54 @@ export class SsnClient {
 
 	private isSocketActive(): boolean {
 		return this.socket?.readyState === WebSocket.OPEN || this.socket?.readyState === WebSocket.CONNECTING;
+	}
+
+	private waitForSocketOpen(): Promise<void> {
+		const socket = this.socket;
+		if (!socket) {
+			return Promise.reject(new Error("Social Stream Ninja API WebSocket is not available"));
+		}
+		if (socket.readyState === WebSocket.OPEN) {
+			return Promise.resolve();
+		}
+		return new Promise((resolve, reject) => {
+			const cleanup = () => {
+				clearTimeout(timeout);
+				socket.off("open", handleOpen);
+				socket.off("close", handleClose);
+				socket.off("error", handleError);
+			};
+			const handleOpen = () => {
+				cleanup();
+				resolve();
+			};
+			const handleClose = () => {
+				cleanup();
+				reject(new Error("Social Stream Ninja API WebSocket closed during connection test"));
+			};
+			const handleError = () => {
+				cleanup();
+				reject(new Error("Social Stream Ninja API WebSocket failed during connection test"));
+			};
+			const timeout = setTimeout(() => {
+				cleanup();
+				reject(new Error("Social Stream Ninja API connection test timed out"));
+			}, this.settings.requestTimeoutMs || 5000);
+			socket.once("open", handleOpen);
+			socket.once("close", handleClose);
+			socket.once("error", handleError);
+		});
+	}
+
+	private getVerifiedCommandProtocol(payload: SsnCommandPayload): number | null {
+		if (!this.capabilities || this.capabilities.version < 2 || isSsappCommand(payload)) {
+			return null;
+		}
+		const ssn = this.capabilities.ssn;
+		const descriptors = isRecord(ssn) && isRecord(ssn.actionDescriptors) ? ssn.actionDescriptors : null;
+		const candidate = descriptors ? descriptors[payload.action] : null;
+		const descriptor = isRecord(candidate) ? candidate : null;
+		return descriptor && descriptor.callback === "guaranteed" ? this.capabilities.version : null;
 	}
 
 	private closeSocket(): void {

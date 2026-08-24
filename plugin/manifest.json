@@ -4,11 +4,12 @@
 	"Name": "Social Stream Ninja",
 	"Author": "Social Stream Ninja",
 	"URL": "https://socialstream.ninja",
+	"SupportURL": "https://github.com/steveseguin/ssn-streamdeck/issues",
 	"Description": "Control Social Stream Ninja from Stream Deck keys: overlays, docks, queues, polls, chat actions, and desktop app source controls for live streams.",
-	"Version": "0.2.1.0",
+	"Version": "0.2.2.0",
 	"SDKVersion": 2,
 	"Software": {
-		"MinimumVersion": "6.8"
+		"MinimumVersion": "6.9"
 	},
 	"Nodejs": {
 		"Version": "20"
@@ -28,6 +29,22 @@
 	"Icon": "imgs/plugin",
 	"CodePath": "bin/plugin.js",
 	"PropertyInspectorPath": "ui/action-settings.html",
+	"Profiles": [
+		{
+			"Name": "profiles/Social Stream Ninja",
+			"DeviceType": 0,
+			"AutoInstall": true,
+			"DontAutoSwitchWhenInstalled": true,
+			"Readonly": false
+		},
+		{
+			"Name": "profiles/Social Stream Ninja Plus",
+			"DeviceType": 7,
+			"AutoInstall": true,
+			"DontAutoSwitchWhenInstalled": true,
+			"Readonly": false
+		}
+	],
 	"Actions": [
 		{
 			"UUID": "ninja.socialstream.streamdeck.connection",
@@ -41,12 +58,16 @@
 					"Name": "Waiting",
 					"Image": "imgs/state-neutral",
 					"Title": "SSN",
+					"TitleAlignment": "bottom",
+					"FontSize": 10,
 					"ShowTitle": true
 				},
 				{
 					"Name": "Connected",
 					"Image": "imgs/state-on",
 					"Title": "SSN",
+					"TitleAlignment": "bottom",
+					"FontSize": 10,
 					"ShowTitle": true
 				}
 			],
@@ -64,6 +85,8 @@
 					"Name": "Ready",
 					"Image": "imgs/command",
 					"Title": "SSN",
+					"TitleAlignment": "bottom",
+					"FontSize": 10,
 					"ShowTitle": true
 				}
 			],
@@ -81,6 +104,8 @@
 					"Name": "Ready",
 					"Image": "imgs/custom",
 					"Title": "Custom",
+					"TitleAlignment": "bottom",
+					"FontSize": 10,
 					"ShowTitle": true
 				}
 			],

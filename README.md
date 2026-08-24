@@ -1,7 +1,7 @@
 # Social Stream Ninja Stream Deck Plugin
 
 [![Status](https://img.shields.io/badge/status-development-f59e0b)](#status)
-[![Stream Deck](https://img.shields.io/badge/Stream%20Deck-6.8%2B-00aeef)](#requirements)
+[![Stream Deck](https://img.shields.io/badge/Stream%20Deck-6.9%2B-00aeef)](#requirements)
 [![SDK](https://img.shields.io/badge/SDK-v2-38bdf8)](https://docs.elgato.com/streamdeck/sdk/)
 [![Runtime](https://img.shields.io/badge/runtime-Node%2020-22c55e)](#requirements)
 [![Social Stream Ninja](https://img.shields.io/badge/Social%20Stream-Ninja-4a90e2)](https://socialstream.ninja/)
@@ -16,6 +16,10 @@ The plugin uses the official Stream Deck SDK, TypeScript source, generated icon 
 
 ![Social Stream Ninja Stream Deck property inspector](docs/images/property-inspector-preview.png)
 
+Preset key icons, in command registry order:
+
+![Preset command key icons](docs/images/command-icons.png)
+
 ## Status
 
 Current workspace capabilities:
@@ -23,16 +27,19 @@ Current workspace capabilities:
 - Guided setup in the property inspector with a short Social Stream Ninja explanation.
 - Setup action for entering the session ID and testing the plugin connection.
 - Preset Command action with Social Stream Ninja remote controls and capability-aware desktop app source controls.
+- A distinct key icon for every preset: a family glyph (queue, credits, timer, poll, waitlist, source, ...) plus a play/stop/next/reset/clear style badge, generated from the command registry.
 - Custom Command action.
 - Global session/API configuration in the property inspector.
 - WebSocket client for `wss://io.socialstream.ninja`, with automatic HTTP capability and command fallback when the hosted socket opens but does not relay responses.
-- Automatic WebSocket reconnect and capability refresh when Social Stream Ninja restarts.
+- Automatic WebSocket reconnect and capability refresh after network loss, system wake, or a Social Stream Ninja restart.
 - HTTP fallback supports capability discovery, desktop-app controls, primitive values, and URL-encoded structured values.
 - Self-contained plugin bundles that do not depend on the development `node_modules` folder.
 - A command registry seeded with common Social Stream Ninja commands from `../api.md`, including credits, dock pinning, waitlist, chat, poll, queue, and desktop app source presets.
 - Capability-aware desktop app source controls when Social Stream Ninja advertises support.
 - Stream Deck + timer dial with live time/status feedback.
 - Stream Deck + chat review strip that listens only while visible, browses recent channel-4 chat, pins messages, and features pinned chat.
+- Ready-to-edit starter profiles for Stream Deck and Stream Deck + that never replace the active profile.
+- Copyable diagnostics with plugin/runtime versions and a sanitized last error; session IDs are excluded.
 - Per-command capability filtering with the detected desktop app and bridge version shown in setup.
 
 ## Suggested Actions
@@ -61,7 +68,7 @@ Based on `../api.md`:
 
 ## Requirements
 
-- Stream Deck desktop app 6.8 or newer.
+- Stream Deck desktop app 6.9 or newer.
 - Node.js 20+ for local development.
 - Social Stream Ninja session ID with remote API control enabled.
 
@@ -95,10 +102,14 @@ npx @elgato/cli@latest restart ninja.socialstream.streamdeck
 
 ## Releases
 
-GitHub Actions builds and publishes the installable `.streamDeckPlugin` file after every commit to `main`. Each release gets a unique build version, such as `v0.2.1.12`, and the workflow can also be run manually.
+GitHub Actions tests and validates the plugin on Windows, macOS, and Linux before publishing the installable `.streamDeckPlugin` file from `main`. Each release gets a unique build version, such as `v0.2.1.12`, and the workflow can also be run manually.
 
 ## Device Notes
 
 - Key actions work on Stream Deck models with keys.
 - Timer Dial and Chat Review appear only for Stream Deck + encoders.
 - Chat Review requires **Send chat messages to API server** in Social Stream Ninja. No external link is needed during setup.
+
+## License
+
+Licensed under the [GNU General Public License v3.0](LICENSE).

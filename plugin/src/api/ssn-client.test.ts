@@ -7,7 +7,7 @@ import type { StreamDeckCapabilities } from "./types.js";
 
 const capabilities: StreamDeckCapabilities = {
 	type: "capabilities",
-	version: 1,
+	version: 2,
 	runtime: "electron",
 	ssapp: {
 		available: true,
@@ -23,6 +23,12 @@ const capabilities: StreamDeckCapabilities = {
 	ssn: {
 		actions: {
 			nextInQueue: true
+		},
+		actionDescriptors: {
+			nextInQueue: {
+				owner: "dock",
+				callback: "guaranteed"
+			}
 		}
 	}
 };
@@ -58,6 +64,48 @@ describe("SsnClient", () => {
 			in: 2,
 			out: 1
 		});
+	});
+
+	it("re-probes the host when the connection is tested", async () => {
+		const { port, server, messages } = await createServer();
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+
+		client.configure({
+			sessionId: "session-verify",
+			apiHost: `127.0.0.1:${port}`,
+			useTls: false,
+			httpFallback: false,
+			requestTimeoutMs: 500
+		});
+
+		await waitFor(() => client.connectionState === "connected");
+		await expect(client.verifyConnection()).resolves.toMatchObject({ type: "capabilities", version: 2 });
+		expect(messages.filter(message => message.action === "getCapabilities")).toHaveLength(2);
+	});
+
+	it("uses versioned callbacks for commands with guaranteed host responses", async () => {
+		const { port, server, messages } = await createServer();
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+
+		client.configure({
+			sessionId: "session-versioned",
+			apiHost: `127.0.0.1:${port}`,
+			useTls: false,
+			httpFallback: false,
+			requestTimeoutMs: 500
+		});
+		await waitFor(() => client.connectionState === "connected");
+
+		await expect(client.sendCommand({ action: "nextInQueue" })).resolves.toMatchObject({ ok: true });
+		expect(messages.find(message => message.action === "nextInQueue")).toMatchObject({
+			action: "nextInQueue",
+			protocol: 2
+		});
+		expect(messages.find(message => message.action === "nextInQueue")?.get).toEqual(expect.any(String));
 	});
 
 	it("does not report connected when no Social Stream host answers", async () => {
@@ -342,6 +390,10 @@ async function createServer(): Promise<{ server: WebSocketServer; port: number; 
 			if (message.action === "getCapabilities" && typeof message.get === "string") {
 				socket.send(JSON.stringify({ callback: { get: message.get, result: false } }));
 				socket.send(JSON.stringify({ callback: { get: message.get, result: capabilities } }));
+				return;
+			}
+			if (message.action === "nextInQueue" && message.protocol === 2 && typeof message.get === "string") {
+				socket.send(JSON.stringify({ callback: { get: message.get, result: { ok: true, status: "completed" } } }));
 				return;
 			}
 			if (message.action === "startSource" && typeof message.get === "string") {

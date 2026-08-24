@@ -174,6 +174,42 @@ function Draw-Pill {
 	$background.Dispose()
 }
 
+function Draw-TimerTouchStrip {
+	param([System.Drawing.Graphics]$Graphics, [float]$X, [float]$Y)
+
+	$strip = [System.Drawing.SolidBrush]::new([System.Drawing.ColorTranslator]::FromHtml("#0F172A"))
+	$bar = [System.Drawing.SolidBrush]::new([System.Drawing.ColorTranslator]::FromHtml("#253247"))
+	$fill = [System.Drawing.SolidBrush]::new([System.Drawing.ColorTranslator]::FromHtml("#38BDF8"))
+	Fill-RoundedRectangle $Graphics $strip $X $Y 570 260 20
+	$title = New-Font 22 ([System.Drawing.FontStyle]::Bold)
+	$value = New-Font 70 ([System.Drawing.FontStyle]::Bold)
+	$hint = New-Font 20 ([System.Drawing.FontStyle]::Bold)
+	Draw-Text $Graphics "STREAM TIMER" $title "#CBD5E1" ($X + 22) ($Y + 12) 250 35
+	Draw-Text $Graphics "RUNNING" $title "#5EEAD4" ($X + 300) ($Y + 12) 248 35 ([System.Drawing.StringAlignment]::Far)
+	Draw-Text $Graphics "02:35" $value "#FFFFFF" ($X + 20) ($Y + 48) 530 105 ([System.Drawing.StringAlignment]::Center)
+	Fill-RoundedRectangle $Graphics $bar ($X + 22) ($Y + 166) 526 18 9
+	Fill-RoundedRectangle $Graphics $fill ($X + 22) ($Y + 166) 326 18 9
+	$timerHint = "TURN " + [char]0x00B1 + "10s   PUSH toggle   TOUCH HOLD reset"
+	Draw-Text $Graphics $timerHint $hint "#94A3B8" ($X + 22) ($Y + 198) 526 40 ([System.Drawing.StringAlignment]::Center)
+	$title.Dispose(); $value.Dispose(); $hint.Dispose(); $strip.Dispose(); $bar.Dispose(); $fill.Dispose()
+}
+
+function Draw-ChatTouchStrip {
+	param([System.Drawing.Graphics]$Graphics, [float]$X, [float]$Y)
+
+	$strip = [System.Drawing.SolidBrush]::new([System.Drawing.ColorTranslator]::FromHtml("#0F172A"))
+	Fill-RoundedRectangle $Graphics $strip $X $Y 570 260 20
+	$meta = New-Font 22 ([System.Drawing.FontStyle]::Bold)
+	$message = New-Font 34 ([System.Drawing.FontStyle]::Bold)
+	$hint = New-Font 20 ([System.Drawing.FontStyle]::Bold)
+	Draw-Text $Graphics "YOUTUBE" $meta "#5EEAD4" ($X + 22) ($Y + 12) 220 35
+	Draw-Text $Graphics "Ava" $meta "#E2E8F0" ($X + 300) ($Y + 12) 248 35 ([System.Drawing.StringAlignment]::Far)
+	Draw-Text $Graphics "Thanks for joining the stream!" $message "#FFFFFF" ($X + 22) ($Y + 47) 526 100
+	Draw-Text $Graphics "1/12   TURN browse   PRESS pin" $hint "#94A3B8" ($X + 22) ($Y + 160) 526 35 ([System.Drawing.StringAlignment]::Center)
+	Draw-Text $Graphics "TAP feature   HOLD unpin" $hint "#94A3B8" ($X + 22) ($Y + 202) 526 35 ([System.Drawing.StringAlignment]::Center)
+	$meta.Dispose(); $message.Dispose(); $hint.Dispose(); $strip.Dispose()
+}
+
 $white = "#F8FAFC"
 $muted = "#AFC0D6"
 $blue = "#59A5FF"
@@ -181,6 +217,18 @@ $teal = "#4CD3BE"
 $panel = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(210, 24, 34, 50))
 $panelSoft = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(160, 24, 34, 50))
 $border = [System.Drawing.Pen]::new([System.Drawing.Color]::FromArgb(100, 148, 163, 184), 2)
+
+# Marketplace app icon (required exact size)
+$appIcon = [System.Drawing.Bitmap]::new(288, 288)
+$appIconGraphics = [System.Drawing.Graphics]::FromImage($appIcon)
+$appIconGraphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+$appIconGraphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+$appIconGraphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+$appIconGraphics.Clear([System.Drawing.Color]::Transparent)
+Draw-ImageFit $appIconGraphics (Join-Path $pluginRoot "plugin@2x.png") 0 0 288 288
+$appIcon.Save((Join-Path $outputRoot "app-icon.png"), [System.Drawing.Imaging.ImageFormat]::Png)
+$appIconGraphics.Dispose()
+$appIcon.Dispose()
 
 # Marketplace thumbnail
 $canvas = New-MediaCanvas "#172033" "#090F1B"
@@ -224,7 +272,7 @@ Draw-Text $g "Build a Stream Deck layout around the Social Stream Ninja tools yo
 
 $cards = @(
 	@{ Icon = "connection@2x.png"; Title = "Quick setup"; Text = "Connect with the same session ID used by the desktop app or Chrome extension." },
-	@{ Icon = "command@2x.png"; Title = "Preset controls"; Text = "Trigger overlays, docks, queues, polls, waitlists and chat actions." },
+	@{ Icon = "command@2x.png"; Title = "Preset controls"; Text = "Trigger credits, overlays, queues, polls, waitlists and chat actions." },
 	@{ Icon = "custom@2x.png"; Title = "Custom commands"; Text = "Send advanced Social Stream Ninja actions from a dedicated key." }
 )
 
@@ -258,9 +306,8 @@ $stepFont = New-Font 31 ([System.Drawing.FontStyle]::Bold)
 $stepBody = New-Font 25
 $stepY = 340
 $steps = @(
-	@{ Number = "1"; Title = "Desktop app"; Text = "Open Stream Deck Setup and copy the session ID." },
-	@{ Number = "2"; Title = "Chrome extension"; Text = "Open Settings and copy your unique session ID." },
-	@{ Number = "3"; Title = "Paste and test"; Text = "Enter it once in Stream Deck and test the connection." }
+	@{ Number = "1"; Title = "Copy the session ID"; Text = "Desktop app: Stream Deck Setup.`nChrome extension: Settings." },
+	@{ Number = "2"; Title = "Paste and test"; Text = "Enter it once in Stream Deck and test the connection." }
 )
 foreach ($step in $steps) {
 	$circle = [System.Drawing.SolidBrush]::new([System.Drawing.ColorTranslator]::FromHtml($blue))
@@ -269,7 +316,7 @@ foreach ($step in $steps) {
 	Draw-Text $g $step.Number $stepFont "#07111F" 110 $stepY 64 64 ([System.Drawing.StringAlignment]::Center)
 	Draw-Text $g $step.Title $stepFont $white 205 ($stepY - 2) 600 45
 	Draw-Text $g $step.Text $stepBody $muted 205 ($stepY + 44) 620 70
-	$stepY += 165
+	$stepY += 220
 }
 
 Fill-RoundedRectangle $g $panel 1010 95 760 770 38
@@ -324,19 +371,24 @@ Draw-Text $g "Built for keys and dials" $heading $white 100 65 1720 100 ([System
 Draw-Text $g "Get live feedback and quick control on Stream Deck and Stream Deck +." $body $muted 200 165 1520 70 ([System.Drawing.StringAlignment]::Center)
 
 $featureCards = @(
-	@{ Icon = "timer@2x.png"; X = 175; Title = "Timer Dial"; Text = "Turn to adjust time. Press to start or pause. Touch to refresh." },
-	@{ Icon = "chat-feed@2x.png"; X = 1035; Title = "Chat Review"; Text = "Browse recent chat, pin messages and feature the next pinned item." }
+	@{ Type = "timer"; Icon = "timer@2x.png"; X = 175; Title = "Timer Dial"; Text = "Adjust and monitor the timer with live status." },
+	@{ Type = "chat"; Icon = "chat-feed@2x.png"; X = 1035; Title = "Chat Review"; Text = "Browse, pin, feature and unpin recent chat." }
 )
 
 foreach ($feature in $featureCards) {
-	Fill-RoundedRectangle $g $panel $feature.X 300 710 500 40
-	Draw-RoundedRectangle $g $border $feature.X 300 710 500 40
-	Draw-ImageFit $g (Join-Path $pluginRoot $feature.Icon) ($feature.X + 45) 390 260 260
+	Fill-RoundedRectangle $g $panel $feature.X 285 710 610 40
+	Draw-RoundedRectangle $g $border $feature.X 285 710 610 40
+	if ($feature.Type -eq "timer") {
+		Draw-TimerTouchStrip $g ($feature.X + 70) 335
+	} else {
+		Draw-ChatTouchStrip $g ($feature.X + 70) 335
+	}
+	Draw-ImageFit $g (Join-Path $pluginRoot $feature.Icon) ($feature.X + 70) 650 70 70
 	$featureTitle = New-Font 48 ([System.Drawing.FontStyle]::Bold)
 	$featureBody = New-Font 28
-	Draw-Text $g $feature.Title $featureTitle $white ($feature.X + 340) 395 320 70
-	Draw-Text $g $feature.Text $featureBody $muted ($feature.X + 340) 480 310 150
-	Draw-Pill $g "STREAM DECK +" ($feature.X + 340) 675 250 $teal
+	Draw-Text $g $feature.Title $featureTitle $white ($feature.X + 160) 647 470 75
+	Draw-Text $g $feature.Text $featureBody $muted ($feature.X + 70) 730 570 65
+	Draw-Pill $g "STREAM DECK +" ($feature.X + 70) 820 250 $teal
 	$featureTitle.Dispose()
 	$featureBody.Dispose()
 }

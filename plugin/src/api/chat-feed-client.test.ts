@@ -1,0 +1,40 @@
+import http from "node:http";
+import type { AddressInfo } from "node:net";
+import { afterEach, describe, expect, it } from "vitest";
+import { ChatFeedClient } from "./chat-feed-client.js";
+
+describe("ChatFeedClient", () => {
+	const cleanup: Array<() => void> = [];
+
+	afterEach(() => {
+		for (const fn of cleanup.splice(0)) fn();
+	});
+
+	it("reports websocket transport errors", async () => {
+		const server = http.createServer((_request, response) => {
+			response.writeHead(400);
+			response.end();
+		});
+		await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+		cleanup.push(() => server.close());
+		const port = (server.address() as AddressInfo).port;
+		const client = new ChatFeedClient();
+		cleanup.push(() => client.setActive("test", false));
+		const errors: Error[] = [];
+		client.onError(error => errors.push(error));
+		client.configure({ sessionId: "session", apiHost: `127.0.0.1:${port}`, useTls: false });
+		client.setActive("test", true);
+
+		await waitFor(() => errors.length > 0);
+
+		expect(errors[0]?.message).toBe("Social Stream Ninja chat-feed WebSocket error");
+	});
+});
+
+async function waitFor(predicate: () => boolean, timeoutMs = 1000): Promise<void> {
+	const started = Date.now();
+	while (!predicate()) {
+		if (Date.now() - started > timeoutMs) throw new Error("Timed out waiting for chat-feed error");
+		await new Promise(resolve => setTimeout(resolve, 10));
+	}
+}

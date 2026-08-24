@@ -70,6 +70,24 @@ describe("TimerDialAction", () => {
 		expect(mocks.sendCommand).toHaveBeenCalledTimes(1);
 		expect(mocks.sendCommand).toHaveBeenCalledWith({ action: "timeradd", value: 10 });
 	});
+
+	it("confirms a timer reset after a held touch", async () => {
+		const timer = new TimerDialAction();
+		const action = fakeDial();
+
+		await timer.onTouchTap({ action, payload: { hold: true, settings: {} } } as never);
+
+		expect(mocks.sendCommand).toHaveBeenCalledWith({ action: "resettimer", value: { confirm: true } });
+	});
+
+	it("updates its dial title as soon as settings are received", async () => {
+		const timer = new TimerDialAction();
+		const action = fakeDial();
+
+		await timer.onDidReceiveSettings({ action, payload: { settings: { title: "Show Clock", stepSeconds: 5 } } } as never);
+
+		expect(action.setFeedback).toHaveBeenLastCalledWith(expect.objectContaining({ title: "Show Clock" }));
+	});
 });
 
 function fakeDial() {

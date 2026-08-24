@@ -1,8 +1,9 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>Social Stream Ninja Settings</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title data-i18n="pi.documentTitle">Social Stream Ninja Settings</title>
 	<style>
 		:root {
 			color-scheme: dark;
@@ -74,6 +75,15 @@
 			background: #303744;
 			border-color: #4c5668;
 			color: var(--soft);
+		}
+		input:focus-visible,
+		select:focus-visible,
+		textarea:focus-visible,
+		button:focus-visible,
+		summary:focus-visible {
+			outline: 2px solid #9dcaff;
+			outline-offset: 2px;
+			border-color: var(--accent);
 		}
 		details {
 			margin-top: 10px;
@@ -183,129 +193,155 @@
 		.setup-details {
 			margin-bottom: 10px;
 		}
+		.help-links {
+			display: flex;
+			gap: 14px;
+			margin-top: 9px;
+		}
+		.help-links a {
+			color: #9dcaff;
+			font-weight: 650;
+		}
+		#diagnosticsText {
+			min-height: 92px;
+			font: 11px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+		}
 	</style>
 </head>
 <body>
-	<div id="statusBox" class="status">
+	<div id="statusBox" class="status" role="status" aria-live="polite" aria-atomic="true">
 		<div class="dot"></div>
 		<div>
-			<div id="statusText" class="status-title">Enter a Social Stream Ninja session ID.</div>
-			<div id="statusNote" class="status-note">Desktop app: open Stream Deck Setup. Chrome extension: open Settings and copy your unique session ID.</div>
+			<div id="statusText" class="status-title" data-i18n="pi.status.enterSession">Enter a Social Stream Ninja session ID.</div>
+			<div id="statusNote" class="status-note" data-i18n="pi.status.sessionHelp">Desktop app: open Stream Deck Setup. Chrome extension: open Settings and copy your unique session ID.</div>
 		</div>
 	</div>
 
 	<details id="setupDetails" class="setup-details">
-		<summary>Setup and connection</summary>
+		<summary data-i18n="pi.setup.summary">Setup and connection</summary>
 		<div class="details-body">
 			<section class="panel">
-				<h2>Connect Social Stream Ninja</h2>
-				<label for="sessionId">Session ID or overlay URL</label>
-				<input id="sessionId" type="password" autocomplete="off" placeholder="Paste session ID or dock.html?session=... URL">
-				<div class="hint">Copy your session ID from Stream Deck Setup in the desktop app or Settings in the Chrome extension. Full dock/overlay URLs also work.</div>
+				<h2 data-i18n="pi.setup.connect">Connect Social Stream Ninja</h2>
+				<label for="sessionId" data-i18n="pi.setup.sessionLabel">Session ID or overlay URL</label>
+				<input id="sessionId" type="password" autocomplete="off" placeholder="Paste session ID or dock.html?session=... URL" data-i18n-placeholder="pi.setup.sessionPlaceholder">
+				<div class="hint" data-i18n="pi.setup.sessionHint">Copy your session ID from Stream Deck Setup in the desktop app or Settings in the Chrome extension. Full dock/overlay URLs also work.</div>
 
 				<div class="actions">
-					<button id="testConnection" type="button">Test Connection</button>
-					<button id="showSession" class="secondary" type="button">Show ID</button>
+					<button id="testConnection" type="button" data-i18n="pi.setup.test">Test Connection</button>
+					<button id="showSession" class="secondary" type="button" data-i18n="pi.setup.showId">Show ID</button>
 				</div>
 
 				<details>
-					<summary>Advanced connection settings</summary>
+					<summary data-i18n="pi.setup.advanced">Advanced connection settings</summary>
 					<div class="details-body">
-						<label for="apiHost">API host</label>
+						<label for="apiHost" data-i18n="pi.setup.apiHost">API host</label>
 						<input id="apiHost" type="text" placeholder="io.socialstream.ninja">
 
 						<div class="row">
 							<div>
-								<label for="inChannel">Listen channel</label>
+								<label for="inChannel" data-i18n="pi.setup.listenChannel">Listen channel</label>
 								<input id="inChannel" type="number" min="1" step="1" placeholder="2">
 							</div>
 							<div>
-								<label for="outChannel">Send channel</label>
+								<label for="outChannel" data-i18n="pi.setup.sendChannel">Send channel</label>
 								<input id="outChannel" type="number" min="1" step="1" placeholder="1">
 							</div>
 						</div>
-						<div class="hint">Default Stream Deck remote control sends on channel 1 and listens for callbacks on channel 2.</div>
+						<div class="hint" data-i18n="pi.setup.channelHint">Default Stream Deck remote control sends on channel 1 and listens for callbacks on channel 2.</div>
 
 						<label class="checkline">
 							<input id="useTls" type="checkbox" checked>
-							Use TLS
+							<span data-i18n="pi.setup.useTls">Use TLS</span>
 						</label>
 						<label class="checkline">
 							<input id="httpFallback" type="checkbox" checked>
-							Allow HTTP fallback
+							<span data-i18n="pi.setup.httpFallback">Allow HTTP fallback</span>
 						</label>
 					</div>
 				</details>
 
-				<div id="capabilityText" class="capability">Desktop app source controls are unavailable until capabilities are received.</div>
+				<div id="capabilityText" class="capability" data-i18n="pi.capabilities.unavailable">Desktop app source controls are unavailable until capabilities are received.</div>
 			</section>
 
-			<div class="quick-start">Desktop app: Stream Deck Setup. Chrome extension: Settings. Copy the session ID, paste it here, and test once.</div>
+			<div class="quick-start" data-i18n="pi.setup.quickStart">Desktop app: Stream Deck Setup. Chrome extension: Settings. Copy the session ID, paste it here, and test once.</div>
 		</div>
 	</details>
 
 	<section id="commandSettings" class="panel hidden">
-		<h2>Preset Command</h2>
-		<label for="command">Command</label>
+		<h2 data-i18n="pi.preset.heading">Preset Command</h2>
+		<label for="command" data-i18n="pi.preset.command">Command</label>
 		<select id="command"></select>
 
-		<label id="targetLabel" for="target">Target</label>
-		<input id="target" type="text" placeholder="Optional">
+		<label id="targetLabel" for="target" data-i18n="pi.common.target">Target</label>
+		<input id="target" type="text" placeholder="Optional" data-i18n-placeholder="pi.common.optional">
 
-		<label id="sourceIdLabel" class="hidden" for="sourceId">Open desktop app source</label>
+		<label id="sourceIdLabel" class="hidden" for="sourceId" data-i18n="pi.preset.openSource">Open desktop app source</label>
 		<select id="sourceId" class="hidden"></select>
-		<button id="refreshSources" class="secondary hidden" type="button">Refresh open sources</button>
+		<button id="refreshSources" class="secondary hidden" type="button" data-i18n="pi.preset.refreshSources">Refresh open sources</button>
 
-		<label id="valueLabel" for="value">Value</label>
-		<textarea id="value" placeholder="Optional"></textarea>
+		<label id="valueLabel" for="value" data-i18n="pi.common.value">Value</label>
+		<textarea id="value" placeholder="Optional" data-i18n-placeholder="pi.common.optional"></textarea>
 
-		<label for="commandTitle">Title override</label>
-		<input id="commandTitle" type="text" placeholder="Optional">
+		<label for="commandTitle" data-i18n="pi.common.titleOverride">Title override</label>
+		<input id="commandTitle" type="text" placeholder="Optional" data-i18n-placeholder="pi.common.optional">
 
 		<label class="checkline">
 			<input id="commandAwaitResponse" type="checkbox">
-			Wait for response
+			<span data-i18n="pi.common.waitResponse">Wait for response</span>
 		</label>
-		<div id="commandHint" class="hint">Preset commands use the documented Social Stream Ninja remote-control API.</div>
+		<div id="commandHint" class="hint" data-i18n="pi.preset.hint">Preset commands use the documented Social Stream Ninja remote-control API.</div>
 	</section>
 
 	<section id="customSettings" class="panel hidden">
-		<h2>Custom Command</h2>
-		<label for="customAction">Action</label>
+		<h2 data-i18n="pi.custom.heading">Custom Command</h2>
+		<label for="customAction" data-i18n="pi.custom.action">Action</label>
 		<input id="customAction" type="text" placeholder="nextInQueue">
 
-		<label for="customTarget">Target</label>
-		<input id="customTarget" type="text" placeholder="Optional">
+		<label for="customTarget" data-i18n="pi.common.target">Target</label>
+		<input id="customTarget" type="text" placeholder="Optional" data-i18n-placeholder="pi.common.optional">
 
-		<label for="customValue">Value</label>
-		<textarea id="customValue" placeholder="true, false, text, or JSON"></textarea>
+		<label for="customValue" data-i18n="pi.common.value">Value</label>
+		<textarea id="customValue" placeholder="true, false, text, or JSON" data-i18n-placeholder="pi.custom.valuePlaceholder"></textarea>
 
-		<label for="customTitle">Title override</label>
-		<input id="customTitle" type="text" placeholder="Optional">
+		<label for="customTitle" data-i18n="pi.common.titleOverride">Title override</label>
+		<input id="customTitle" type="text" placeholder="Optional" data-i18n-placeholder="pi.common.optional">
 
 		<label class="checkline">
 			<input id="customAwaitResponse" type="checkbox">
-			Wait for response
+			<span data-i18n="pi.common.waitResponse">Wait for response</span>
 		</label>
-		<div class="hint">Custom Command is for payloads not yet exposed as presets.</div>
+		<div class="hint" data-i18n="pi.custom.hint">Custom Command is for payloads not yet exposed as presets.</div>
 	</section>
 
 	<section id="timerSettings" class="panel hidden">
-		<h2>Timer Dial</h2>
-		<label for="timerStep">Seconds per turn</label>
+		<h2 data-i18n="pi.timer.heading">Timer Dial</h2>
+		<label for="timerStep" data-i18n="pi.timer.step">Seconds per turn</label>
 		<input id="timerStep" type="number" min="1" step="1" value="10">
-		<label for="timerTitle">Display title</label>
-		<input id="timerTitle" type="text" placeholder="Stream Timer">
-		<div class="hint">Turn to adjust. Press to start or pause. Hold the touchscreen to reset.</div>
+		<label for="timerTitle" data-i18n="pi.common.displayTitle">Display title</label>
+		<input id="timerTitle" type="text" placeholder="Stream Timer" data-i18n-placeholder="pi.timer.titlePlaceholder">
+		<div class="hint" data-i18n="pi.timer.hint">Turn to adjust. Press to start or pause. Hold the touch strip to reset.</div>
 	</section>
 
 	<section id="chatFeedSettings" class="panel hidden">
-		<h2>Chat Review</h2>
-		<label for="chatFeedTitle">Display title</label>
-		<input id="chatFeedTitle" type="text" placeholder="Chat Review">
-		<div class="hint">Turn to browse recent chat, press to pin, tap to feature the next pinned message, or hold to unpin. In Social Stream Ninja, enable “Send chat messages to API server”.</div>
+		<h2 data-i18n="pi.chat.heading">Chat Review</h2>
+		<label for="chatFeedTitle" data-i18n="pi.common.displayTitle">Display title</label>
+		<input id="chatFeedTitle" type="text" placeholder="Chat Review" data-i18n-placeholder="pi.chat.titlePlaceholder">
+		<div class="hint" data-i18n="pi.chat.hint">Turn to browse recent chat, press to pin, tap to feature the next pinned message, or hold to unpin. In Social Stream Ninja, enable “Send chat messages to API server”.</div>
 	</section>
 
+	<details id="helpDetails">
+		<summary data-i18n="pi.help.summary">Help and diagnostics</summary>
+		<div class="details-body">
+			<textarea id="diagnosticsText" readonly aria-label="Diagnostics" data-i18n-aria-label="pi.help.diagnostics">No errors recorded.</textarea>
+			<button id="copyDiagnostics" class="secondary" type="button" data-i18n="pi.help.copy">Copy diagnostics</button>
+			<div class="help-links">
+				<a href="https://github.com/steveseguin/ssn-streamdeck/issues" target="_blank" rel="noreferrer" data-i18n="pi.help.support">Support</a>
+				<a href="https://socialstream.ninja/privacy" target="_blank" rel="noreferrer" data-i18n="pi.help.privacy">Privacy</a>
+			</div>
+		</div>
+	</details>
+
+	<script src="locales.js"></script>
 	<script>
 		let websocket = null;
 		let actionInfo = null;
@@ -315,12 +351,53 @@
 		let globalSettings = {};
 		let actionSettings = {};
 		let capabilities = null;
+		let diagnostics = null;
 		let availableSources = [];
 		let currentState = "missing-session";
 		let globalSettingsLoaded = false;
 		let setupDetailsInitialized = false;
+		let currentLocale = "en";
+		let localizedStrings = {};
+		const supportedLocales = ["de", "en", "es", "fr", "ja", "ko", "zh_CN", "zh_TW"];
+
+		function normalizedLocale(value) {
+			return supportedLocales.includes(value) ? value : "en";
+		}
+
+		function t(key, fallback, values) {
+			let text = Object.prototype.hasOwnProperty.call(localizedStrings, key) ? localizedStrings[key] : fallback;
+			text = typeof text === "string" ? text : key;
+			Object.keys(values || {}).forEach(name => {
+				text = text.replace(new RegExp("\\{" + name + "\\}", "g"), String(values[name]));
+			});
+			return text;
+		}
+
+		function applyStaticTranslations() {
+			if (document.documentElement) document.documentElement.lang = currentLocale.replace("_", "-");
+			document.querySelectorAll("[data-i18n]").forEach(element => {
+				const key = element.getAttribute("data-i18n");
+				element.textContent = t(key, element.textContent);
+			});
+			document.querySelectorAll("[data-i18n-placeholder]").forEach(element => {
+				const key = element.getAttribute("data-i18n-placeholder");
+				element.placeholder = t(key, element.placeholder);
+			});
+			document.querySelectorAll("[data-i18n-aria-label]").forEach(element => {
+				const key = element.getAttribute("data-i18n-aria-label");
+				element.setAttribute("aria-label", t(key, element.getAttribute("aria-label") || ""));
+			});
+		}
+
+		function setLocale(value) {
+			currentLocale = normalizedLocale(value);
+			const catalogs = window.SSN_STREAMDECK_LOCALES || {};
+			localizedStrings = catalogs[currentLocale] || catalogs.en || {};
+			applyStaticTranslations();
+		}
 		const commandGroups = [
 			{
+				key: "overlayQueue",
 				label: "Overlay and queue",
 				options: [
 					{ value: "nextInQueue", label: "Next in queue", scope: "ssn" },
@@ -334,6 +411,7 @@
 				]
 			},
 			{
+				key: "credits",
 				label: "Credits",
 				options: [
 					{ value: "creditsStart", label: "Start credits", scope: "ssn", defaultAwaitResponse: true },
@@ -343,6 +421,7 @@
 				]
 			},
 			{
+				key: "chatPolls",
 				label: "Chat and polls",
 				options: [
 					{ value: "sendChat", label: "Send chat", scope: "ssn", allowTarget: true, defaultValue: "Hello from Stream Deck", valueLabel: "Message" },
@@ -356,6 +435,7 @@
 				]
 			},
 			{
+				key: "dockMessages",
 				label: "Dock messages",
 				options: [
 					{ value: "pin", label: "Pin message", scope: "ssn", allowTarget: true, valueLabel: "Message ID or JSON message" },
@@ -364,6 +444,7 @@
 				]
 			},
 			{
+				key: "waitlistDraws",
 				label: "Waitlist and draws",
 				options: [
 					{ value: "removefromwaitlist", label: "Remove entry", scope: "ssn", defaultValue: "1", valueLabel: "Entry number" },
@@ -381,12 +462,13 @@
 				]
 			},
 			{
+				key: "timerMap",
 				label: "Timer and map",
 				options: [
 					{ value: "starttimer", label: "Start timer", scope: "ssn" },
 					{ value: "pausetimer", label: "Pause timer", scope: "ssn" },
 					{ value: "toggletimer", label: "Toggle timer", scope: "ssn" },
-					{ value: "resettimer", label: "Reset timer", scope: "ssn" },
+					{ value: "resettimer", label: "Reset timer", scope: "ssn", defaultValue: { confirm: true } },
 					{ value: "timeradd", label: "Add timer time", scope: "ssn", defaultValue: "30", valueLabel: "Seconds" },
 					{ value: "timersubtract", label: "Subtract timer time", scope: "ssn", defaultValue: "30", valueLabel: "Seconds" },
 					{ value: "settimer", label: "Set timer", scope: "ssn", defaultValue: { seconds: 300 }, valueLabel: "Timer JSON" },
@@ -397,6 +479,7 @@
 				]
 			},
 			{
+				key: "desktopSources",
 				label: "Desktop app sources",
 				options: [
 					{ value: "getSources", label: "List sources", scope: "ssapp", capabilityPath: ["sourceControls", "list"], defaultAwaitResponse: true },
@@ -424,6 +507,13 @@
 
 		window.connectElgatoStreamDeckSocket = function(port, uuid, registerEvent, info, actionInfoJson) {
 			propertyInspectorContext = uuid;
+			let registrationInfo = {};
+			try {
+				registrationInfo = JSON.parse(info || "{}");
+			} catch (error) {
+				registrationInfo = {};
+			}
+			setLocale(registrationInfo.application && registrationInfo.application.language);
 			actionInfo = JSON.parse(actionInfoJson);
 			actionUuid = actionInfo.action || "";
 			actionContext = actionInfo.context || "";
@@ -502,16 +592,18 @@
 
 		function renderCapabilities() {
 			if (ssappAvailable()) {
-				const version = capabilities.ssapp.version ? " " + escapeHtml(String(capabilities.ssapp.version)) : "";
-				const bridge = capabilities.ssapp.bridgeVersion ? " · bridge v" + escapeHtml(String(capabilities.ssapp.bridgeVersion)) : "";
-				byId("capabilityText").innerHTML = "<strong>Desktop app" + version + " connected</strong>" + bridge + ". Compatible controls are enabled.";
+				const version = capabilities.ssapp.version ? " " + String(capabilities.ssapp.version) : "";
+				const bridge = capabilities.ssapp.bridgeVersion ? " · " + t("pi.capabilities.bridge", "bridge v{version}", { version: capabilities.ssapp.bridgeVersion }) : "";
+				const connected = t("pi.capabilities.connected", "Desktop app{version} connected", { version });
+				const enabled = t("pi.capabilities.enabled", "Compatible controls are enabled.");
+				byId("capabilityText").innerHTML = "<strong>" + escapeHtml(connected) + "</strong>" + escapeHtml(bridge) + ". " + escapeHtml(enabled);
 				return;
 			}
 			if (capabilities) {
-				byId("capabilityText").innerHTML = "<strong>Browser mode</strong> · Social Stream controls only.";
+				byId("capabilityText").innerHTML = "<strong>" + escapeHtml(t("pi.capabilities.browserMode", "Browser mode")) + "</strong> · " + escapeHtml(t("pi.capabilities.socialOnly", "Social Stream controls only."));
 				return;
 			}
-			byId("capabilityText").textContent = "Desktop app source controls will appear here after Social Stream Ninja advertises them.";
+			byId("capabilityText").textContent = t("pi.capabilities.pending", "Desktop app source controls will appear here after Social Stream Ninja advertises them.");
 		}
 
 		function renderCommandOptions() {
@@ -523,11 +615,11 @@
 				const available = group.options.filter(commandOptionAvailable);
 				if (!available.length) return;
 				const optgroup = document.createElement("optgroup");
-				optgroup.label = group.label;
+				optgroup.label = t("group." + group.key, group.label);
 				available.forEach(option => {
 					const item = document.createElement("option");
 					item.value = option.value;
-					item.textContent = option.label;
+					item.textContent = t("command." + option.value, option.label);
 					optgroup.appendChild(item);
 					if (option.value === selected) selectedIsAvailable = true;
 				});
@@ -536,7 +628,9 @@
 			if (!selectedIsAvailable && selected) {
 				const item = document.createElement("option");
 				item.value = selected;
-				item.textContent = selected + " (unavailable)";
+				const unavailableValues = {};
+				unavailableValues.value = selected;
+				item.textContent = t("pi.common.unavailable", "{value} (unavailable)", unavailableValues);
 				item.disabled = true;
 				select.appendChild(item);
 			}
@@ -569,16 +663,24 @@
 			if (supportsSourceSelection) renderSourceOptions();
 			byId("valueLabel").classList.toggle("hidden", !hasValue);
 			byId("value").classList.toggle("hidden", !hasValue);
-			byId("valueLabel").textContent = valueLabel || "Value";
-			byId("value").placeholder = valueLabel || (isSsapp ? "Source ID or JSON" : "Optional");
+			byId("valueLabel").textContent = valueLabel ? t("valueLabel." + valueLabel, valueLabel) : t("pi.common.value", "Value");
+			byId("value").placeholder = valueLabel
+				? t("valueLabel." + valueLabel, valueLabel)
+				: isSsapp
+					? t("pi.preset.sourceValue", "Source ID or JSON")
+					: t("pi.common.optional", "Optional");
 			awaitResponse.checked = requiresResponse || actionSettings.awaitResponse === true;
 			awaitResponse.disabled = requiresResponse;
 			const baseHint = supportsSourceSelection
-				? "Select one open desktop app source to reply there only. The source is resolved again when the key is pressed, so restarts are safe."
+				? t("pi.preset.sourceHint", "Select one open desktop app source to reply there only. The source is resolved again when the key is pressed, so restarts are safe.")
 				: isSsapp
-				? "Desktop app commands are still sent through Social Stream Ninja, which decides how to route them."
-				: "Preset commands use the documented Social Stream Ninja remote-control API.";
-			byId("commandHint").textContent = requiresResponse ? baseHint + " This command waits for the result." : baseHint;
+				? t("pi.preset.desktopHint", "Desktop app commands are still sent through Social Stream Ninja, which decides how to route them.")
+					: t("pi.preset.hint", "Preset commands use the documented Social Stream Ninja remote-control API.");
+			const waitHint = requiresResponse ? " " + t("pi.preset.waitHint", "This command waits for the result.") : "";
+			const confirmHint = option && option.value === "creditsReset"
+				? " " + t("pi.preset.confirmHint", "Standalone keys require two presses; Multi Actions reset immediately.")
+				: "";
+			byId("commandHint").textContent = baseHint + waitHint + confirmHint;
 		}
 
 		function renderSourceOptions() {
@@ -587,7 +689,7 @@
 			select.innerHTML = "";
 			const allOption = document.createElement("option");
 			allOption.value = "";
-			allOption.textContent = "All sources / use target";
+			allOption.textContent = t("pi.preset.allSources", "All sources / use target");
 			select.appendChild(allOption);
 			let selectedFound = !selected;
 			availableSources.filter(source => source.status === "active" && Number.isInteger(source.tabId) && source.tabId > 0).forEach(source => {
@@ -600,7 +702,9 @@
 			if (selected && !selectedFound) {
 				const unavailable = document.createElement("option");
 				unavailable.value = selected;
-				unavailable.textContent = selected + " (not open)";
+				const notOpenValues = {};
+				notOpenValues.value = selected;
+				unavailable.textContent = t("pi.common.notOpen", "{value} (not open)", notOpenValues);
 				select.appendChild(unavailable);
 			}
 			select.value = selected;
@@ -659,7 +763,7 @@
 			// Connection status at the top is the onboarding progress indicator.
 		}
 
-		function saveGlobalSettings() {
+		function saveGlobalSettings(suppressStatusRequest) {
 			const sessionId = normalizeSessionInput();
 			globalSettings = {
 				sessionId: sessionId,
@@ -671,7 +775,7 @@
 			};
 			send({ event: "setGlobalSettings", context: propertyInspectorContext, payload: globalSettings });
 			renderSetupSteps();
-			setTimeout(requestStatus, 250);
+			if (suppressStatusRequest !== true) setTimeout(requestStatus, 250);
 		}
 
 		function normalizeSessionInput() {
@@ -752,13 +856,15 @@
 
 		function handlePluginMessage(payload) {
 			if (payload.type === "status") {
+				diagnostics = payload.diagnostics || diagnostics;
+				renderDiagnostics();
 				if (Object.prototype.hasOwnProperty.call(payload, "capabilities")) {
 					capabilities = payload.capabilities || null;
 					renderActionSettings();
 				}
 				currentState = payload.state || currentState;
-				updateStatus(payload.ok === true ? "ok" : payload.state === "missing-session" ? "warn" : "error", payload.message || "Status updated.");
-				if (payload.ok === true) requestSources();
+				updateStatus(payload.ok === true ? "ok" : payload.state === "missing-session" ? "warn" : "error", localizedStatus(payload.message || "Status updated."));
+				if (payload.ok === true && ssappAvailable()) requestSources();
 			} else if (payload.type === "capabilities") {
 				capabilities = payload.capabilities || null;
 				renderActionSettings();
@@ -770,6 +876,23 @@
 			renderSetupSteps();
 		}
 
+		function renderDiagnostics() {
+			if (!diagnostics) {
+				byId("diagnosticsText").value = t("pi.help.noErrors", "No errors recorded.");
+				return;
+			}
+			const parts = [
+				"Plugin " + (diagnostics.pluginVersion || "?"),
+				"Stream Deck " + (diagnostics.streamDeckVersion || "?"),
+				diagnostics.platform || "unknown",
+				diagnostics.runtime || "unknown",
+				"API v" + (diagnostics.protocolVersion || 0),
+				diagnostics.state || currentState
+			];
+			const lastError = diagnostics.lastError ? "\n" + diagnostics.lastError : "\n" + t("pi.help.noErrors", "No errors recorded.");
+			byId("diagnosticsText").value = parts.join(" · ") + lastError;
+		}
+
 		function updateStatus(kind, text) {
 			const box = byId("statusBox");
 			box.classList.remove("ok", "error");
@@ -777,8 +900,28 @@
 			if (kind === "error") box.classList.add("error");
 			byId("statusText").textContent = text;
 			byId("statusNote").textContent = kind === "ok"
-				? "Ready. Only controls supported by this runtime are shown."
-				: "Copy the session ID from the Social Stream Ninja desktop app or Chrome extension, then keep it running.";
+				? t("pi.status.readyNote", "Ready. Only controls supported by this runtime are shown.")
+				: t("pi.status.sessionNote", "Copy the session ID from the Social Stream Ninja desktop app or Chrome extension, then keep it running.");
+		}
+
+		function localizedStatus(text) {
+			const exactKeys = {
+				"Enter a session ID first.": "pi.status.enterFirst",
+				"Connection verified.": "pi.status.verified",
+				"Unable to verify the connection.": "pi.status.verifyFailed",
+				"Connected to Social Stream Ninja.": "pi.status.connected",
+				"Connecting to the Social Stream Ninja API.": "pi.status.connecting",
+				"Enter a Social Stream Ninja session ID.": "pi.status.enterSession",
+				"The Social Stream Ninja API connection reported an error.": "pi.status.apiError",
+				"Disconnected from Social Stream Ninja.": "pi.status.disconnected",
+				"Status updated.": "pi.status.updated"
+			};
+			if (exactKeys[text]) return t(exactKeys[text], text);
+			const prefix = "Connection test failed: ";
+			if (text.indexOf(prefix) === 0) {
+				return t("pi.status.testFailed", "Connection test failed: {message}", { message: text.slice(prefix.length) });
+			}
+			return text;
 		}
 
 		function escapeHtml(value) {
@@ -816,13 +959,29 @@
 		byId("command").addEventListener("change", handleCommandChange);
 		byId("refreshSources").onclick = requestSources;
 		byId("testConnection").onclick = function() {
-			saveGlobalSettings();
+			saveGlobalSettings(true);
 			send({ event: "sendToPlugin", action: actionUuid, context: propertyInspectorContext, payload: { type: "testConnection" } });
 		};
 		byId("showSession").onclick = function() {
 			const input = byId("sessionId");
 			input.type = input.type === "password" ? "text" : "password";
-			byId("showSession").textContent = input.type === "password" ? "Show ID" : "Hide ID";
+			byId("showSession").textContent = input.type === "password"
+				? t("pi.setup.showId", "Show ID")
+				: t("pi.setup.hideId", "Hide ID");
+		};
+		byId("copyDiagnostics").onclick = function() {
+			const field = byId("diagnosticsText");
+			field.select();
+			field.setSelectionRange(0, field.value.length);
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(field.value).catch(function() { document.execCommand("copy"); });
+			} else {
+				document.execCommand("copy");
+			}
+			byId("copyDiagnostics").textContent = t("pi.help.copied", "Copied");
+			setTimeout(function() {
+				byId("copyDiagnostics").textContent = t("pi.help.copy", "Copy diagnostics");
+			}, 1200);
 		};
 	</script>
 </body>

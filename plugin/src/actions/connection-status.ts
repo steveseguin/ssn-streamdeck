@@ -1,27 +1,44 @@
-import { action, type KeyAction, SingletonAction, type WillAppearEvent } from "@elgato/streamdeck";
+import { action, type DidReceiveSettingsEvent, type KeyAction, SingletonAction, type WillAppearEvent, type WillDisappearEvent } from "@elgato/streamdeck";
 import type { ConnectionStatusSettings } from "../api/types.js";
+import { translate } from "../i18n.js";
 import { sessionStore } from "../services.js";
 
 @action({ UUID: "ninja.socialstream.streamdeck.connection" })
 export class ConnectionStatusAction extends SingletonAction<ConnectionStatusSettings> {
+	private connectionState = sessionStore.getConnectionState();
+	private readonly settings = new Map<string, ConnectionStatusSettings>();
+
 	constructor() {
 		super();
 		sessionStore.subscribe(() => {
+			const nextConnectionState = sessionStore.getConnectionState();
+			if (nextConnectionState === this.connectionState) return;
+			this.connectionState = nextConnectionState;
 			void this.refreshVisible();
 		});
 	}
 
 	override async onWillAppear(ev: WillAppearEvent<ConnectionStatusSettings>): Promise<void> {
 		if (ev.action.isKey()) {
+			this.settings.set(ev.action.id, ev.payload.settings);
 			await this.render(ev.action, ev.payload.settings);
 		}
+	}
+
+	override async onDidReceiveSettings(ev: DidReceiveSettingsEvent<ConnectionStatusSettings>): Promise<void> {
+		if (!ev.action.isKey()) return;
+		this.settings.set(ev.action.id, ev.payload.settings);
+		await this.render(ev.action, ev.payload.settings);
+	}
+
+	override onWillDisappear(ev: WillDisappearEvent<ConnectionStatusSettings>): void {
+		this.settings.delete(ev.action.id);
 	}
 
 	private async refreshVisible(): Promise<void> {
 		for (const visible of this.actions) {
 			if (visible.isKey()) {
-				const settings = await visible.getSettings<ConnectionStatusSettings>();
-				await this.render(visible, settings);
+				await this.render(visible, this.settings.get(visible.id));
 			}
 		}
 	}
@@ -35,13 +52,13 @@ export class ConnectionStatusAction extends SingletonAction<ConnectionStatusSett
 
 function titleForState(state: string): string {
 	if (state === "connected") {
-		return "SSN\nOnline";
+		return `SSN\n${translate("deviceSetupOnline", "Online")}`;
 	}
 	if (state === "connecting") {
-		return "SSN\nConnecting";
+		return `SSN\n${translate("deviceSetupConnecting", "Connecting")}`;
 	}
 	if (state === "missing-session") {
-		return "SSN\nSetup";
+		return `SSN\n${translate("deviceSetupSetup", "Setup")}`;
 	}
-	return "SSN\nOffline";
+	return `SSN\n${translate("deviceSetupOffline", "Offline")}`;
 }

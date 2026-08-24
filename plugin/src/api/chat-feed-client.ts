@@ -8,12 +8,14 @@ const RECONNECT_BASE_DELAY_MS = 750;
 const RECONNECT_MAX_DELAY_MS = 10000;
 
 type Listener = (payload: unknown) => void;
+type ErrorListener = (error: Error) => void;
 
 export class ChatFeedClient {
 	private settings: GlobalSettings = normalizeGlobalSettings(undefined);
 	private socket: WebSocket | null = null;
 	private activeContexts = new Set<string>();
 	private listeners = new Set<Listener>();
+	private errorListeners = new Set<ErrorListener>();
 	private reconnectTimer: NodeJS.Timeout | null = null;
 	private reconnectAttempts = 0;
 
@@ -52,6 +54,17 @@ export class ChatFeedClient {
 		return () => this.listeners.delete(listener);
 	}
 
+	onError(listener: ErrorListener): () => void {
+		this.errorListeners.add(listener);
+		return () => this.errorListeners.delete(listener);
+	}
+
+	reconnect(): void {
+		if (this.settings.sessionId && this.activeContexts.size) {
+			this.connect();
+		}
+	}
+
 	private connect(): void {
 		this.clearReconnectTimer();
 		this.closeSocket();
@@ -77,9 +90,9 @@ export class ChatFeedClient {
 			this.scheduleReconnect();
 		});
 		socket.on("error", () => {
-			if (this.socket === socket && socket.readyState !== WebSocket.CLOSED) {
-				socket.terminate();
-			}
+			if (this.socket !== socket) return;
+			this.emitError(new Error("Social Stream Ninja chat-feed WebSocket error"));
+			if (socket.readyState !== WebSocket.CLOSED) socket.terminate();
 		});
 	}
 
@@ -120,6 +133,10 @@ export class ChatFeedClient {
 
 	private emit(payload: unknown): void {
 		for (const listener of this.listeners) listener(payload);
+	}
+
+	private emitError(error: Error): void {
+		for (const listener of this.errorListeners) listener(error);
 	}
 }
 

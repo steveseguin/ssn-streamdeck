@@ -8,7 +8,7 @@ Control Social Stream Ninja overlays, docks, queues, polls, waitlists, chat acti
 
 Bring Social Stream Ninja controls directly to your Stream Deck.
 
-Trigger common streaming actions without leaving your control surface: clear overlays and docks, manage queues and waitlists, run polls and timers, pin or feature chat messages, and send custom remote-control commands.
+Trigger common streaming actions without leaving your control surface: start or preview credits, clear overlays and docks, manage queues and waitlists, run polls and timers, pin or feature chat messages, and send custom remote-control commands.
 
 Setup uses the same private session ID already shown in the Social Stream Ninja desktop app or Chrome extension. Enter it once, test the connection, and add the controls you need.
 
@@ -18,8 +18,11 @@ Highlights:
 
 - Native Stream Deck plugin for Windows and macOS
 - Preset and custom Social Stream Ninja commands
+- Credits start, preview, test, and reset controls with two-press confirmation on standalone keys
 - Stream Deck + timer and chat-review dials
-- Automatic reconnect and capability detection
+- Ready-to-edit starter profiles for Stream Deck and Stream Deck +
+- Automatic reconnect after network loss, app restarts, or system wake
+- Copyable, privacy-safe diagnostics for support
 - Works with the Social Stream Ninja desktop app and Chrome extension
 
 ## Price
@@ -31,7 +34,9 @@ Free
 - Website: https://socialstream.ninja/
 - Setup guide: https://socialstream.ninja/streamdeck/
 - Support: https://github.com/steveseguin/ssn-streamdeck/issues
+- Privacy policy: https://socialstream.ninja/privacy
 - Source code: https://github.com/steveseguin/ssn-streamdeck
+- License: GNU GPL v3.0 — https://github.com/steveseguin/ssn-streamdeck/blob/main/LICENSE
 
 ## Release notes
 
@@ -42,3 +47,5 @@ Initial Marketplace release.
 - Add custom API commands
 - Use Timer Dial and Chat Review on Stream Deck +
 - Control supported desktop app sources
+- Start quickly with bundled Stream Deck and Stream Deck + profiles
+- Reset collected credits after a confirming second press on standalone keys; Multi Actions run directly

@@ -83,6 +83,34 @@ describe("property inspector", () => {
 		expect(options).not.toContain("setSourceConnectionMode");
 	});
 
+	it("requests sources after a healthy status only when SSApp is available", () => {
+		const inspector = createPropertyInspector();
+		inspector.run(`
+			actionUuid = "ninja.socialstream.streamdeck.command";
+			propertyInspectorContext = "property-inspector-context";
+			websocket = { readyState: WebSocket.OPEN, send: message => sentMessages.push(JSON.parse(message)) };
+			handlePluginMessage({
+				type: "status",
+				ok: true,
+				state: "connected",
+				capabilities: { ssn: { actions: {} }, ssapp: { available: false } }
+			});
+		`);
+
+		expect(inspector.sentMessages).not.toContainEqual(expect.objectContaining({ payload: { type: "requestSources" } }));
+
+		inspector.run(`
+			handlePluginMessage({
+				type: "status",
+				ok: true,
+				state: "connected",
+				capabilities: { ssn: { actions: {} }, ssapp: { available: true } }
+			});
+		`);
+
+		expect(inspector.sentMessages).toContainEqual(expect.objectContaining({ payload: { type: "requestSources" } }));
+	});
+
 	it("shows and saves preset default values when a command is selected", () => {
 		const inspector = createPropertyInspector();
 		inspector.run(`
@@ -160,11 +188,81 @@ describe("property inspector", () => {
 
 		expect(inspector.element("sessionId").value).toBe("T86DpkdGAw");
 	});
+
+	it("keeps the verified result visible after testing the connection", () => {
+		const inspector = createPropertyInspector();
+		inspector.run(`
+			actionUuid = "ninja.socialstream.streamdeck.setup";
+			propertyInspectorContext = "property-inspector-context";
+			byId("sessionId").value = "session-1";
+			byId("apiHost").value = "io.socialstream.ninja";
+			byId("inChannel").value = "2";
+			byId("outChannel").value = "1";
+			websocket = { readyState: WebSocket.OPEN, send: message => sentMessages.push(JSON.parse(message)) };
+			byId("testConnection").onclick();
+		`);
+
+		expect(inspector.sentMessages).toContainEqual({
+			event: "sendToPlugin",
+			action: "ninja.socialstream.streamdeck.setup",
+			context: "property-inspector-context",
+			payload: { type: "testConnection" }
+		});
+		expect(inspector.scheduledTimeouts).toHaveLength(0);
+	});
+
+	it("runs the refresh-sources and show-session buttons", () => {
+		const inspector = createPropertyInspector();
+		inspector.run(`
+			actionUuid = "ninja.socialstream.streamdeck.command";
+			propertyInspectorContext = "property-inspector-context";
+			websocket = { readyState: WebSocket.OPEN, send: message => sentMessages.push(JSON.parse(message)) };
+			byId("sessionId").type = "password";
+			byId("refreshSources").onclick();
+			byId("showSession").onclick();
+		`);
+
+		expect(inspector.sentMessages).toContainEqual({
+			event: "sendToPlugin",
+			action: "ninja.socialstream.streamdeck.command",
+			context: "property-inspector-context",
+			payload: { type: "requestSources" }
+		});
+		expect(inspector.element("sessionId").type).toBe("text");
+		expect(inspector.element("showSession").textContent).toBe("Hide ID");
+
+		inspector.run(`byId("showSession").onclick();`);
+		expect(inspector.element("sessionId").type).toBe("password");
+		expect(inspector.element("showSession").textContent).toBe("Show ID");
+	});
+
+	it("uses the Stream Deck application locale with English fallback", () => {
+		const inspector = createPropertyInspector();
+		inspector.run(`
+			window.SSN_STREAMDECK_LOCALES = {
+				de: { "pi.setup.showId": "ID anzeigen", "pi.setup.hideId": "ID ausblenden" },
+				en: { "pi.setup.showId": "Show ID", "pi.setup.hideId": "Hide ID" }
+			};
+			window.connectElgatoStreamDeckSocket(
+				1234,
+				"property-inspector-context",
+				"registerPropertyInspector",
+				JSON.stringify({ application: { language: "de" } }),
+				JSON.stringify({ context: "action-context", action: "ninja.socialstream.streamdeck.connection", payload: { settings: {} } })
+			);
+			byId("sessionId").type = "password";
+			byId("showSession").onclick();
+		`);
+
+		expect(inspector.element("showSession").textContent).toBe("ID ausblenden");
+		expect(inspector.run(`setLocale("it"); t("pi.setup.showId", "Show ID")`)).toBe("Show ID");
+	});
 });
 
 function createPropertyInspector() {
 	const elements = new Map<string, InspectorElement>();
 	const sentMessages: unknown[] = [];
+	const scheduledTimeouts: Array<{ callback: () => void; delay: number }> = [];
 	const WebSocket = function WebSocket() {};
 	WebSocket.OPEN = 1;
 
@@ -178,7 +276,10 @@ function createPropertyInspector() {
 	const context = createContext({
 		console,
 		clearTimeout,
-		setTimeout,
+		setTimeout: (callback: () => void, delay: number) => {
+			scheduledTimeouts.push({ callback, delay });
+			return scheduledTimeouts.length;
+		},
 		sentMessages,
 		WebSocket,
 		window: {},
@@ -197,6 +298,7 @@ function createPropertyInspector() {
 
 	return {
 		sentMessages,
+		scheduledTimeouts,
 		element,
 		run: (code: string) => runInContext(code, context),
 		commandOptions: () => {

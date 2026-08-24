@@ -1,19 +1,21 @@
 {
 	"name": "social-stream-ninja-streamdeck-plugin",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"private": true,
+	"license": "GPL-3.0-only",
 	"description": "Native Elgato Stream Deck plugin for Social Stream Ninja.",
 	"type": "module",
 	"scripts": {
-		"assets": "node scripts/generate-png-assets.mjs",
+		"assets": "node scripts/generate-png-assets.mjs && node scripts/generate-command-icons.mjs --sheet=../docs/images/command-icons.png && node scripts/generate-profiles.mjs",
 		"build": "npm run assets && node scripts/clean-build.mjs && tsc -p tsconfig.build.json --noEmit && node scripts/build-plugin.mjs && node scripts/copy-assets.mjs",
 		"check": "tsc -p tsconfig.json --noEmit",
 		"test": "vitest run",
-		"test:runtime": "node scripts/streamdeck-runtime-smoke.mjs",
+		"test:profiles": "node scripts/validate-profiles.mjs",
+		"test:runtime": "npm run test:profiles && node scripts/streamdeck-runtime-smoke.mjs --language=en && node scripts/streamdeck-runtime-smoke.mjs --language=de && node scripts/streamdeck-runtime-smoke.mjs --language=es && node scripts/streamdeck-runtime-smoke.mjs --language=fr && node scripts/streamdeck-runtime-smoke.mjs --language=ja && node scripts/streamdeck-runtime-smoke.mjs --language=ko && node scripts/streamdeck-runtime-smoke.mjs --language=zh_CN && node scripts/streamdeck-runtime-smoke.mjs --language=zh_TW",
 		"dev": "tsc -p tsconfig.build.json --watch"
 	},
 	"dependencies": {
-		"@elgato/streamdeck": "^2.1.0",
+		"@elgato/streamdeck": "^2.1.2",
 		"ws": "^8.18.3"
 	},
 	"devDependencies": {

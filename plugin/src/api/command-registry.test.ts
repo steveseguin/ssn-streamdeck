@@ -8,12 +8,23 @@ import {
 	extractSourceFromCommandResult,
 	extractSourcesFromCommandResult,
 	getCommandDefinition,
+	getCommandKeyTitle,
 	isSourceTargetedChat,
 	parseValue,
 	targetChatPayloadToSource
 } from "./command-registry.js";
 
 describe("command registry", () => {
+	it("provides readable two-line titles for every preset key", () => {
+		for (const command of COMMANDS) {
+			const title = getCommandKeyTitle(command);
+			const lines = title.split("\n");
+			expect(title).not.toBe("SSN\nCommand");
+			expect(lines.length).toBeLessThanOrEqual(2);
+			expect(lines.every(line => line.length <= 11)).toBe(true);
+		}
+	});
+
 	it("builds simple preset commands", () => {
 		expect(buildSsnCommandPayload({ command: "nextInQueue" })).toEqual({
 			action: "nextInQueue"
@@ -31,6 +42,10 @@ describe("command registry", () => {
 		});
 		expect(buildSsnCommandPayload({ command: "creditsStart" })).toEqual({
 			action: "creditsStart"
+		});
+		expect(buildSsnCommandPayload({ command: "resettimer" })).toEqual({
+			action: "resettimer",
+			value: { confirm: true }
 		});
 	});
 
