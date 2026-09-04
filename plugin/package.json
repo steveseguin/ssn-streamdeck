@@ -15,7 +15,7 @@
 		"test:p2p:runtime-live": "node scripts/p2p-runtime-live.mjs",
 		"test:profiles": "node scripts/validate-profiles.mjs",
 		"test:runtime": "npm run test:profiles && node scripts/streamdeck-runtime-smoke.mjs --language=en && node scripts/streamdeck-runtime-smoke.mjs --language=de && node scripts/streamdeck-runtime-smoke.mjs --language=es && node scripts/streamdeck-runtime-smoke.mjs --language=fr && node scripts/streamdeck-runtime-smoke.mjs --language=ja && node scripts/streamdeck-runtime-smoke.mjs --language=ko && node scripts/streamdeck-runtime-smoke.mjs --language=zh_CN && node scripts/streamdeck-runtime-smoke.mjs --language=zh_TW",
-		"prepare:p2p-runtime": "npm install --force --no-save @node-datachannel/darwin-arm64@0.33.2 @node-datachannel/darwin-x64@0.33.2 @node-datachannel/win32-arm64-msvc@0.33.2 @node-datachannel/win32-x64-msvc@0.33.2",
+		"prepare:p2p-runtime": "npm install --force --no-save --package-lock=false --ignore-scripts --no-audit --no-fund @node-datachannel/darwin-arm64@0.33.2 @node-datachannel/darwin-x64@0.33.2 @node-datachannel/win32-arm64-msvc@0.33.2 @node-datachannel/win32-x64-msvc@0.33.2",
 		"dev": "tsc -p tsconfig.build.json --watch"
 	},
 	"dependencies": {
