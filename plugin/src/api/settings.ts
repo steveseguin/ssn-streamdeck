@@ -1,10 +1,12 @@
-import type { CustomCommandSettings, GlobalSettings, SsnCommandSettings, TimerDialSettings } from "./types.js";
+import type { CustomCommandSettings, GlobalSettings, SsnCommandSettings, TimerDialSettings, TransportMode } from "./types.js";
 
 export const DEFAULT_API_HOST = "io.socialstream.ninja";
 
 export function normalizeGlobalSettings(settings: Partial<GlobalSettings> | undefined): GlobalSettings {
 	return {
 		sessionId: normalizeSessionId(settings?.sessionId),
+		password: stringOrEmpty(settings?.password),
+		transport: settings?.transport === "websocket" ? "websocket" : "p2p",
 		apiHost: stringOrEmpty(settings?.apiHost) || DEFAULT_API_HOST,
 		useTls: settings?.useTls !== false,
 		httpFallback: settings?.httpFallback !== false,
@@ -14,13 +16,30 @@ export function normalizeGlobalSettings(settings: Partial<GlobalSettings> | unde
 	};
 }
 
-export function normalizeSessionId(value: unknown): string {
+export interface ParsedConnectionInput {
+	sessionId: string;
+	password: string;
+	transport: TransportMode | null;
+}
+
+export function parseConnectionInput(value: unknown): ParsedConnectionInput {
 	const raw = stringOrEmpty(value);
 	if (!raw) {
-		return "";
+		return { sessionId: "", password: "", transport: null };
 	}
-	const session = extractQueryValue(raw, "session");
-	return session || raw;
+	const sessionId = extractQueryValue(raw, "session");
+	const password = extractQueryValue(raw, "password");
+	const looksLikeLink = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) || /(?:^|[?&#])session=/i.test(raw);
+	const usesServer = ["server", "server2", "server3"].some(key => hasEnabledQueryFlag(raw, key));
+	return {
+		sessionId: sessionId || raw,
+		password,
+		transport: looksLikeLink ? (usesServer ? "websocket" : "p2p") : null
+	};
+}
+
+export function normalizeSessionId(value: unknown): string {
+	return parseConnectionInput(value).sessionId;
 }
 
 export function normalizeSsnCommandSettings(settings: Partial<SsnCommandSettings> | undefined): SsnCommandSettings {
@@ -74,6 +93,14 @@ function extractQueryValue(value: string, key: string): string {
 	} catch {
 		return match[1].trim();
 	}
+}
+
+function hasEnabledQueryFlag(value: string, key: string): boolean {
+	const raw = extractQueryValue(value, key);
+	if (raw) {
+		return !/^(?:0|false|off|no)$/i.test(raw);
+	}
+	return new RegExp("(?:^|[?&#])" + key + "(?:[&#]|$)", "i").test(value);
 }
 
 function positiveInteger(value: unknown, fallback: number): number {

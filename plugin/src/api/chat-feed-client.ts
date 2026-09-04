@@ -23,10 +23,11 @@ export class ChatFeedClient {
 		const next = normalizeGlobalSettings(settings);
 		const changed =
 			next.sessionId !== this.settings.sessionId ||
+			next.transport !== this.settings.transport ||
 			next.apiHost !== this.settings.apiHost ||
 			next.useTls !== this.settings.useTls;
 		this.settings = next;
-		if (!next.sessionId || !this.activeContexts.size) {
+		if (!next.sessionId || !this.activeContexts.size || next.transport === "p2p") {
 			this.close();
 			return;
 		}
@@ -38,7 +39,7 @@ export class ChatFeedClient {
 	setActive(contextId: string, active: boolean): void {
 		if (active) {
 			this.activeContexts.add(contextId);
-			if (this.settings.sessionId && !this.isSocketActive()) {
+			if (this.settings.transport === "websocket" && this.settings.sessionId && !this.isSocketActive()) {
 				this.connect();
 			}
 			return;
@@ -59,8 +60,14 @@ export class ChatFeedClient {
 		return () => this.errorListeners.delete(listener);
 	}
 
+	handleTransportMessage(payload: unknown): void {
+		if (this.settings.transport === "p2p" && this.activeContexts.size) {
+			this.emit(payload);
+		}
+	}
+
 	reconnect(): void {
-		if (this.settings.sessionId && this.activeContexts.size) {
+		if (this.settings.transport === "websocket" && this.settings.sessionId && this.activeContexts.size) {
 			this.connect();
 		}
 	}
@@ -68,7 +75,7 @@ export class ChatFeedClient {
 	private connect(): void {
 		this.clearReconnectTimer();
 		this.closeSocket();
-		if (!this.settings.sessionId || !this.activeContexts.size) {
+		if (this.settings.transport !== "websocket" || !this.settings.sessionId || !this.activeContexts.size) {
 			return;
 		}
 		const protocol = this.settings.useTls === false ? "ws" : "wss";
@@ -116,7 +123,7 @@ export class ChatFeedClient {
 	}
 
 	private scheduleReconnect(): void {
-		if (!this.settings.sessionId || !this.activeContexts.size || this.reconnectTimer) return;
+		if (this.settings.transport !== "websocket" || !this.settings.sessionId || !this.activeContexts.size || this.reconnectTimer) return;
 		const delay = Math.min(RECONNECT_BASE_DELAY_MS * 2 ** this.reconnectAttempts, RECONNECT_MAX_DELAY_MS);
 		this.reconnectAttempts += 1;
 		this.reconnectTimer = setTimeout(() => {

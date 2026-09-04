@@ -6,6 +6,8 @@ This distribution includes the following MIT-licensed components:
 - @elgato/streamdeck 2.1.2 — Copyright (c) Corsair Memory Inc.
 - @elgato/schemas 0.4.15 — Copyright (c) 2023 Corsair Memory Inc.
 - @elgato/utils 0.6.0 — Copyright (c) Corsair Memory Inc.
+- abort-controller 3.0.0 — Copyright (c) 2017 Toru Nagashima
+- event-target-shim 5.0.1 — Copyright (c) 2015 Toru Nagashima
 
 MIT License
 
@@ -29,7 +31,16 @@ SOFTWARE.
 
 -------------------------------------------------------------------------------
 
-ws 8.21.0
+The VDO.Ninja SDK 1.5.5 and node-datachannel 0.33.2 are licensed under the
+Mozilla Public License 2.0. Their source distributions and license files are
+included under node_modules/@vdoninja/sdk and node_modules/node-datachannel.
+
+detect-libc 2.1.2 is licensed under the Apache License 2.0. Its package and
+license file are included under node_modules/detect-libc.
+
+-------------------------------------------------------------------------------
+
+ws 8.21.3
 
 Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com>
 Copyright (c) 2013 Arnout Kazemier and contributors

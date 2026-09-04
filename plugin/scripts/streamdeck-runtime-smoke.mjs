@@ -45,6 +45,7 @@ try {
 	const streamDeck = await createStreamDeckServer({
 		globalSettings: {
 			sessionId,
+			transport: "websocket",
 			apiHost: `127.0.0.1:${social.port}`,
 			useTls: false,
 			httpFallback: false,

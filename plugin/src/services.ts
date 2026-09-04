@@ -18,7 +18,10 @@ export async function initializeServices(): Promise<void> {
 		serviceLogger.info(`Connection state: ${state}`);
 		sessionStore.setConnectionState(state);
 	});
-	ssnClient.onMessage(message => sessionStore.setLastMessage(message));
+	ssnClient.onMessage(message => {
+		sessionStore.setLastMessage(message);
+		chatFeedClient.handleTransportMessage(message);
+	});
 	chatFeedClient.onMessage(message => sessionStore.addChatMessage(message));
 	chatFeedClient.onError(error => recordPluginError("chat-feed.transport", error));
 	ssnClient.onCapabilities(capabilities => {
@@ -128,6 +131,7 @@ function diagnosticSummary(state: ConnectionStateName): JsonObject {
 		pluginVersion: streamDeck.info.plugin.version,
 		streamDeckVersion: streamDeck.info.application.version,
 		platform: streamDeck.info.application.platform,
+		transport: ssnClient.transportMode,
 		state,
 		runtime: capabilities?.runtime || "unknown",
 		protocolVersion: capabilities?.version || 0,
@@ -142,13 +146,13 @@ function statusMessage(state: ConnectionStateName): string {
 		return "Connected to Social Stream Ninja.";
 	}
 	if (state === "connecting") {
-		return "Connecting to the Social Stream Ninja API.";
+		return "Connecting to Social Stream Ninja.";
 	}
 	if (state === "missing-session") {
 		return "Enter a Social Stream Ninja session ID.";
 	}
 	if (state === "error") {
-		return "The Social Stream Ninja API connection reported an error.";
+		return "The Social Stream Ninja connection reported an error.";
 	}
 	return "Disconnected from Social Stream Ninja.";
 }
@@ -159,7 +163,7 @@ function isJsonObject(value: JsonValue): value is JsonObject {
 
 function sanitizeDiagnosticMessage(value: string): string {
 	return value
-		.replace(/([?&](?:session|apiid)=)[^&#\s]+/gi, "$1[redacted]")
-		.replace(/\b(session|apiid)\s*[:=]\s*[^\s,;]+/gi, "$1=[redacted]")
+		.replace(/([?&](?:session|apiid|password)=)[^&#\s]+/gi, "$1[redacted]")
+		.replace(/\b(session|apiid|password)\s*[:=]\s*[^\s,;]+/gi, "$1=[redacted]")
 		.slice(0, 500);
 }

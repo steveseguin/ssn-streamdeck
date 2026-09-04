@@ -12,6 +12,8 @@ Trigger common streaming actions without leaving your control surface: start or 
 
 Setup uses the same private session ID already shown in the Social Stream Ninja desktop app or Chrome extension. Enter it once, test the connection, and add the controls you need.
 
+Peer-to-peer is the default connection mode. Users who enable Social Stream's hosted WebSocket mode can select the matching WebSocket option instead.
+
 Stream Deck + users also get dial actions for timer control and recent-chat review. Desktop app source controls appear automatically when supported by the connected Social Stream Ninja runtime.
 
 Highlights:
@@ -22,6 +24,7 @@ Highlights:
 - Stream Deck + timer and chat-review dials
 - Ready-to-edit starter profiles for Stream Deck and Stream Deck +
 - Automatic reconnect after network loss, app restarts, or system wake
+- Peer-to-peer and hosted WebSocket connection modes
 - Copyable, privacy-safe diagnostics for support
 - Works with the Social Stream Ninja desktop app and Chrome extension
 

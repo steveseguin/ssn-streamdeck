@@ -50,6 +50,7 @@ describe("SsnClient", () => {
 
 		client.configure({
 			sessionId: "session-1",
+			transport: "websocket",
 			apiHost: `127.0.0.1:${port}`,
 			useTls: false,
 			httpFallback: false,
@@ -74,6 +75,7 @@ describe("SsnClient", () => {
 
 		client.configure({
 			sessionId: "session-verify",
+			transport: "websocket",
 			apiHost: `127.0.0.1:${port}`,
 			useTls: false,
 			httpFallback: false,
@@ -93,6 +95,7 @@ describe("SsnClient", () => {
 
 		client.configure({
 			sessionId: "session-versioned",
+			transport: "websocket",
 			apiHost: `127.0.0.1:${port}`,
 			useTls: false,
 			httpFallback: false,
@@ -118,6 +121,7 @@ describe("SsnClient", () => {
 
 		client.configure({
 			sessionId: "missing-host",
+			transport: "websocket",
 			apiHost: `127.0.0.1:${address.port}`,
 			useTls: false,
 			httpFallback: false,
@@ -136,6 +140,7 @@ describe("SsnClient", () => {
 
 		client.configure({
 			sessionId: "session-reconnect",
+			transport: "websocket",
 			apiHost: `127.0.0.1:${port}`,
 			useTls: false,
 			httpFallback: false,
@@ -160,6 +165,7 @@ describe("SsnClient", () => {
 
 		client.configure({
 			sessionId: "session-clear",
+			transport: "websocket",
 			apiHost: `127.0.0.1:${port}`,
 			useTls: false,
 			httpFallback: false,
@@ -169,6 +175,7 @@ describe("SsnClient", () => {
 		await waitFor(() => client.getCapabilities() !== null);
 		client.configure({
 			sessionId: "",
+			transport: "websocket",
 			apiHost: `127.0.0.1:${port}`,
 			useTls: false,
 			httpFallback: false,
@@ -189,6 +196,7 @@ describe("SsnClient", () => {
 
 		client.configure({
 			sessionId: "session-2",
+			transport: "websocket",
 			apiHost: `127.0.0.1:${port}`,
 			useTls: false,
 			httpFallback: false,
@@ -214,6 +222,7 @@ describe("SsnClient", () => {
 
 		client.configure({
 			sessionId: "session-3",
+			transport: "websocket",
 			apiHost: `127.0.0.1:${port}`,
 			useTls: false,
 			httpFallback: false,
@@ -232,6 +241,7 @@ describe("SsnClient", () => {
 
 		client.configure({
 			sessionId: "session-4",
+			transport: "websocket",
 			apiHost: `127.0.0.1:${port}`,
 			useTls: false,
 			httpFallback: true,
@@ -250,6 +260,7 @@ describe("SsnClient", () => {
 
 		client.configure({
 			sessionId: "session-5",
+			transport: "websocket",
 			apiHost: `127.0.0.1:${port}`,
 			useTls: false,
 			httpFallback: true,
@@ -268,6 +279,7 @@ describe("SsnClient", () => {
 
 		client.configure({
 			sessionId: "session-6",
+			transport: "websocket",
 			apiHost: `127.0.0.1:${port}`,
 			useTls: false,
 			httpFallback: true,
@@ -286,6 +298,7 @@ describe("SsnClient", () => {
 
 		client.configure({
 			sessionId: "session-7",
+			transport: "websocket",
 			apiHost: `127.0.0.1:${port}`,
 			useTls: false,
 			httpFallback: true,
@@ -309,6 +322,7 @@ describe("SsnClient", () => {
 
 		client.configure({
 			sessionId: "session-http-capabilities",
+			transport: "websocket",
 			apiHost: `127.0.0.1:${port}`,
 			useTls: false,
 			httpFallback: true,
@@ -331,7 +345,7 @@ describe("SsnClient", () => {
 		cleanup.push(() => server.close());
 		const client = new SsnClient();
 		cleanup.push(() => client.disconnect());
-		client.configure({ sessionId: "session-http-error", apiHost: `127.0.0.1:${port}`, useTls: false, httpFallback: true });
+		client.configure({ sessionId: "session-http-error", transport: "websocket", apiHost: `127.0.0.1:${port}`, useTls: false, httpFallback: true });
 
 		await expect(client.sendCommand({ action: "getSource", target: "ssapp", value: "missing" }, { awaitResponse: true })).rejects.toThrow(
 			"Source was not found."
@@ -346,6 +360,7 @@ describe("SsnClient", () => {
 
 		client.configure({
 			sessionId: "session-8",
+			transport: "websocket",
 			apiHost: `127.0.0.1:${port}`,
 			useTls: false,
 			httpFallback: true,
@@ -366,6 +381,7 @@ describe("SsnClient", () => {
 
 		client.configure({
 			sessionId: "session-timeout",
+			transport: "websocket",
 			apiHost: `127.0.0.1:${address.port}`,
 			useTls: false,
 			httpFallback: true,

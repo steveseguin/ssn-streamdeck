@@ -133,7 +133,7 @@
 		{
 			"UUID": "ninja.socialstream.streamdeck.chat-feed",
 			"Name": "Chat Review",
-			"Tooltip": "Review recent channel-4 chat, pin a message, and feature the next pinned message.",
+			"Tooltip": "Review recent chat, pin a message, and feature the next pinned message.",
 			"Icon": "imgs/actions/chat-feed",
 			"Controllers": ["Encoder"],
 			"States": [{ "Name": "Ready", "Image": "imgs/state-neutral", "ShowTitle": false }],

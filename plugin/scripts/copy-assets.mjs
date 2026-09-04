@@ -72,3 +72,27 @@ for (const file of await readdir(sourceActionIconDir)) {
 
 await cp(join(process.cwd(), "layouts"), join(process.cwd(), "ninja.socialstream.streamdeck.sdPlugin", "layouts"), { recursive: true });
 await cp(join(process.cwd(), "profiles"), join(process.cwd(), "ninja.socialstream.streamdeck.sdPlugin", "profiles"), { recursive: true });
+
+const runtimePackages = [
+	"@vdoninja/sdk",
+	"node-datachannel",
+	"detect-libc",
+	"ws",
+	"abort-controller",
+	"event-target-shim"
+];
+for (const packageName of runtimePackages) {
+	await copyRuntimePackage(packageName);
+}
+
+const nativeScope = join(process.cwd(), "node_modules", "@node-datachannel");
+for (const packageName of await readdir(nativeScope)) {
+	await copyRuntimePackage(`@node-datachannel/${packageName}`);
+}
+
+async function copyRuntimePackage(packageName) {
+	const source = join(process.cwd(), "node_modules", ...packageName.split("/"));
+	const destination = join(process.cwd(), "ninja.socialstream.streamdeck.sdPlugin", "node_modules", ...packageName.split("/"));
+	await mkdir(dirname(destination), { recursive: true });
+	await cp(source, destination, { recursive: true });
+}

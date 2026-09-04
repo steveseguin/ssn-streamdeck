@@ -22,12 +22,26 @@ describe("ChatFeedClient", () => {
 		cleanup.push(() => client.setActive("test", false));
 		const errors: Error[] = [];
 		client.onError(error => errors.push(error));
-		client.configure({ sessionId: "session", apiHost: `127.0.0.1:${port}`, useTls: false });
+		client.configure({ sessionId: "session", transport: "websocket", apiHost: `127.0.0.1:${port}`, useTls: false });
 		client.setActive("test", true);
 
 		await waitFor(() => errors.length > 0);
 
 		expect(errors[0]?.message).toBe("Social Stream Ninja chat-feed WebSocket error");
+	});
+
+	it("uses the main P2P feed while Chat Review is visible", () => {
+		const client = new ChatFeedClient();
+		const messages: unknown[] = [];
+		client.onMessage(message => messages.push(message));
+		client.configure({ sessionId: "session", transport: "p2p" });
+		client.handleTransportMessage({ chatname: "Viewer", chatmessage: "Hello" });
+		expect(messages).toHaveLength(0);
+
+		client.setActive("chat-dial", true);
+		client.handleTransportMessage({ chatname: "Viewer", chatmessage: "Hello" });
+		expect(messages).toEqual([{ chatname: "Viewer", chatmessage: "Hello" }]);
+		client.setActive("chat-dial", false);
 	});
 });
 

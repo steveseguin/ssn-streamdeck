@@ -222,9 +222,20 @@
 		<div class="details-body">
 			<section class="panel">
 				<h2 data-i18n="pi.setup.connect">Connect Social Stream Ninja</h2>
+				<label for="transport" data-i18n="pi.setup.transport">Connection mode</label>
+				<select id="transport">
+					<option value="p2p" data-i18n="pi.setup.transportP2p">Peer-to-peer (default)</option>
+					<option value="websocket" data-i18n="pi.setup.transportWebsocket">WebSocket server</option>
+				</select>
+				<div class="hint" data-i18n="pi.setup.transportHint">Use peer-to-peer normally. Choose WebSocket only when the matching Social Stream WebSocket mode is enabled.</div>
+
 				<label for="sessionId" data-i18n="pi.setup.sessionLabel">Session ID or overlay URL</label>
 				<input id="sessionId" type="password" autocomplete="off" placeholder="Paste session ID or dock.html?session=... URL" data-i18n-placeholder="pi.setup.sessionPlaceholder">
 				<div class="hint" data-i18n="pi.setup.sessionHint">Copy your session ID from Stream Deck Setup in the desktop app or Settings in the Chrome extension. Full dock/overlay URLs also work.</div>
+
+				<label for="password" data-i18n="pi.setup.password">Password (optional)</label>
+				<input id="password" type="password" autocomplete="off" placeholder="Leave blank unless your Social Stream link uses a password" data-i18n-placeholder="pi.setup.passwordPlaceholder">
+				<div class="hint" data-i18n="pi.setup.passwordHint">A password is imported automatically when you paste a full Social Stream link.</div>
 
 				<div class="actions">
 					<button id="testConnection" type="button" data-i18n="pi.setup.test">Test Connection</button>
@@ -326,7 +337,7 @@
 		<h2 data-i18n="pi.chat.heading">Chat Review</h2>
 		<label for="chatFeedTitle" data-i18n="pi.common.displayTitle">Display title</label>
 		<input id="chatFeedTitle" type="text" placeholder="Chat Review" data-i18n-placeholder="pi.chat.titlePlaceholder">
-		<div class="hint" data-i18n="pi.chat.hint">Turn to browse recent chat, press to pin, tap to feature the next pinned message, or hold to unpin. In Social Stream Ninja, enable “Send chat messages to API server”.</div>
+		<div class="hint" data-i18n="pi.chat.hint">Turn to browse recent chat, press to pin, tap to feature the next pinned message, or hold to unpin. Keep Social Stream Ninja running and connected.</div>
 	</section>
 
 	<details id="helpDetails">
@@ -560,6 +571,8 @@
 
 		function renderGlobalSettings() {
 			byId("sessionId").value = globalSettings.sessionId || "";
+			byId("password").value = globalSettings.password || "";
+			byId("transport").value = globalSettings.transport === "websocket" ? "websocket" : "p2p";
 			byId("apiHost").value = globalSettings.apiHost || "io.socialstream.ninja";
 			byId("inChannel").value = globalSettings.inChannel || "2";
 			byId("outChannel").value = globalSettings.outChannel || "1";
@@ -767,6 +780,8 @@
 			const sessionId = normalizeSessionInput();
 			globalSettings = {
 				sessionId: sessionId,
+				password: byId("password").value.trim(),
+				transport: byId("transport").value === "websocket" ? "websocket" : "p2p",
 				apiHost: byId("apiHost").value.trim() || "io.socialstream.ninja",
 				inChannel: Number(byId("inChannel").value || 2),
 				outChannel: Number(byId("outChannel").value || 1),
@@ -780,25 +795,53 @@
 
 		function normalizeSessionInput() {
 			const input = byId("sessionId");
-			const sessionId = extractSessionId(input.value);
+			const parsed = parseConnectionInput(input.value);
+			const sessionId = parsed.sessionId;
+			if (parsed.isLink) {
+				byId("password").value = parsed.password;
+				byId("transport").value = parsed.transport;
+			}
 			if (sessionId && sessionId !== input.value.trim()) {
 				input.value = sessionId;
 			}
 			return sessionId;
 		}
 
+		function parseConnectionInput(value) {
+			const raw = String(value || "").trim();
+			if (!raw) return { sessionId: "", password: "", transport: "p2p", isLink: false };
+			const sessionId = extractQueryValue(raw, "session");
+			const password = extractQueryValue(raw, "password");
+			const isLink = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) || /(?:^|[?&#])session=/i.test(raw);
+			const usesServer = ["server", "server2", "server3"].some(function(key) {
+				const flag = extractQueryValue(raw, key);
+				if (flag) return !/^(?:0|false|off|no)$/i.test(flag);
+				return new RegExp("(?:^|[?&#])" + key + "(?:[&#]|$)", "i").test(raw);
+			});
+			return {
+				sessionId: sessionId || raw,
+				password: password,
+				transport: usesServer ? "websocket" : "p2p",
+				isLink: isLink
+			};
+		}
+
 		function extractSessionId(value) {
+			return parseConnectionInput(value).sessionId;
+		}
+
+		function extractQueryValue(value, key) {
 			const raw = String(value || "").trim();
 			if (!raw) return "";
 			try {
 				const url = new URL(raw);
-				const session = url.searchParams.get("session");
-				if (session) return session.trim();
+				const result = url.searchParams.get(key);
+				if (result) return result.trim();
 			} catch (error) {
 				// Not a full URL; fall through to query-fragment parsing.
 			}
-			const match = raw.match(/(?:^|[?&#])session=([^&#\s]+)/i);
-			if (!match) return raw;
+			const match = raw.match(new RegExp("(?:^|[?&#])" + key + "=([^&#\\s]+)", "i"));
+			if (!match) return "";
 			try {
 				return decodeURIComponent(match[1]).trim();
 			} catch (error) {
@@ -885,6 +928,7 @@
 				"Plugin " + (diagnostics.pluginVersion || "?"),
 				"Stream Deck " + (diagnostics.streamDeckVersion || "?"),
 				diagnostics.platform || "unknown",
+				diagnostics.transport || "p2p",
 				diagnostics.runtime || "unknown",
 				"API v" + (diagnostics.protocolVersion || 0),
 				diagnostics.state || currentState
@@ -910,9 +954,9 @@
 				"Connection verified.": "pi.status.verified",
 				"Unable to verify the connection.": "pi.status.verifyFailed",
 				"Connected to Social Stream Ninja.": "pi.status.connected",
-				"Connecting to the Social Stream Ninja API.": "pi.status.connecting",
+				"Connecting to Social Stream Ninja.": "pi.status.connecting",
 				"Enter a Social Stream Ninja session ID.": "pi.status.enterSession",
-				"The Social Stream Ninja API connection reported an error.": "pi.status.apiError",
+				"The Social Stream Ninja connection reported an error.": "pi.status.apiError",
 				"Disconnected from Social Stream Ninja.": "pi.status.disconnected",
 				"Status updated.": "pi.status.updated"
 			};
@@ -941,6 +985,8 @@
 				renderSetupSteps();
 			}, 0);
 		});
+		byId("password").addEventListener("change", saveGlobalSettings);
+		byId("transport").addEventListener("change", saveGlobalSettings);
 		["apiHost", "inChannel", "outChannel"].forEach(id => {
 			byId(id).addEventListener("change", saveGlobalSettings);
 			byId(id).addEventListener("input", renderSetupSteps);
@@ -965,6 +1011,7 @@
 		byId("showSession").onclick = function() {
 			const input = byId("sessionId");
 			input.type = input.type === "password" ? "text" : "password";
+			byId("password").type = input.type;
 			byId("showSession").textContent = input.type === "password"
 				? t("pi.setup.showId", "Show ID")
 				: t("pi.setup.hideId", "Hide ID");

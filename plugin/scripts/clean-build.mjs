@@ -7,6 +7,7 @@ const generatedPaths = [
 	"imgs",
 	"ui",
 	"profiles",
+	"node_modules",
 	"logs",
 	"manifest.json",
 	"de.json",

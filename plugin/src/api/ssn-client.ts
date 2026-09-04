@@ -1,6 +1,7 @@
 import WebSocket from "ws";
+import { SsnP2pTransport } from "./p2p-transport.js";
 import { DEFAULT_API_HOST, normalizeGlobalSettings } from "./settings.js";
-import type { ConnectionStateName, GlobalSettings, SsnCommandPayload, StreamDeckCapabilities } from "./types.js";
+import type { ConnectionStateName, GlobalSettings, SsnCommandPayload, StreamDeckCapabilities, TransportMode } from "./types.js";
 
 const SSAPP_ACTIONS = new Set([
 	"getSources",
@@ -33,13 +34,14 @@ type PendingRequest = {
 export class SsnClient {
 	private settings: GlobalSettings = normalizeGlobalSettings(undefined);
 	private socket: WebSocket | null = null;
+	private p2p: SsnP2pTransport;
 	private state: ConnectionStateName = "missing-session";
 	private capabilities: StreamDeckCapabilities | null = null;
 	private pendingRequests = new Map<string, PendingRequest>();
 	private reconnectTimer: NodeJS.Timeout | null = null;
 	private capabilityTimer: NodeJS.Timeout | null = null;
 	private capabilityRequest: Promise<StreamDeckCapabilities | null> | null = null;
-	private socketVerified = false;
+	private transportVerified = false;
 	private reconnectAttempts = 0;
 	private shouldReconnect = false;
 	private listeners = {
@@ -48,14 +50,44 @@ export class SsnClient {
 		capabilities: new Set<Listener<StreamDeckCapabilities | null>>()
 	};
 
+	constructor(p2p = new SsnP2pTransport()) {
+		this.p2p = p2p;
+		this.p2p.onOpen(() => {
+			if (this.settings.transport !== "p2p") return;
+			this.reconnectAttempts = 0;
+			this.setState("connecting");
+			this.probeCapabilities();
+		});
+		this.p2p.onMessage(message => {
+			if (this.settings.transport === "p2p") this.handleMessage(message);
+		});
+		this.p2p.onClose(() => {
+			if (this.settings.transport !== "p2p") return;
+			this.handleTransportClosed(new Error("Social Stream Ninja P2P connection closed"));
+		});
+		this.p2p.onError(error => {
+			if (this.settings.transport !== "p2p") return;
+			this.rejectPendingRequests(error);
+			this.setCapabilities(null);
+			this.setState("error");
+			this.scheduleReconnect();
+		});
+	}
+
 	get connectionState(): ConnectionStateName {
 		return this.state;
+	}
+
+	get transportMode(): TransportMode {
+		return this.settings.transport === "websocket" ? "websocket" : "p2p";
 	}
 
 	configure(settings: Partial<GlobalSettings> | undefined): void {
 		const next = normalizeGlobalSettings(settings);
 		const changed =
 			next.sessionId !== this.settings.sessionId ||
+			next.password !== this.settings.password ||
+			next.transport !== this.settings.transport ||
 			next.apiHost !== this.settings.apiHost ||
 			next.useTls !== this.settings.useTls ||
 			next.inChannel !== this.settings.inChannel ||
@@ -66,7 +98,7 @@ export class SsnClient {
 			return;
 		}
 		this.shouldReconnect = true;
-		if (changed || !this.isSocketActive()) {
+		if (changed || !this.isTransportActive()) {
 			if (changed) {
 				this.setCapabilities(null);
 			}
@@ -93,7 +125,7 @@ export class SsnClient {
 	connect(): void {
 		this.clearReconnectTimer();
 		this.clearCapabilityTimer();
-		this.closeSocket();
+		this.closeTransport();
 		if (!this.settings.sessionId) {
 			this.shouldReconnect = false;
 			this.setState("missing-session");
@@ -101,7 +133,11 @@ export class SsnClient {
 		}
 		this.shouldReconnect = true;
 		this.setState("connecting");
-		this.socketVerified = false;
+		this.transportVerified = false;
+		if (this.settings.transport === "p2p") {
+			this.p2p.connect(this.settings.sessionId, this.settings.password || "");
+			return;
+		}
 		const socket = new WebSocket(this.buildEndpoint(this.settings.useTls === false ? "ws" : "wss"));
 		this.socket = socket;
 		socket.on("open", () => {
@@ -123,13 +159,7 @@ export class SsnClient {
 				return;
 			}
 			this.socket = null;
-			this.clearCapabilityTimer();
-			this.rejectPendingRequests(new Error("Social Stream Ninja API WebSocket closed"));
-			this.setCapabilities(null);
-			if (this.settings.sessionId) {
-				this.setState("disconnected");
-				this.scheduleReconnect();
-			}
+			this.handleTransportClosed(new Error("Social Stream Ninja API WebSocket closed"));
 		});
 		socket.on("error", () => {
 			if (this.socket !== socket) {
@@ -156,7 +186,7 @@ export class SsnClient {
 		this.shouldReconnect = false;
 		this.clearReconnectTimer();
 		this.clearCapabilityTimer();
-		this.closeSocket();
+		this.closeTransport();
 		this.setCapabilities(null);
 		this.setState(state);
 	}
@@ -166,13 +196,13 @@ export class SsnClient {
 			...payload,
 			apiid: this.settings.sessionId || payload.apiid
 		};
-		if (this.isSocketOpen() && this.socketVerified) {
+		if (this.isTransportOpen() && this.transportVerified) {
 			const verifiedProtocol = this.getVerifiedCommandProtocol(command);
 			if (verifiedProtocol !== null) {
 				command = { ...command, protocol: verifiedProtocol };
 			}
 			if (options.awaitResponse === true || command.get || verifiedProtocol !== null) {
-				return this.sendSocketRequest(
+				return this.sendTransportRequest(
 					command,
 					isSsappCommand(command) || verifiedProtocol !== null ? isStructuredCommandResult : undefined
 				);
@@ -180,10 +210,10 @@ export class SsnClient {
 			this.sendRaw(command);
 			return command;
 		}
-		if (this.settings.httpFallback !== false) {
+		if (this.settings.transport === "websocket" && this.settings.httpFallback !== false) {
 			return this.sendHttp(command, options.awaitResponse === true);
 		}
-		throw new Error("Social Stream Ninja API WebSocket is not connected");
+		throw new Error(`Social Stream Ninja ${this.transportMode.toUpperCase()} transport is not connected`);
 	}
 
 	async verifyConnection(): Promise<StreamDeckCapabilities> {
@@ -191,14 +221,14 @@ export class SsnClient {
 			throw new Error("Missing Social Stream Ninja session ID");
 		}
 		try {
-			if (!this.isSocketActive()) {
+			if (!this.isTransportActive()) {
 				this.connect();
 			}
-			if (!this.isSocketOpen()) {
-				await this.waitForSocketOpen();
+			if (!this.isTransportOpen()) {
+				await this.waitForTransportOpen();
 			}
 			const capabilities = await (
-				this.socketVerified
+				this.transportVerified
 					? this.requestCapabilitiesWithFallback()
 					: this.capabilityRequest || this.requestCapabilitiesWithFallback()
 			);
@@ -214,10 +244,10 @@ export class SsnClient {
 	}
 
 	async requestCapabilities(): Promise<StreamDeckCapabilities | null> {
-		const response = await this.sendSocketRequest({ action: "getCapabilities", apiid: this.settings.sessionId }, value => extractCapabilities(value) !== null);
+		const response = await this.sendTransportRequest({ action: "getCapabilities", apiid: this.settings.sessionId }, value => extractCapabilities(value) !== null);
 		const capabilities = extractCapabilities(response);
 		if (capabilities) {
-			this.socketVerified = true;
+			this.transportVerified = true;
 			this.setCapabilities(capabilities);
 			this.setState("connected");
 			return capabilities;
@@ -225,7 +255,7 @@ export class SsnClient {
 		return null;
 	}
 
-	private sendSocketRequest(payload: SsnCommandPayload, accept?: (value: unknown) => boolean): Promise<unknown> {
+	private sendTransportRequest(payload: SsnCommandPayload, accept?: (value: unknown) => boolean): Promise<unknown> {
 		const get = typeof payload.get === "string" && payload.get ? payload.get : this.createRequestId(payload.action);
 		const request = {
 			...payload,
@@ -287,23 +317,29 @@ export class SsnClient {
 	}
 
 	private sendRaw(payload: object): void {
+		if (this.settings.transport === "p2p") {
+			this.p2p.send(payload);
+			return;
+		}
 		if (!this.isSocketOpen() || !this.socket) {
 			throw new Error("Social Stream Ninja API WebSocket is not connected");
 		}
 		this.socket.send(JSON.stringify(payload));
 	}
 
-	private handleMessage(raw: string): void {
-		let message: unknown = raw;
-		try {
-			message = JSON.parse(raw) as unknown;
-		} catch {
-			this.emit("message", raw);
-			return;
+	private handleMessage(raw: unknown): void {
+		let message = raw;
+		if (typeof raw === "string") {
+			try {
+				message = JSON.parse(raw) as unknown;
+			} catch {
+				this.emit("message", raw);
+				return;
+			}
 		}
 		const capabilities = extractCapabilities(message);
 		if (capabilities) {
-			this.socketVerified = true;
+			this.transportVerified = true;
 			this.setCapabilities(capabilities);
 			this.setState("connected");
 		}
@@ -317,6 +353,20 @@ export class SsnClient {
 
 	private isSocketActive(): boolean {
 		return this.socket?.readyState === WebSocket.OPEN || this.socket?.readyState === WebSocket.CONNECTING;
+	}
+
+	private isTransportOpen(): boolean {
+		return this.settings.transport === "p2p" ? this.p2p.isOpen : this.isSocketOpen();
+	}
+
+	private isTransportActive(): boolean {
+		return this.settings.transport === "p2p" ? this.p2p.isActive : this.isSocketActive();
+	}
+
+	private waitForTransportOpen(): Promise<void> {
+		return this.settings.transport === "p2p"
+			? this.p2p.waitForOpen(this.settings.requestTimeoutMs || 5000)
+			: this.waitForSocketOpen();
 	}
 
 	private waitForSocketOpen(): Promise<void> {
@@ -374,7 +424,7 @@ export class SsnClient {
 		this.rejectPendingRequests(new Error("Social Stream Ninja API WebSocket disconnected"));
 		const socket = this.socket;
 		this.socket = null;
-		this.socketVerified = false;
+		this.transportVerified = false;
 		socket.removeAllListeners();
 		socket.on("error", () => undefined);
 		if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CLOSING) {
@@ -384,8 +434,26 @@ export class SsnClient {
 		}
 	}
 
+	private closeTransport(): void {
+		this.rejectPendingRequests(new Error("Social Stream Ninja transport disconnected"));
+		this.transportVerified = false;
+		this.closeSocket();
+		this.p2p.disconnect();
+	}
+
+	private handleTransportClosed(error: Error): void {
+		this.clearCapabilityTimer();
+		this.transportVerified = false;
+		this.rejectPendingRequests(error);
+		this.setCapabilities(null);
+		if (this.settings.sessionId) {
+			this.setState("disconnected");
+			this.scheduleReconnect();
+		}
+	}
+
 	private probeCapabilities(): void {
-		if (this.capabilityRequest || !this.isSocketOpen()) {
+		if (this.capabilityRequest || !this.isTransportOpen()) {
 			return;
 		}
 		const request = this.requestCapabilitiesWithFallback();
@@ -409,10 +477,10 @@ export class SsnClient {
 	private async requestCapabilitiesWithFallback(): Promise<StreamDeckCapabilities | null> {
 		try {
 			return await this.requestCapabilities();
-		} catch (socketError) {
-			this.socketVerified = false;
-			if (this.settings.httpFallback === false) {
-				throw socketError;
+		} catch (transportError) {
+			this.transportVerified = false;
+			if (this.settings.transport !== "websocket" || this.settings.httpFallback === false) {
+				throw transportError;
 			}
 		}
 
@@ -428,7 +496,7 @@ export class SsnClient {
 
 	private scheduleCapabilityProbe(delay: number): void {
 		this.clearCapabilityTimer();
-		if (!this.shouldReconnect || !this.isSocketOpen()) {
+		if (!this.shouldReconnect || !this.isTransportOpen()) {
 			return;
 		}
 		this.capabilityTimer = setTimeout(() => {

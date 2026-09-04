@@ -8,14 +8,20 @@
 	"scripts": {
 		"assets": "node scripts/generate-png-assets.mjs && node scripts/generate-command-icons.mjs --sheet=../docs/images/command-icons.png && node scripts/generate-profiles.mjs",
 		"build": "npm run assets && node scripts/clean-build.mjs && tsc -p tsconfig.build.json --noEmit && node scripts/build-plugin.mjs && node scripts/copy-assets.mjs",
+		"build:release": "npm run prepare:p2p-runtime && npm run build",
 		"check": "tsc -p tsconfig.json --noEmit",
 		"test": "vitest run",
+		"test:p2p:live": "node scripts/run-p2p-live-tests.mjs",
+		"test:p2p:runtime-live": "node scripts/p2p-runtime-live.mjs",
 		"test:profiles": "node scripts/validate-profiles.mjs",
 		"test:runtime": "npm run test:profiles && node scripts/streamdeck-runtime-smoke.mjs --language=en && node scripts/streamdeck-runtime-smoke.mjs --language=de && node scripts/streamdeck-runtime-smoke.mjs --language=es && node scripts/streamdeck-runtime-smoke.mjs --language=fr && node scripts/streamdeck-runtime-smoke.mjs --language=ja && node scripts/streamdeck-runtime-smoke.mjs --language=ko && node scripts/streamdeck-runtime-smoke.mjs --language=zh_CN && node scripts/streamdeck-runtime-smoke.mjs --language=zh_TW",
+		"prepare:p2p-runtime": "npm install --force --no-save @node-datachannel/darwin-arm64@0.33.2 @node-datachannel/darwin-x64@0.33.2 @node-datachannel/win32-arm64-msvc@0.33.2 @node-datachannel/win32-x64-msvc@0.33.2",
 		"dev": "tsc -p tsconfig.build.json --watch"
 	},
 	"dependencies": {
 		"@elgato/streamdeck": "^2.1.2",
+		"@vdoninja/sdk": "^1.5.5",
+		"node-datachannel": "^0.33.2",
 		"ws": "^8.18.3"
 	},
 	"devDependencies": {

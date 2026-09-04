@@ -300,7 +300,10 @@ The plugin normalizes values before sending:
 ### Message flow
 
 1. Plugin starts and reads global settings.
-2. On valid `sessionId`, it opens WebSocket and sends:
+2. On valid `sessionId`, it uses the selected transport:
+
+- P2P (default): join the session room, view the session's data-only publisher, and advertise the `streamdeck` label.
+- WebSocket: open the hosted relay and send:
 
 ```json
 { "join": "SESSION_ID", "in": IN_CHANNEL, "out": OUT_CHANNEL }
@@ -310,28 +313,29 @@ The plugin normalizes values before sending:
 
 - action payload is built from settings.
 - `apiid` is injected with the current `sessionId`.
-- command is sent over WebSocket.
-- if no socket and fallback is allowed, command is sent via HTTPS path.
+- command is sent over the selected P2P or WebSocket transport.
+- in WebSocket mode only, if no socket and fallback is allowed, command is sent via HTTPS path.
 - success shows green `OK`, failure shows red `Alert`.
 
-4. Incoming messages from socket are parsed as JSON when possible and stored as `lastMessage` in session state; UI updates can consume this later.
-5. The client reconnects after socket loss or system wake and periodically refreshes capabilities so SSN/SSApp restarts are detected.
+4. Incoming messages from the selected transport are stored as `lastMessage` in session state; WebSocket text is parsed as JSON when possible.
+5. The client reconnects after transport loss or system wake and periodically refreshes capabilities so SSN/SSApp restarts are detected.
 6. Support diagnostics expose only versions, connection state, runtime, protocol, and a sanitized error; they never include the session ID.
 
 ### Current limitations worth calling out
 
-- Chat/listener feedback is not yet surfaced on dedicated key feedback.
+- Chat Review is available on Stream Deck + encoders; key-only devices do not show the recent-chat browser.
 - Generic SSN requests use the first matching callback; capability and SSApp requests additionally reject unrelated same-channel replies.
-- `requestTimeoutMs` is enforced for both WebSocket callbacks and HTTP fallback requests.
+- `requestTimeoutMs` is enforced for P2P/WebSocket callbacks and HTTP fallback requests.
 
 ## Transport and endpoint behavior
 
 ### Client transport
 
+- P2P: `wss://wss.socialstream.ninja` signaling plus a direct WebRTC data channel
 - WebSocket: `wss://io.socialstream.ninja`
 - HTTP: `https://io.socialstream.ninja`
 - The same `{ action, target, value, get, apiid }` payload shape is used for commands.
-- Stream Deck always sends commands to `social_stream`.
+- Stream Deck sends commands to `social_stream` over the selected P2P or WebSocket path.
 - SSApp routing happens inside `social_stream`; it is not a Stream Deck transport.
 
 ### Channel routing

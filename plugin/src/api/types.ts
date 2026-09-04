@@ -1,9 +1,12 @@
 import type { JsonObject, JsonValue } from "@elgato/utils";
 
 export type ConnectionStateName = "missing-session" | "connecting" | "connected" | "disconnected" | "error";
+export type TransportMode = "p2p" | "websocket";
 
 export interface GlobalSettings extends JsonObject {
 	sessionId?: string;
+	password?: string;
+	transport?: TransportMode;
 	apiHost?: string;
 	useTls?: boolean;
 	httpFallback?: boolean;

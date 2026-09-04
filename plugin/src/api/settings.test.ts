@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { normalizeCustomCommandSettings, normalizeGlobalSettings, normalizeSessionId, normalizeSsnCommandSettings } from "./settings.js";
+import { normalizeCustomCommandSettings, normalizeGlobalSettings, normalizeSessionId, normalizeSsnCommandSettings, parseConnectionInput } from "./settings.js";
 
 describe("settings normalization", () => {
 	it("uses safe global defaults", () => {
 		expect(normalizeGlobalSettings(undefined)).toEqual({
 			sessionId: "",
+			password: "",
+			transport: "p2p",
 			apiHost: "io.socialstream.ninja",
 			useTls: true,
 			httpFallback: true,
@@ -26,10 +28,24 @@ describe("settings normalization", () => {
 	});
 
 	it("extracts session IDs from Social Stream Ninja URLs", () => {
-		expect(normalizeSessionId("https://beta.socialstream.ninja/dock.html?session=T86DpkdGAw&v=3.50.4&branded")).toBe("T86DpkdGAw");
+		expect(normalizeSessionId("https://beta.socialstream.ninja/dock.html?session=exampleSession123&v=3.50.4&branded")).toBe("exampleSession123");
 		expect(normalizeSessionId("?session=abc123&showviewercount")).toBe("abc123");
 		expect(normalizeGlobalSettings({ sessionId: "session=rawSession&v=1" }).sessionId).toBe("rawSession");
 		expect(normalizeSessionId("plainSession")).toBe("plainSession");
+	});
+
+	it("infers transport and password from pasted Social Stream links", () => {
+		expect(parseConnectionInput("https://socialstream.ninja/dock.html?session=abc&password=secret")).toEqual({
+			sessionId: "abc",
+			password: "secret",
+			transport: "p2p"
+		});
+		expect(parseConnectionInput("https://socialstream.ninja/dock.html?session=abc&server2")).toEqual({
+			sessionId: "abc",
+			password: "",
+			transport: "websocket"
+		});
+		expect(parseConnectionInput("plainSession").transport).toBeNull();
 	});
 
 	it("parses custom command booleans and JSON-looking values", () => {

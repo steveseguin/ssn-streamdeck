@@ -300,7 +300,7 @@ $g = $canvas.Graphics
 $heading = New-Font 66 ([System.Drawing.FontStyle]::Bold)
 $body = New-Font 31
 Draw-Text $g "Connect in minutes" $heading $white 100 85 820 105
-Draw-Text $g "Use the session ID already shown in Social Stream Ninja." $body $muted 105 200 760 90
+Draw-Text $g "Use your existing session ID. Peer-to-peer works by default." $body $muted 105 200 760 90
 
 $stepFont = New-Font 31 ([System.Drawing.FontStyle]::Bold)
 $stepBody = New-Font 25
@@ -321,45 +321,13 @@ foreach ($step in $steps) {
 
 Fill-RoundedRectangle $g $panel 1010 95 760 770 38
 Draw-RoundedRectangle $g $border 1010 95 760 770 38
-$statusBrush = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(255, 45, 55, 75))
-Fill-RoundedRectangle $g $statusBrush 1060 145 660 120 22
-$dotBrush = [System.Drawing.SolidBrush]::new([System.Drawing.ColorTranslator]::FromHtml("#F5B942"))
-$g.FillEllipse($dotBrush, 1090, 180, 22, 22)
-$dotBrush.Dispose()
-$statusTitle = New-Font 28 ([System.Drawing.FontStyle]::Bold)
-$statusBody = New-Font 21
-Draw-Text $g "Enter a Social Stream Ninja session ID." $statusTitle $white 1135 157 545 44
-Draw-Text $g "Desktop app or Chrome extension" $statusBody $muted 1135 201 530 42
-
-$labelFont = New-Font 24 ([System.Drawing.FontStyle]::Bold)
-Draw-Text $g "CONNECT SOCIAL STREAM NINJA" $labelFont $white 1070 305 620 55
-Draw-Text $g "Session ID or overlay URL" $statusBody $muted 1070 365 620 45
-$inputBrush = [System.Drawing.SolidBrush]::new([System.Drawing.ColorTranslator]::FromHtml("#0A111C"))
-Fill-RoundedRectangle $g $inputBrush 1070 420 620 70 12
-Draw-RoundedRectangle $g $border 1070 420 620 70 12
-Draw-Text $g "Paste session ID or dock URL" $statusBody "#718096" 1090 425 580 60
-
-$buttonBlue = [System.Drawing.SolidBrush]::new([System.Drawing.ColorTranslator]::FromHtml("#2668B9"))
-$buttonDark = [System.Drawing.SolidBrush]::new([System.Drawing.ColorTranslator]::FromHtml("#2D3748"))
-Fill-RoundedRectangle $g $buttonBlue 1070 540 295 72 12
-Fill-RoundedRectangle $g $buttonDark 1395 540 295 72 12
-Draw-Text $g "Test Connection" $labelFont $white 1070 540 295 72 ([System.Drawing.StringAlignment]::Center)
-Draw-Text $g "Show ID" $labelFont $white 1395 540 295 72 ([System.Drawing.StringAlignment]::Center)
-
-Fill-RoundedRectangle $g $panelSoft 1070 665 620 115 18
-Draw-Text $g "Desktop app source controls appear automatically when available." $statusBody $teal 1100 675 560 95 ([System.Drawing.StringAlignment]::Center)
+$propertyInspectorPreview = Join-Path $PSScriptRoot "..\docs\images\property-inspector-preview.png"
+Draw-ImageFit $g $propertyInspectorPreview 1030 115 720 730
 
 $heading.Dispose()
 $body.Dispose()
 $stepFont.Dispose()
 $stepBody.Dispose()
-$statusBrush.Dispose()
-$statusTitle.Dispose()
-$statusBody.Dispose()
-$labelFont.Dispose()
-$inputBrush.Dispose()
-$buttonBlue.Dispose()
-$buttonDark.Dispose()
 Save-MediaCanvas $canvas "gallery-setup.png"
 
 # Gallery 3: Stream Deck + controls

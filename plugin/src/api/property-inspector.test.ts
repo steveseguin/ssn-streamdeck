@@ -179,14 +179,16 @@ describe("property inspector", () => {
 		});
 	});
 
-	it("uses the session value when a full overlay URL is pasted", () => {
+	it("imports the session, password, and transport from a full overlay URL", () => {
 		const inspector = createPropertyInspector();
 		inspector.run(`
-			byId("sessionId").value = "https://beta.socialstream.ninja/dock.html?session=T86DpkdGAw&v=3.50.4&branded";
+			byId("sessionId").value = "https://beta.socialstream.ninja/dock.html?session=exampleSession123&password=secret&server2&v=3.50.4";
 			normalizeSessionInput();
 		`);
 
-		expect(inspector.element("sessionId").value).toBe("T86DpkdGAw");
+		expect(inspector.element("sessionId").value).toBe("exampleSession123");
+		expect(inspector.element("password").value).toBe("secret");
+		expect(inspector.element("transport").value).toBe("websocket");
 	});
 
 	it("keeps the verified result visible after testing the connection", () => {
