@@ -41,6 +41,7 @@ export class SsnClient {
 	private reconnectTimer: NodeJS.Timeout | null = null;
 	private capabilityTimer: NodeJS.Timeout | null = null;
 	private capabilityRequest: Promise<StreamDeckCapabilities | null> | null = null;
+	private generation = 0;
 	private transportVerified = false;
 	private reconnectAttempts = 0;
 	private shouldReconnect = false;
@@ -90,6 +91,7 @@ export class SsnClient {
 			next.transport !== this.settings.transport ||
 			next.apiHost !== this.settings.apiHost ||
 			next.useTls !== this.settings.useTls ||
+			(next.transport === "websocket" && next.httpFallback !== this.settings.httpFallback) ||
 			next.inChannel !== this.settings.inChannel ||
 			next.outChannel !== this.settings.outChannel;
 		this.settings = next;
@@ -138,7 +140,9 @@ export class SsnClient {
 			this.p2p.connect(this.settings.sessionId, this.settings.password || "");
 			return;
 		}
-		const socket = new WebSocket(this.buildEndpoint(this.settings.useTls === false ? "ws" : "wss"));
+		const socket = new WebSocket(this.buildEndpoint(this.settings.useTls === false ? "ws" : "wss"), {
+			handshakeTimeout: this.settings.requestTimeoutMs || 5000
+		});
 		this.socket = socket;
 		socket.on("open", () => {
 			if (this.socket !== socket) {
@@ -220,31 +224,44 @@ export class SsnClient {
 		if (!this.settings.sessionId) {
 			throw new Error("Missing Social Stream Ninja session ID");
 		}
+		let generation = this.generation;
 		try {
 			if (!this.isTransportActive()) {
 				this.connect();
+				generation = this.generation;
 			}
 			if (!this.isTransportOpen()) {
-				await this.waitForTransportOpen();
+				try {
+					await this.waitForTransportOpen();
+				} catch (error) {
+					this.assertCurrentConnection(generation);
+					if (this.settings.transport !== "websocket" || this.settings.httpFallback === false) throw error;
+				}
 			}
+			this.assertCurrentConnection(generation);
 			const capabilities = await (
 				this.transportVerified
 					? this.requestCapabilitiesWithFallback()
 					: this.capabilityRequest || this.requestCapabilitiesWithFallback()
 			);
+			this.assertCurrentConnection(generation);
 			if (!capabilities) {
 				throw new Error("Social Stream Ninja capability response was invalid");
 			}
 			return capabilities;
 		} catch (error) {
-			this.setCapabilities(null);
-			this.setState("error");
+			if (generation === this.generation) {
+				this.setCapabilities(null);
+				this.setState("error");
+			}
 			throw error;
 		}
 	}
 
 	async requestCapabilities(): Promise<StreamDeckCapabilities | null> {
+		const generation = this.generation;
 		const response = await this.sendTransportRequest({ action: "getCapabilities", apiid: this.settings.sessionId }, value => extractCapabilities(value) !== null);
+		this.assertCurrentConnection(generation);
 		const capabilities = extractCapabilities(response);
 		if (capabilities) {
 			this.transportVerified = true;
@@ -278,6 +295,7 @@ export class SsnClient {
 	}
 
 	private async sendHttp(payload: SsnCommandPayload, awaitResponse: boolean): Promise<unknown> {
+		const generation = this.generation;
 		if (!this.settings.sessionId) {
 			throw new Error("Missing Social Stream Ninja session ID");
 		}
@@ -286,7 +304,16 @@ export class SsnClient {
 		let response: Response;
 		let text: string;
 		try {
-			response = await fetch(this.buildHttpUrl(payload), { signal: controller.signal });
+			// GET paths cannot carry source tab IDs or other extended command fields.
+			const usePost = Object.keys(payload).some(key => !["action", "apiid", "target", "value"].includes(key));
+			response = await fetch(this.buildHttpUrl(payload, usePost), {
+				signal: controller.signal,
+				...(usePost ? {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(payload)
+				} : {})
+			});
 			text = await response.text();
 		} catch (error) {
 			if (controller.signal.aborted) {
@@ -296,12 +323,10 @@ export class SsnClient {
 		} finally {
 			clearTimeout(timeout);
 		}
+		this.assertCurrentConnection(generation);
 		if (!response.ok) {
 			this.setState("error");
 			throw new Error(`Social Stream Ninja API HTTP request failed with ${response.status}`);
-		}
-		if (!awaitResponse) {
-			return text;
 		}
 		let result: unknown;
 		try {
@@ -313,7 +338,7 @@ export class SsnClient {
 			const error = isRecord(result.error) ? result.error : {};
 			throw new Error(typeof error.message === "string" ? error.message : "Social Stream Ninja API request failed");
 		}
-		return result;
+		return awaitResponse ? result : text;
 	}
 
 	private sendRaw(payload: object): void {
@@ -435,6 +460,8 @@ export class SsnClient {
 	}
 
 	private closeTransport(): void {
+		this.generation += 1;
+		this.capabilityRequest = null;
 		this.rejectPendingRequests(new Error("Social Stream Ninja transport disconnected"));
 		this.transportVerified = false;
 		this.closeSocket();
@@ -449,20 +476,24 @@ export class SsnClient {
 		if (this.settings.sessionId) {
 			this.setState("disconnected");
 			this.scheduleReconnect();
+			// A failed WebSocket handshake need not mean the HTTP API is offline.
+			if (this.settings.transport === "websocket" && this.settings.httpFallback !== false) this.probeCapabilities();
 		}
 	}
 
 	private probeCapabilities(): void {
-		if (this.capabilityRequest || !this.isTransportOpen()) {
+		if (this.capabilityRequest || !this.shouldReconnect || !this.canProbeCapabilities()) {
 			return;
 		}
 		const request = this.requestCapabilitiesWithFallback();
 		this.capabilityRequest = request;
 		request
 			.then(capabilities => {
+				if (this.capabilityRequest !== request) return;
 				this.scheduleCapabilityProbe(capabilities ? CAPABILITY_REFRESH_DELAY_MS : CAPABILITY_RETRY_DELAY_MS);
 			})
 			.catch(() => {
+				if (this.capabilityRequest !== request) return;
 				this.setCapabilities(null);
 				this.setState("disconnected");
 				this.scheduleCapabilityProbe(CAPABILITY_RETRY_DELAY_MS);
@@ -475,9 +506,11 @@ export class SsnClient {
 	}
 
 	private async requestCapabilitiesWithFallback(): Promise<StreamDeckCapabilities | null> {
+		const generation = this.generation;
 		try {
 			return await this.requestCapabilities();
 		} catch (transportError) {
+			this.assertCurrentConnection(generation);
 			this.transportVerified = false;
 			if (this.settings.transport !== "websocket" || this.settings.httpFallback === false) {
 				throw transportError;
@@ -485,6 +518,7 @@ export class SsnClient {
 		}
 
 		const response = await this.sendHttp({ action: "getCapabilities", apiid: this.settings.sessionId }, true);
+		this.assertCurrentConnection(generation);
 		const capabilities = extractCapabilities(response);
 		if (!capabilities) {
 			throw new Error("Social Stream Ninja API HTTP capability response was invalid");
@@ -494,9 +528,17 @@ export class SsnClient {
 		return capabilities;
 	}
 
+	private assertCurrentConnection(generation: number): void {
+		if (generation !== this.generation) throw new Error("Social Stream Ninja connection changed during request");
+	}
+
+	private canProbeCapabilities(): boolean {
+		return this.isTransportOpen() || (this.settings.transport === "websocket" && this.settings.httpFallback !== false);
+	}
+
 	private scheduleCapabilityProbe(delay: number): void {
 		this.clearCapabilityTimer();
-		if (!this.shouldReconnect || !this.isTransportOpen()) {
+		if (!this.shouldReconnect || !this.canProbeCapabilities()) {
 			return;
 		}
 		this.capabilityTimer = setTimeout(() => {
@@ -538,7 +580,7 @@ export class SsnClient {
 		return `${protocol}://${host}`;
 	}
 
-	private buildHttpUrl(payload: SsnCommandPayload): string {
+	private buildHttpUrl(payload: SsnCommandPayload, usePost = false): string {
 		const protocol = this.settings.useTls === false ? "http" : "https";
 		const host = normalizeHost(this.settings.apiHost || DEFAULT_API_HOST);
 		const parts = [this.settings.sessionId || "", payload.action];
@@ -550,7 +592,9 @@ export class SsnClient {
 		if ("value" in payload) {
 			parts.push(formatHttpPathSegment(payload.value));
 		}
-		return `${protocol}://${host}/${parts.map(encodeURIComponent).join("/")}`;
+		const path = usePost ? encodeURIComponent(this.settings.sessionId || "") : parts.map(encodeURIComponent).join("/");
+		const channel = this.settings.outChannel || 1;
+		return `${protocol}://${host}/${path}${channel === 1 ? "" : `?channel=${channel}`}`;
 	}
 
 	private setState(state: ConnectionStateName): void {

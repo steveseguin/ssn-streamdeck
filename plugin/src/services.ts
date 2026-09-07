@@ -14,6 +14,7 @@ const serviceLogger = streamDeck.logger.createScope("services");
 
 export async function initializeServices(): Promise<void> {
 	const settings = normalizeGlobalSettings(await streamDeck.settings.getGlobalSettings<GlobalSettings>());
+	sessionStore.setSessionId(settings.sessionId || "");
 	ssnClient.onState(state => {
 		serviceLogger.info(`Connection state: ${state}`);
 		sessionStore.setConnectionState(state);
@@ -46,6 +47,7 @@ export async function initializeServices(): Promise<void> {
 
 	streamDeck.settings.onDidReceiveGlobalSettings<GlobalSettings>(ev => {
 		const next = normalizeGlobalSettings(ev.settings);
+		sessionStore.setSessionId(next.sessionId || "");
 		ssnClient.configure(next);
 		chatFeedClient.configure(next);
 	});
@@ -69,7 +71,14 @@ function registerPropertyInspectorMessages(): void {
 		}
 		if (payload.type === "requestStatus") {
 			await sendInspectorStatus();
-		} else if (payload.type === "requestSources") {
+		} else if (payload.type === "requestCommerce") {
+            try {
+                const result = await ssnClient.sendCommand({ action: "getCommerceState" }, { awaitResponse: true });
+                await streamDeck.ui.sendToPropertyInspector({ type: "commerce", result: result as import("@elgato/utils").JsonValue });
+            } catch (error) {
+                await streamDeck.ui.sendToPropertyInspector({ type: "commerce", error: error instanceof Error ? error.message : "Product state unavailable." });
+            }
+        } else if (payload.type === "requestSources") {
 			await sendInspectorSources();
 		} else if (payload.type === "testConnection") {
 			await testConnection();
@@ -96,6 +105,7 @@ async function sendInspectorSources(): Promise<void> {
 
 async function testConnection(): Promise<void> {
 	const settings = normalizeGlobalSettings(await streamDeck.settings.getGlobalSettings<GlobalSettings>());
+	sessionStore.setSessionId(settings.sessionId || "");
 	ssnClient.configure(settings);
 	if (!settings.sessionId) {
 		await sendInspectorStatus("Enter a session ID first.");

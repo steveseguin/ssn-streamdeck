@@ -3,6 +3,16 @@ import { createContext, runInContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 
 describe("property inspector", () => {
+	it.each(["server", "server2", "server3"])("imports WebSocket transport for an empty %s flag", flag => {
+		const inspector = createPropertyInspector();
+		inspector.run(`
+			byId("sessionId").value = "https://socialstream.ninja/dock.html?session=exampleSession&${flag}=&label=Chat";
+			normalizeSessionInput();
+		`);
+		expect(inspector.element("sessionId").value).toBe("exampleSession");
+		expect(inspector.element("transport").value).toBe("websocket");
+	});
+
 	it("uses the PI context for inspector commands", () => {
 		const inspector = createPropertyInspector();
 		inspector.run(`
@@ -277,6 +287,7 @@ function createPropertyInspector() {
 
 	const context = createContext({
 		console,
+		URL,
 		clearTimeout,
 		setTimeout: (callback: () => void, delay: number) => {
 			scheduledTimeouts.push({ callback, delay });
@@ -367,3 +378,17 @@ type InspectorElement = {
 	addEventListener: () => void;
 	innerHTML: string;
 };
+
+
+describe('commerce product picker', () => {
+ it('loads saved products without replacing an unavailable configured selection', () => {
+  const inspector=createPropertyInspector();
+  inspector.run(`byId("value").value="https://example.com/missing"; handlePluginMessage({type:"commerce",result:{ok:true,payload:{commerce:{mode:"pinned",selected:{name:"Print"},remainingSeconds:30,items:[{name:"Print",url:"https://example.com/print"}]}}}});`);
+  expect(inspector.element('commerceProduct').value).toBe('https://example.com/missing');
+  expect(inspector.element('commerceProduct').children.map(x=>x.value)).toEqual(['','https://example.com/print','https://example.com/missing']);
+  expect(inspector.element('commerceState').textContent).toContain('Print');
+  expect(inspector.element('commerceState').textContent).toContain('30s');
+  inspector.run(`handlePluginMessage({type:"commerce",error:"SSN disconnected"});`);
+  expect(inspector.element('commerceState').textContent).toBe('SSN disconnected');
+ });
+});

@@ -2,6 +2,17 @@ import { describe, expect, it } from "vitest";
 import { normalizeCustomCommandSettings, normalizeGlobalSettings, normalizeSessionId, normalizeSsnCommandSettings, parseConnectionInput } from "./settings.js";
 
 describe("settings normalization", () => {
+	it.each(["server", "server2", "server3"])("recognizes an empty %s flag in a pasted link", flag => {
+		expect(parseConnectionInput(`https://socialstream.ninja/dock.html?session=abc&${flag}=&label=Chat`).transport).toBe("websocket");
+		expect(parseConnectionInput(`?session=abc&${flag}=`).transport).toBe("websocket");
+	});
+
+	it("does not turn fractional channel values into channel zero", () => {
+		const settings = normalizeGlobalSettings({ inChannel: 0.5, outChannel: 0.5, requestTimeoutMs: 0.5 });
+		expect(settings.inChannel).toBe(2);
+		expect(settings.outChannel).toBe(1);
+		expect(settings.requestTimeoutMs).toBe(5000);
+	});
 	it("uses safe global defaults", () => {
 		expect(normalizeGlobalSettings(undefined)).toEqual({
 			sessionId: "",

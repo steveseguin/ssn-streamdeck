@@ -38,6 +38,7 @@ Current workspace capabilities:
 - A command registry seeded with common Social Stream Ninja commands from `../api.md`, including credits, dock pinning, waitlist, chat, poll, queue, and desktop app source presets.
 - Capability-aware desktop app source controls when Social Stream Ninja advertises support.
 - Stream Deck + timer dial with live time/status feedback.
+- Query presets briefly show returned queue size, timer time, poll/source counts, or source status on the key when available.
 - Stream Deck + chat review strip that listens only while visible, browses recent chat from the selected transport, pins messages, and features pinned chat.
 - Ready-to-edit starter profiles for Stream Deck and Stream Deck + that never replace the active profile.
 - Copyable diagnostics with plugin/runtime versions and a sanitized last error; session IDs are excluded.
@@ -124,3 +125,11 @@ GitHub Actions tests and validates the plugin on Windows, macOS, and Linux befor
 ## License
 
 Licensed under the [GNU General Public License v3.0](LICENSE).
+
+
+### Product buttons
+
+Add four **Preset Command** keys and choose **Products & support**: Show product, Next product, Hide products, Resume products. Show accepts a saved product URL (leave blank for the current/first product). Next and Hide accept seconds; 0 lasts until changed. These use the existing connection and wait for SSN's result. Save and enable products in SSN first. Hide affects promotions only; purchase alerts continue. Public-page publishing stays in SSN's setup panel. Older hosts without these capabilities need updating. [Guide](../docs/product-controls.html).
+
+
+Show Product now offers a saved-product picker in the inspector. Refresh products and state reads the current catalog from SSN; a missing selection is retained for review. The optional Product State preset refreshes its selected/hidden/scheduled display every five seconds while visible, using one shared poll for visible state keys. This reports SSN selection, not OBS live/scene visibility. Local control acknowledgements do not wait for public-shop publishing. An OBS control dock can reuse the same `getCommerceState` and commerce-control API without putting controls on the audience overlay.

@@ -65,7 +65,7 @@ export function normalizeCustomCommandSettings(settings: Partial<CustomCommandSe
 
 export function normalizeTimerDialSettings(settings: Partial<TimerDialSettings> | undefined): TimerDialSettings {
 	return {
-		title: stringOrEmpty(settings?.title) || "Stream Timer",
+		title: stringOrEmpty(settings?.title),
 		stepSeconds: positiveInteger(settings?.stepSeconds, 10)
 	};
 }
@@ -100,12 +100,12 @@ function hasEnabledQueryFlag(value: string, key: string): boolean {
 	if (raw) {
 		return !/^(?:0|false|off|no)$/i.test(raw);
 	}
-	return new RegExp("(?:^|[?&#])" + key + "(?:[&#]|$)", "i").test(value);
+	return new RegExp("(?:^|[?&#])" + key + "=?(?:[&#]|$)", "i").test(value);
 }
 
 function positiveInteger(value: unknown, fallback: number): number {
 	const parsed = typeof value === "number" ? value : typeof value === "string" && value.trim() ? Number(value) : NaN;
-	return Number.isFinite(parsed) && parsed > 0 ? Math.trunc(parsed) : fallback;
+	return Number.isFinite(parsed) && parsed >= 1 ? Math.trunc(parsed) : fallback;
 }
 
 function emptyToUndefined(value: unknown): CustomCommandSettings["value"] | undefined {

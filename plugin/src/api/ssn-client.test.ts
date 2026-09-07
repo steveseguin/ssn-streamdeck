@@ -42,6 +42,91 @@ describe("SsnClient", () => {
 		}
 	});
 
+	it("retries a WebSocket handshake that never receives a response", async () => {
+		const server = http.createServer();
+		let attempts = 0;
+		server.on("upgrade", () => { attempts++; });
+		await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+		client.configure({ sessionId: "stalled-handshake", transport: "websocket", apiHost: `127.0.0.1:${(server.address() as AddressInfo).port}`, useTls: false, httpFallback: false, requestTimeoutMs: 50 });
+		await waitFor(() => attempts >= 2, 1500);
+	});
+
+	it("verifies HTTP fallback when WebSocket handshakes are rejected", async () => {
+		const { server, port, requests } = await createHttpServer(JSON.stringify(capabilities));
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+		client.configure({ sessionId: "http-only", transport: "websocket", apiHost: `127.0.0.1:${port}`, useTls: false, requestTimeoutMs: 100 });
+		await expect(client.verifyConnection()).resolves.toMatchObject({ type: "capabilities" });
+		await new Promise(resolve => setTimeout(resolve, 30));
+		expect(client.connectionState).toBe("connected");
+		await waitFor(() => requests.filter(request => request.url === "/").length >= 2, 1500);
+		await waitFor(() => client.connectionState === "connected");
+	});
+
+	it("does not use HTTP when fallback is disabled", async () => {
+		const { server, port, requests } = await createHttpServer(JSON.stringify(capabilities));
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+		client.configure({ sessionId: "no-http", transport: "websocket", apiHost: `127.0.0.1:${port}`, useTls: false, httpFallback: false, requestTimeoutMs: 100 });
+		await expect(client.verifyConnection()).rejects.toThrow();
+		expect(requests.some(request => request.url?.includes("getCapabilities"))).toBe(false);
+	});
+
+	it.each([false, true])("clears HTTP-only connection status when fallback is disabled (response pending: %s)", async pending => {
+		let heldResponse: http.ServerResponse | undefined;
+		const server = http.createServer((_req, res) => {
+			heldResponse = res;
+			if (!pending) res.end(JSON.stringify(capabilities));
+		});
+		const wsServer = new WebSocketServer({ server });
+		await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+		cleanup.push(() => { for (const socket of wsServer.clients) socket.terminate(); wsServer.close(); server.closeAllConnections(); server.close(); });
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+		const settings = { sessionId: "fallback-toggle", transport: "websocket" as const, apiHost: `127.0.0.1:${(server.address() as AddressInfo).port}`, useTls: false, requestTimeoutMs: 150 };
+		client.configure(settings);
+		await waitFor(() => pending ? !!heldResponse : client.connectionState === "connected");
+		client.configure({ ...settings, httpFallback: false });
+		if (pending) heldResponse!.end(JSON.stringify(capabilities));
+		await new Promise(resolve => setTimeout(resolve, 50));
+		expect(client.getCapabilities()).toBeNull();
+		expect(client.connectionState).not.toBe("connected");
+	});
+
+	it.each([["clear", 200], ["switch", 200], ["clear", 503], ["switch", 503]] as const)("ignores a delayed capability response after session %s (HTTP %s)", async (change, status) => {
+		let heldResponse: http.ServerResponse | undefined;
+		const server = http.createServer((req, res) => {
+			if (req.url?.startsWith("/old-session/")) { heldResponse = res; return; }
+			res.end(JSON.stringify({ ...capabilities, runtime: "current-runtime" }));
+		});
+		const wsServer = new WebSocketServer({ server });
+		wsServer.on("connection", socket => socket.on("message", raw => {
+			const request = JSON.parse(raw.toString());
+			if (request.apiid === "new-session" && request.action === "getCapabilities") {
+				socket.send(JSON.stringify({ callback: { get: request.get, result: { ...capabilities, runtime: "current-runtime" } } }));
+			}
+		}));
+		await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+		cleanup.push(() => { for (const socket of wsServer.clients) socket.terminate(); wsServer.close(); server.closeAllConnections(); server.close(); });
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+		const settings = { sessionId: "old-session", transport: "websocket" as const, apiHost: `127.0.0.1:${(server.address() as AddressInfo).port}`, useTls: false, requestTimeoutMs: 150 };
+		client.configure(settings);
+		await waitFor(() => !!heldResponse);
+		client.configure({ ...settings, sessionId: change === "clear" ? "" : "new-session" });
+		if (change === "switch") await waitFor(() => client.getCapabilities()?.runtime === "current-runtime");
+		heldResponse!.writeHead(status);
+		heldResponse!.end(JSON.stringify({ ...capabilities, runtime: "old-runtime" }));
+		await new Promise(resolve => setTimeout(resolve, 50));
+		expect(client.connectionState).toBe(change === "clear" ? "missing-session" : "connected");
+		expect(client.getCapabilities()?.runtime || null).toBe(change === "clear" ? null : "current-runtime");
+	});
+
 	it("requests and stores capabilities after connecting", async () => {
 		const { port, server, messages } = await createServer();
 		cleanup.push(() => server.close());
@@ -352,6 +437,42 @@ describe("SsnClient", () => {
 		);
 	});
 
+	it("preserves the selected source and channel in HTTP fallback", async () => {
+		const { server, port, requests } = await createHttpServer();
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+		client.configure({ sessionId: "session-targeted", transport: "websocket", apiHost: `127.0.0.1:${port}`, useTls: false, outChannel: 7 });
+
+		await client.sendCommand({ action: "sendChat", target: "youtube", tabId: 123, value: "Hello" });
+		const request = requests.find(request => request.method === "POST");
+		expect(request).toBeDefined();
+		expect(request?.url).toBe("/session-targeted?channel=7");
+		expect(request?.contentType).toBe("application/json");
+		expect(JSON.parse(request?.body || "{}")).toMatchObject({ action: "sendChat", target: "youtube", tabId: 123, value: "Hello" });
+	});
+
+	it("honors the configured channel for ordinary HTTP fallback commands", async () => {
+		const { server, port, requests } = await createHttpServer();
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+		client.configure({ sessionId: "session-channel", transport: "websocket", apiHost: `127.0.0.1:${port}`, useTls: false, outChannel: 7 });
+
+		await client.sendCommand({ action: "clearOverlay" });
+		expect(requests.some(request => request.url === "/session-channel/clearOverlay?channel=7")).toBe(true);
+	});
+
+	it("rejects HTTP command errors even without awaiting callbacks", async () => {
+		const { server, port } = await createHttpServer(JSON.stringify({ ok: false, error: { message: "No writable source" } }));
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+		client.configure({ sessionId: "session-rejected", transport: "websocket", apiHost: `127.0.0.1:${port}`, useTls: false });
+
+		await expect(client.sendCommand({ action: "sendChat", value: "Hello" })).rejects.toThrow("No writable source");
+	});
+
 	it("keeps targeted custom commands compatible even when action names overlap SSApp", async () => {
 		const { server, port, requests } = await createHttpServer("ok");
 		cleanup.push(() => server.close());
@@ -454,12 +575,19 @@ async function createServer(): Promise<{ server: WebSocketServer; port: number; 
 	return { server, port: address.port, messages };
 }
 
-async function createHttpServer(body = "ok"): Promise<{ server: http.Server; port: number; requests: { method?: string; url?: string }[] }> {
-	const requests: { method?: string; url?: string }[] = [];
+type HttpRequest = { method?: string; url?: string; contentType?: string; body: string };
+
+async function createHttpServer(body = "ok"): Promise<{ server: http.Server; port: number; requests: HttpRequest[] }> {
+	const requests: HttpRequest[] = [];
 	const server = http.createServer((req, res) => {
-		requests.push({ method: req.method, url: req.url });
-		res.writeHead(200, { "Content-Type": "text/plain" });
-		res.end(body);
+		let received = "";
+		req.setEncoding("utf8");
+		req.on("data", chunk => { received += chunk; });
+		req.on("end", () => {
+			requests.push({ method: req.method, url: req.url, contentType: req.headers["content-type"], body: received });
+			res.writeHead(200, { "Content-Type": "text/plain" });
+			res.end(body);
+		});
 	});
 	await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
 	const address = server.address() as AddressInfo;

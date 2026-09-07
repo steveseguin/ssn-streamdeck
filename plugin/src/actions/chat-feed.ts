@@ -10,6 +10,7 @@ import {
 	type WillDisappearEvent
 } from "@elgato/streamdeck";
 import type { JsonValue } from "@elgato/utils";
+import { messageText, literalText, unwrapMessage } from "../api/chat-message.js";
 import type { ChatFeedSettings } from "../api/types.js";
 import { translate } from "../i18n.js";
 import { chatFeedClient, recordPluginError, sessionStore, ssnClient } from "../services.js";
@@ -17,6 +18,7 @@ import { chatFeedClient, recordPluginError, sessionStore, ssnClient } from "../s
 @action({ UUID: "ninja.socialstream.streamdeck.chat-feed" })
 export class ChatFeedAction extends SingletonAction<ChatFeedSettings> {
 	private offsets = new Map<string, number>();
+	private displayedEntries = new Map<string, unknown>();
 	private readonly settings = new Map<string, ChatFeedSettings>();
 	private connectionState = sessionStore.getConnectionState();
 	private chatCount = sessionStore.getChatMessages().length;
@@ -33,7 +35,8 @@ export class ChatFeedAction extends SingletonAction<ChatFeedSettings> {
 			const nextChatCount = sessionStore.getChatMessages().length;
 			const nextChatRevision = sessionStore.getChatRevision();
 			let shouldRefresh = false;
-			if (nextConnectionState !== this.connectionState) {
+			if (nextChatRevision < this.chatRevision) this.displayedEntries.clear();
+			if (nextConnectionState !== this.connectionState || nextChatRevision < this.chatRevision) {
 				for (const context of this.offsets.keys()) this.offsets.set(context, 0);
 				shouldRefresh = true;
 			} else if (nextChatRevision > this.chatRevision) {
@@ -66,6 +69,7 @@ export class ChatFeedAction extends SingletonAction<ChatFeedSettings> {
 	}
 
 	override onWillDisappear(ev: WillDisappearEvent<ChatFeedSettings>): void {
+		this.displayedEntries.delete(ev.action.id);
 		this.offsets.delete(ev.action.id);
 		this.settings.delete(ev.action.id);
 		chatFeedClient.setActive(ev.action.id, false);
@@ -114,7 +118,7 @@ export class ChatFeedAction extends SingletonAction<ChatFeedSettings> {
 	}
 
 	private currentEntry(contextId: string): unknown | null {
-		return displayableMessages()[this.offsets.get(contextId) || 0] || null;
+		return this.displayedEntries.get(contextId) || null;
 	}
 
 	private async refreshVisible(): Promise<void> {
@@ -148,11 +152,12 @@ export class ChatFeedAction extends SingletonAction<ChatFeedSettings> {
 		this.offsets.set(actionContext.id, offset);
 		const entry = entries[offset];
 		const chat = normalizeChat(entry);
+		this.displayedEntries.set(actionContext.id, chat ? entry : null);
 		await actionContext.setFeedback({
 			title: settings?.title || translate("deviceChatTitle", "Chat Review"),
-			platform: chat ? chat.platform : translate("deviceChatChannel", "CH 4"),
+			platform: chat ? chat.platform : translate("deviceChatChannel", "CHAT"),
 			name: chat ? chat.name : translate("deviceChatWaiting", "Waiting for chat"),
-			message: chat ? chat.message : translate("deviceChatEnableRelay", "Enable “Send chat messages to API server” in Social Stream Ninja."),
+			message: chat ? chat.message : translate("deviceChatEnableRelay", "Keep Social Stream Ninja running and connected."),
 			hint: chat
 				? translate("deviceChatHint", "{position}/{count}  TURN browse  PRESS pin", { position: offset + 1, count: entries.length })
 				: translate("deviceChatBrowseHint", "TURN browse"),
@@ -170,22 +175,15 @@ function displayableMessages(): unknown[] {
 function normalizeChat(value: unknown): { raw: Record<string, unknown>; name: string; message: string; platform: string } | null {
 	const raw = unwrapMessage(value);
 	if (!raw) return null;
-	const name = plainText(raw.chatname);
-	const message = plainText(raw.chatmessage) || (raw.contentimg ? translate("deviceChatSharedImage", "Shared an image") : "");
+	const name = literalText(raw.chatname);
+	const message = messageText(raw) || (raw.contentimg ? translate("deviceChatSharedImage", "Shared an image") : "");
 	if (!name && !message) return null;
 	return {
 		raw,
 		name: name || translate("deviceChatAnonymous", "Anonymous"),
 		message: message || translate("deviceChatMessage", "Message"),
-		platform: plainText(raw.platform || raw.type).toUpperCase() || "CHAT"
+		platform: literalText(raw.platform || raw.type).toUpperCase() || "CHAT"
 	};
-}
-
-function unwrapMessage(value: unknown): Record<string, unknown> | null {
-	if (!isRecord(value)) return null;
-	if (isRecord(value.dataReceived) && isRecord(value.dataReceived.overlayNinja)) return value.dataReceived.overlayNinja;
-	if (isRecord(value.data) && ("chatmessage" in value.data || "chatname" in value.data)) return value.data;
-	return value;
 }
 
 function pinValue(value: unknown): JsonValue {
@@ -195,27 +193,10 @@ function pinValue(value: unknown): JsonValue {
 
 function messageId(value: unknown): string {
 	const raw = unwrapMessage(value);
-	const id = raw && (raw.mid || raw.id);
+	const id = raw && [raw.mid, raw.id].find(value =>
+		(typeof value === "string" && value.length > 0) || (typeof value === "number" && Number.isFinite(value))
+	);
 	return typeof id === "string" || typeof id === "number" ? String(id) : "";
-}
-
-function plainText(value: unknown): string {
-	if (typeof value !== "string") return "";
-	return value
-		.replace(/<img\b[^>]*\balt=["']([^"']*)["'][^>]*>/gi, "$1")
-		.replace(/<[^>]+>/g, " ")
-		.replace(/&nbsp;/gi, " ")
-		.replace(/&amp;/gi, "&")
-		.replace(/&lt;/gi, "<")
-		.replace(/&gt;/gi, ">")
-		.replace(/&quot;/gi, '"')
-		.replace(/&#39;/gi, "'")
-		.replace(/\s+/g, " ")
-		.trim();
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
 function clamp(value: number, min: number, max: number): number {

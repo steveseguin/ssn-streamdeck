@@ -1,3 +1,4 @@
+import type { QueryResultKind } from "./query-result.js";
 import type { JsonValue } from "@elgato/utils";
 import type { CustomCommandSettings, SsappSourceSummary, SsnCommandPayload, SsnCommandSettings, StreamDeckCapabilities } from "./types.js";
 
@@ -8,11 +9,18 @@ export type CommandDefinition = {
 	icon: string;
 	defaultValue?: JsonValue;
 	valueLabel?: string;
+	valueType?: "text";
+	resultKind?: QueryResultKind;
 	defaultAwaitResponse?: boolean;
 	capabilityPath?: string[];
 };
 
 export const SSN_COMMANDS: CommandDefinition[] = [
+    { id: "getCommerceState", label: "Product State", scope: "ssn", icon: "product-info", defaultAwaitResponse: true },
+	{ id: "commerceShow", label: "Show Product", scope: "ssn", icon: "product-play", valueType: "text", valueLabel: "Saved product URL (optional)", defaultAwaitResponse: true },
+	{ id: "commerceNext", label: "Next Product", scope: "ssn", icon: "product-next", defaultValue: "0", valueLabel: "Seconds (0 = until changed)", defaultAwaitResponse: true },
+	{ id: "commerceHide", label: "Hide Products", scope: "ssn", icon: "product-hide", defaultValue: "0", valueLabel: "Seconds (0 = until changed)", defaultAwaitResponse: true },
+	{ id: "commerceResume", label: "Resume Products", scope: "ssn", icon: "product-resume", defaultAwaitResponse: true },
 	{ id: "nextInQueue", label: "Next In Queue", scope: "ssn", icon: "queue-next" },
 	{ id: "clearOverlay", label: "Clear Overlay", scope: "ssn", icon: "overlay-clear" },
 	{ id: "clearDock", label: "Clear Dock Messages", scope: "ssn", icon: "dock-clear" },
@@ -24,9 +32,9 @@ export const SSN_COMMANDS: CommandDefinition[] = [
 	{ id: "creditsTest", label: "Test Credits", scope: "ssn", icon: "credits-test", defaultAwaitResponse: true },
 	{ id: "creditsReset", label: "Reset Collected Credits", scope: "ssn", icon: "credits-reset", defaultAwaitResponse: true },
 	{ id: "resetleaderboard", label: "Reset Leaderboard", scope: "ssn", icon: "leaderboard-reset" },
-	{ id: "getQueueSize", label: "Queue Size", scope: "ssn", icon: "queue-count", defaultAwaitResponse: true },
-	{ id: "sendChat", label: "Send Chat", scope: "ssn", icon: "message-send", defaultValue: "Hello from Stream Deck", valueLabel: "Message" },
-	{ id: "sendEncodedChat", label: "Send Encoded Chat", scope: "ssn", icon: "encoded-send", defaultValue: "Hello%20from%20Stream%20Deck", valueLabel: "Encoded message" },
+	{ id: "getQueueSize", label: "Queue Size", scope: "ssn", icon: "queue-count", defaultAwaitResponse: true, resultKind: "queue" },
+	{ id: "sendChat", label: "Send Chat", scope: "ssn", icon: "message-send", defaultValue: "Hello from Stream Deck", valueType: "text", valueLabel: "Message" },
+	{ id: "sendEncodedChat", label: "Send Encoded Chat", scope: "ssn", icon: "encoded-send", defaultValue: "Hello%20from%20Stream%20Deck", valueType: "text", valueLabel: "Encoded message" },
 	{ id: "pin", label: "Pin Dock Message", scope: "ssn", icon: "pin-add", valueLabel: "Message ID or JSON message" },
 	{ id: "unpin", label: "Unpin Dock Message", scope: "ssn", icon: "pin-remove", valueLabel: "Message ID" },
 	{ id: "nextPinned", label: "Next Pinned Message", scope: "ssn", icon: "pin-next" },
@@ -38,8 +46,8 @@ export const SSN_COMMANDS: CommandDefinition[] = [
 	{ id: "startentries", label: "Start Waitlist Entries", scope: "ssn", icon: "waitlist-play" },
 	{ id: "openentries", label: "Open Waitlist Entries", scope: "ssn", icon: "waitlist-open" },
 	{ id: "resumeentries", label: "Resume Waitlist Entries", scope: "ssn", icon: "waitlist-resume" },
-	{ id: "waitlistmessage", label: "Set Waitlist Message", scope: "ssn", icon: "waitlist-message", defaultValue: "Type !join to enter!", valueLabel: "Message" },
-	{ id: "setwaitlistmessage", label: "Set Waitlist Message", scope: "ssn", icon: "waitlist-message", defaultValue: "Type !join to enter!", valueLabel: "Message" },
+	{ id: "waitlistmessage", label: "Set Waitlist Message", scope: "ssn", icon: "waitlist-message", defaultValue: "Type !join to enter!", valueType: "text", valueLabel: "Message" },
+	{ id: "setwaitlistmessage", label: "Set Waitlist Message", scope: "ssn", icon: "waitlist-message", defaultValue: "Type !join to enter!", valueType: "text", valueLabel: "Message" },
 	{ id: "downloadwaitlist", label: "Download Waitlist", scope: "ssn", icon: "waitlist-download" },
 	{ id: "selectwinner", label: "Select Winner", scope: "ssn", icon: "trophy-highlight", defaultValue: "1", valueLabel: "Winner count" },
 	{ id: "starttimer", label: "Start Timer", scope: "ssn", icon: "timer-play" },
@@ -49,10 +57,10 @@ export const SSN_COMMANDS: CommandDefinition[] = [
 	{ id: "timeradd", label: "Add Timer Time", scope: "ssn", icon: "timer-add", defaultValue: "30", valueLabel: "Seconds" },
 	{ id: "timersubtract", label: "Subtract Timer Time", scope: "ssn", icon: "timer-remove", defaultValue: "30", valueLabel: "Seconds" },
 	{ id: "settimer", label: "Set Timer", scope: "ssn", icon: "timer-edit", defaultValue: { seconds: 300 }, valueLabel: "Timer JSON" },
-	{ id: "gettimerstate", label: "Timer State", scope: "ssn", icon: "timer-info", defaultAwaitResponse: true },
+	{ id: "gettimerstate", label: "Timer State", scope: "ssn", icon: "timer-info", defaultAwaitResponse: true, resultKind: "timer" },
 	{ id: "loadpoll", label: "Load Poll Preset", scope: "ssn", icon: "poll-load", valueLabel: "{\"pollId\":\"...\"}" },
 	{ id: "setpollsettings", label: "Set Poll Settings", scope: "ssn", icon: "poll-settings", valueLabel: "Poll settings JSON" },
-	{ id: "getpollpresets", label: "Poll Presets", scope: "ssn", icon: "poll-list", defaultAwaitResponse: true },
+	{ id: "getpollpresets", label: "Poll Presets", scope: "ssn", icon: "poll-list", defaultAwaitResponse: true, resultKind: "polls" },
 	{ id: "createpoll", label: "Create Poll", scope: "ssn", icon: "poll-add", valueLabel: "Poll definition JSON" },
 	{ id: "resetpoll", label: "Reset Poll", scope: "ssn", icon: "poll-reset" },
 	{ id: "closepoll", label: "Close Poll", scope: "ssn", icon: "poll-clear" },
@@ -62,8 +70,8 @@ export const SSN_COMMANDS: CommandDefinition[] = [
 ];
 
 export const SSAPP_COMMANDS: CommandDefinition[] = [
-	{ id: "getSources", label: "Desktop App Sources", scope: "ssapp", icon: "sources-list", capabilityPath: ["sourceControls", "list"], defaultAwaitResponse: true },
-	{ id: "getSource", label: "Desktop App Source", scope: "ssapp", icon: "source-info", capabilityPath: ["sourceControls", "get"], valueLabel: "Source ID", defaultAwaitResponse: true },
+	{ id: "getSources", label: "Desktop App Sources", scope: "ssapp", icon: "sources-list", capabilityPath: ["sourceControls", "list"], defaultAwaitResponse: true, resultKind: "sources" },
+	{ id: "getSource", label: "Desktop App Source", scope: "ssapp", icon: "source-info", capabilityPath: ["sourceControls", "get"], valueLabel: "Source ID", defaultAwaitResponse: true, resultKind: "source" },
 	{ id: "addSource", label: "Add Source", scope: "ssapp", icon: "source-add", capabilityPath: ["sourceControls", "add"], valueLabel: "Source JSON", defaultAwaitResponse: true },
 	{ id: "updateSource", label: "Update Source", scope: "ssapp", icon: "source-edit", capabilityPath: ["sourceControls", "update"], valueLabel: "{\"sourceId\":\"...\",\"updates\":{...}}", defaultAwaitResponse: true },
 	{ id: "removeSource", label: "Remove Source", scope: "ssapp", icon: "source-remove", capabilityPath: ["sourceControls", "remove"], valueLabel: "{\"sourceId\":\"...\",\"confirm\":true}", defaultAwaitResponse: true },
@@ -85,6 +93,11 @@ export const SSAPP_COMMANDS: CommandDefinition[] = [
 export const COMMANDS: CommandDefinition[] = [...SSN_COMMANDS, ...SSAPP_COMMANDS];
 
 const COMMAND_KEY_TITLES: Record<string, string> = {
+    getCommerceState: "Product\nState",
+	commerceShow: "Show\nproduct",
+	commerceNext: "Next\nproduct",
+	commerceHide: "Hide\nproducts",
+	commerceResume: "Resume\nproducts",
 	nextInQueue: "Next\nQueue",
 	clearOverlay: "Clear\nOverlay",
 	clearDock: "Clear\nDock",
@@ -188,7 +201,8 @@ export function buildSsnCommandPayload(settings: SsnCommandSettings): SsnCommand
 	const definition = getCommandDefinition(settings.command);
 	const payload: SsnCommandPayload = { action: definition.id };
 	const target = parseValue(settings.target);
-	const value = parseValue(settings.value || stringFromJsonValue(definition.defaultValue));
+	const input = settings.value || stringFromJsonValue(definition.defaultValue);
+	const value = definition.valueType === "text" ? input : parseValue(input);
 	if (definition.scope === "ssapp") {
 		payload.target = "ssapp";
 	} else if (typeof target !== "undefined") {

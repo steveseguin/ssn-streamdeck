@@ -15,6 +15,15 @@ import {
 } from "./command-registry.js";
 
 describe("command registry", () => {
+	it("preserves literal text in message presets", () => {
+		for (const command of ["sendChat", "sendEncodedChat", "waitlistmessage", "setwaitlistmessage"]) {
+			for (const value of ["false", "true", "null", '{"hello":"world"}', "[1,2]"]) {
+				expect(buildSsnCommandPayload({ command, value })).toEqual({ action: command, value });
+			}
+		}
+		expect(buildSsnCommandPayload({ command: "drawmode", value: "false" }).value).toBe(false);
+		expect(buildSsnCommandPayload({ command: "settimer", value: '{"seconds":30}' }).value).toEqual({ seconds: 30 });
+	});
 	it("provides readable two-line titles for every preset key", () => {
 		for (const command of COMMANDS) {
 			const title = getCommandKeyTitle(command);
@@ -272,3 +281,14 @@ function readUiCommandOptions(): Map<string, UiCommandOption> {
 	}
 	return options;
 }
+
+
+describe('commerce presets', () => {
+ it('uses plain product links and numeric durations with acknowledged controls', () => {
+  expect(buildSsnCommandPayload({command:'commerceShow',value:'https://example.com/product'})).toEqual({action:'commerceShow',value:'https://example.com/product'});
+  expect(buildSsnCommandPayload({command:'commerceNext',value:'30'})).toEqual({action:'commerceNext',value:'30'});
+  expect(buildSsnCommandPayload({command:'commerceHide'})).toEqual({action:'commerceHide',value:'0'});
+  expect(buildSsnCommandPayload({command:'commerceResume'})).toEqual({action:'commerceResume'});
+  for (const id of ['commerceShow','commerceNext','commerceHide','commerceResume']) expect(getCommandDefinition(id).defaultAwaitResponse).toBe(true);
+ });
+});

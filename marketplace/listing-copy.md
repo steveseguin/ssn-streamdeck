@@ -2,7 +2,7 @@
 
 ## Short description
 
-Control Social Stream Ninja overlays, docks, queues, polls, waitlists, chat actions, timers, and desktop app sources from Stream Deck keys and dials.
+Control Social Stream Ninja overlays, product showcases, docks, queues, polls, waitlists, chat actions, timers, and desktop app sources from Stream Deck keys and dials.
 
 ## Description
 
@@ -18,6 +18,8 @@ Stream Deck + users also get dial actions for timer control and recent-chat revi
 
 Highlights:
 
+- Show, cycle, hide, and resume saved products or support links in your OBS overlay
+- Product selector and current selection feedback; OBS scene visibility remains separate
 - Native Stream Deck plugin for Windows and macOS
 - Preset and custom Social Stream Ninja commands
 - Credits start, preview, test, and reset controls with two-press confirmation on standalone keys
@@ -43,7 +45,12 @@ Free
 
 ## Release notes
 
-Initial Marketplace release.
+Commerce controls and translated product feedback.
+
+- Show a saved product, advance to the next, hide promotions, or resume the saved schedule
+- Refresh saved products and selection state from Social Stream Ninja
+- Product controls translated into all eight supported plugin languages
+- Activity alerts continue independently when product promotion is hidden
 
 - Connect with a Social Stream Ninja session ID or overlay URL
 - Control overlays, docks, chat, queues, waitlists, polls, and timers

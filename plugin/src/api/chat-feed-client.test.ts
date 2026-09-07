@@ -10,6 +10,19 @@ describe("ChatFeedClient", () => {
 		for (const fn of cleanup.splice(0)) fn();
 	});
 
+	it("retries a stalled chat-feed WebSocket handshake", async () => {
+		const server = http.createServer();
+		let attempts = 0;
+		server.on("upgrade", () => { attempts++; });
+		await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+		cleanup.push(() => server.close());
+		const client = new ChatFeedClient();
+		cleanup.push(() => client.setActive("stalled", false));
+		client.configure({ sessionId: "stalled-handshake", transport: "websocket", apiHost: `127.0.0.1:${(server.address() as AddressInfo).port}`, useTls: false, requestTimeoutMs: 50 });
+		client.setActive("stalled", true);
+		await waitFor(() => attempts >= 2, 1800);
+	});
+
 	it("reports websocket transport errors", async () => {
 		const server = http.createServer((_request, response) => {
 			response.writeHead(400);

@@ -288,7 +288,7 @@ Source URLs stay inside SSApp and must not be returned over the session WebSocke
 
 ### Parsing and normalization rules
 
-The plugin normalizes values before sending:
+Message presets (`sendChat`, `sendEncodedChat`, `waitlistmessage`, and `setwaitlistmessage`) preserve their values as text, including literal `false`, `null`, and JSON text. Other controls and custom commands keep the existing normalization:
 
 - `true`, `false`, `null` become booleans/null.
 - JSON-looking strings parse into objects/arrays.
@@ -319,6 +319,8 @@ The plugin normalizes values before sending:
 
 4. Incoming messages from the selected transport are stored as `lastMessage` in session state; WebSocket text is parsed as JSON when possible.
 5. The client reconnects after transport loss or system wake and periodically refreshes capabilities so SSN/SSApp restarts are detected.
+
+Connection tests also verify HTTP fallback when a WebSocket handshake fails, if fallback is enabled. Responses from an earlier connection cannot change the current connection's state or capabilities.
 6. Support diagnostics expose only versions, connection state, runtime, protocol, and a sanitized error; they never include the session ID.
 
 ### Current limitations worth calling out
@@ -349,7 +351,7 @@ Plugin defaults are currently `inChannel=2`, `outChannel=1` for callback/capabil
 
 ## HTTP fallback request shape
 
-The current client builds:
+For ordinary commands, the client builds a GET request:
 
 ```text
 /{SESSION_ID}/{action}/{target}/{value}
@@ -367,7 +369,9 @@ https://io.socialstream.ninja/my-session/resetpoll
 https://io.socialstream.ninja/my-session/sendchat/twitch/hello%20deck
 ```
 
-JSON responses are parsed only when `awaitResponse` is enabled in the action settings.
+Commands with additional fields, such as `tabId` for a selected chat source, use a JSON POST to `/{SESSION_ID}` so the full payload is preserved. Both GET and POST include `?channel=...` when the configured send channel differs from the default channel 1.
+
+JSON responses are checked for structured errors regardless of `awaitResponse`. Successful responses retain the existing return format: parsed JSON when `awaitResponse` is enabled, otherwise response text.
 
 ## Request/response patterns
 
@@ -739,7 +743,7 @@ Remote source creation accepts `target`, `username`, `videoId`, `url`, `connecti
 
 ### Parse and coercion
 
-The property inspector may pass strings. The plugin currently converts:
+The property inspector may pass strings. Except for the message presets described above, the plugin converts:
 
 - `"true"`/`"false"` to boolean
 - `"null"` to null

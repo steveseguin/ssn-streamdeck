@@ -610,6 +610,10 @@ async function createSocialStreamServer() {
 				}));
 				return;
 			}
+            if (message.action === "getCommerceState" && typeof message.get === "string") {
+                socket.send(JSON.stringify({callback:{get:message.get,result:{ok:true,payload:{commerce:{mode:"pinned",selected:{name:"Studio print",url:"https://example.com/print"},items:[{name:"Studio print",url:"https://example.com/print"}],remainingSeconds:null}}}}}));
+                return;
+            }
 			if (message.action === "gettimerstate" && typeof message.get === "string") {
 				socket.send(JSON.stringify({ callback: { get: message.get, result: { ok: true, payload: { mode: "countdown", durationMs: 300000, displayMs: 300000, running: false, done: false, overtime: false } } } }));
 				return;

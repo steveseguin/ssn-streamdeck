@@ -79,7 +79,9 @@ export class ChatFeedClient {
 			return;
 		}
 		const protocol = this.settings.useTls === false ? "ws" : "wss";
-		const socket = new WebSocket(`${protocol}://${normalizeHost(this.settings.apiHost || DEFAULT_API_HOST)}`);
+		const socket = new WebSocket(`${protocol}://${normalizeHost(this.settings.apiHost || DEFAULT_API_HOST)}`, {
+			handshakeTimeout: this.settings.requestTimeoutMs || 5000
+		});
 		this.socket = socket;
 		socket.on("open", () => {
 			if (this.socket !== socket) return;

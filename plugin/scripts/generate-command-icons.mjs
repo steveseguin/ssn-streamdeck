@@ -46,6 +46,7 @@ const SKY = [14, 165, 233];
 const DEEP_AMBER = [245, 158, 11];
 
 const FAMILIES = {
+	product: { tint: [167, 139, 250], draw: drawProduct },
 	queue: { tint: [88, 166, 255], draw: drawQueue },
 	overlay: { tint: [34, 211, 238], draw: drawOverlay },
 	dock: { tint: [56, 189, 248], draw: drawDock },
@@ -72,6 +73,7 @@ const FAMILIES = {
 };
 
 const MODIFIERS = {
+	hide: { badge: SLATE, symbol: WHITE, draw: badgeStop },
 	play: { badge: GREEN, symbol: WHITE, draw: badgePlay },
 	resume: { badge: GREEN, symbol: WHITE, draw: badgeResume },
 	open: { badge: GREEN, symbol: WHITE, draw: badgeOpen },
@@ -193,6 +195,13 @@ function drawQueue(p, ink) {
 	drawPerson(p, 86, 30, 7, 24, 74, ink.fg);
 	drawPerson(p, 60, 36, 12, 38, 91, ink.dark);
 	drawPerson(p, 60, 36, 9, 32, 88, ink.fg2);
+}
+
+function drawProduct(p, ink) {
+    p.rect(42, 16, 38, 35, 12, ink.fg);
+    p.rect(48, 22, 26, 25, 7, ink.dark);
+    p.rect(27, 37, 69, 48, 6, ink.fg);
+    p.rect(36, 46, 51, 30, 3, ink.dark);
 }
 
 function drawOverlay(p, ink) {

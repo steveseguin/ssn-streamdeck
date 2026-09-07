@@ -290,7 +290,12 @@
 		<select id="sourceId" class="hidden"></select>
 		<button id="refreshSources" class="secondary hidden" type="button" data-i18n="pi.preset.refreshSources">Refresh open sources</button>
 
-		<label id="valueLabel" for="value" data-i18n="pi.common.value">Value</label>
+		<div id="commerceControls" class="hidden">
+            <label id="commerceProductLabel" for="commerceProduct" data-i18n="pi.commerce.product">Saved product</label><select id="commerceProduct"></select>
+            <button id="refreshCommerce" class="secondary" type="button" data-i18n="pi.commerce.refresh">Refresh products and state</button>
+            <p id="commerceState" role="status"></p>
+        </div>
+        <label id="valueLabel" for="value" data-i18n="pi.common.value">Value</label>
 		<textarea id="value" placeholder="Optional" data-i18n-placeholder="pi.common.optional"></textarea>
 
 		<label for="commandTitle" data-i18n="pi.common.titleOverride">Title override</label>
@@ -421,6 +426,16 @@
 					{ value: "getQueueSize", label: "Get queue size", scope: "ssn", defaultAwaitResponse: true }
 				]
 			},
+            {
+                key: "commerce", label: "Products & support",
+                options: [
+                    { value: "getCommerceState", label: "Product state", scope: "ssn", defaultAwaitResponse: true },
+                    { value: "commerceShow", label: "Show product", scope: "ssn", valueLabel: "Saved product URL (optional)", defaultAwaitResponse: true },
+                    { value: "commerceNext", label: "Next product", scope: "ssn", defaultValue: "0", valueLabel: "Seconds (0 = until changed)", defaultAwaitResponse: true },
+                    { value: "commerceHide", label: "Hide products", scope: "ssn", defaultValue: "0", valueLabel: "Seconds (0 = until changed)", defaultAwaitResponse: true },
+                    { value: "commerceResume", label: "Resume products", scope: "ssn", defaultAwaitResponse: true }
+                ]
+            },
 			{
 				key: "credits",
 				label: "Credits",
@@ -660,8 +675,30 @@
 			return typeof option.defaultValue === "string" ? option.defaultValue : JSON.stringify(option.defaultValue);
 		}
 
-		function renderCommandFields() {
+		var commerceResult = null;
+        function requestCommerce() {
+            if (!byId("command").value.match(/^(commerce|getCommerceState)/)) return;
+            send({ event: "sendToPlugin", action: actionUuid, context: propertyInspectorContext, payload: { type: "requestCommerce" } });
+        }
+        function renderCommerce() {
+            var select = byId("commerceProduct"), selected = byId("value").value || "";
+            select.innerHTML = "";
+            var first = document.createElement("option"); first.value = ""; first.textContent = t("pi.commerce.current", "Current / first product"); select.appendChild(first);
+            var found = !selected;
+            ((commerceResult && commerceResult.items) || []).forEach(function (item) {
+                var option = document.createElement("option"); option.value = item.url; option.textContent = item.name; select.appendChild(option); if (item.url === selected) found = true;
+            });
+            if (!found) { var missing = document.createElement("option"); missing.value = selected; missing.textContent = t("pi.commerce.missing", "Saved selection unavailable") + ': ' + selected; select.appendChild(missing); }
+            select.value = selected;
+            if (commerceResult) byId("commerceState").textContent = t("commerce.mode." + commerceResult.mode, commerceResult.mode) + (commerceResult.selected ? ': ' + commerceResult.selected.name : '') + (commerceResult.remainingSeconds != null ? ' (' + commerceResult.remainingSeconds + 's)' : '');
+        }
+        function renderCommandFields() {
 			const option = selectedCommandOption();
+            var commerce = !!(option && /^(commerce|getCommerceState)/.test(option.value));
+            byId("commerceControls").classList.toggle("hidden", !commerce);
+            byId("commerceProduct").classList.toggle("hidden", !option || option.value !== 'commerceShow');
+            var productLabel = byId("commerceProductLabel"); if (productLabel) productLabel.classList.toggle("hidden", !option || option.value !== 'commerceShow');
+            if (commerce) renderCommerce();
 			const isSsapp = option && option.scope === "ssapp";
 			const supportsSourceSelection = !!(option && (option.value === "sendChat" || option.value === "sendEncodedChat") && ssappAvailable());
 			const valueLabel = option && option.valueLabel;
@@ -816,7 +853,7 @@
 			const usesServer = ["server", "server2", "server3"].some(function(key) {
 				const flag = extractQueryValue(raw, key);
 				if (flag) return !/^(?:0|false|off|no)$/i.test(flag);
-				return new RegExp("(?:^|[?&#])" + key + "(?:[&#]|$)", "i").test(raw);
+				return new RegExp("(?:^|[?&#])" + key + "=?(?:[&#]|$)", "i").test(raw);
 			});
 			return {
 				sessionId: sessionId || raw,
@@ -908,11 +945,16 @@
 				currentState = payload.state || currentState;
 				updateStatus(payload.ok === true ? "ok" : payload.state === "missing-session" ? "warn" : "error", localizedStatus(payload.message || "Status updated."));
 				if (payload.ok === true && ssappAvailable()) requestSources();
+                if (payload.ok === true) requestCommerce();
 			} else if (payload.type === "capabilities") {
 				capabilities = payload.capabilities || null;
 				renderActionSettings();
 				if (ssappAvailable()) requestSources();
-			} else if (payload.type === "sources") {
+			} else if (payload.type === "commerce") {
+                commerceResult = payload.result && payload.result.payload && payload.result.payload.commerce || null;
+                if (payload.error) byId("commerceState").textContent = payload.error;
+                else renderCommerce();
+            } else if (payload.type === "sources") {
 				availableSources = Array.isArray(payload.sources) ? payload.sources : [];
 				renderSourceOptions();
 			}
@@ -1004,6 +1046,9 @@
 		});
 		byId("command").addEventListener("change", handleCommandChange);
 		byId("refreshSources").onclick = requestSources;
+        byId("refreshCommerce").onclick = requestCommerce;
+        byId("commerceProduct").addEventListener("change", function () { byId("value").value = this.value; saveActionSettings(); });
+        byId("command").addEventListener("change", requestCommerce);
 		byId("testConnection").onclick = function() {
 			saveGlobalSettings(true);
 			send({ event: "sendToPlugin", action: actionUuid, context: propertyInspectorContext, payload: { type: "testConnection" } });

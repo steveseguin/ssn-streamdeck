@@ -1,4 +1,5 @@
 import type { ConnectionStateName } from "../api/types.js";
+import { isDisplayableMessage } from "../api/chat-message.js";
 
 type Listener = () => void;
 
@@ -9,6 +10,8 @@ export type PluginDiagnosticError = {
 };
 
 export class SessionStore {
+	private sessionId = "";
+	private sessionRevision = 0;
 	private connectionState: ConnectionStateName = "missing-session";
 	private lastMessage: unknown = null;
 	private chatMessages: unknown[] = [];
@@ -30,6 +33,20 @@ export class SessionStore {
 		return this.connectionState;
 	}
 
+	setSessionId(sessionId: string): void {
+		if (sessionId === this.sessionId) return;
+		this.sessionId = sessionId;
+		this.sessionRevision += 1;
+		this.lastMessage = null;
+		this.chatMessages = [];
+		this.chatRevision = 0;
+		this.emit();
+	}
+
+	getSessionRevision(): number {
+		return this.sessionRevision;
+	}
+
 	setLastMessage(message: unknown): void {
 		this.lastMessage = message;
 		this.emit();
@@ -40,6 +57,7 @@ export class SessionStore {
 	}
 
 	addChatMessage(message: unknown): void {
+		if (!isDisplayableMessage(message)) return;
 		this.chatMessages.unshift(message);
 		this.chatRevision += 1;
 		if (this.chatMessages.length > 50) {

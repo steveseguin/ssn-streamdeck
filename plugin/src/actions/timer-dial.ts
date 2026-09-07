@@ -10,22 +10,12 @@ import {
 	type WillAppearEvent,
 	type WillDisappearEvent
 } from "@elgato/streamdeck";
+import { parseTimerState, liveDisplayMs, formatDuration, type TimerState } from "../api/timer-state.js";
 import { isCommandSupported } from "../api/command-registry.js";
 import { normalizeTimerDialSettings } from "../api/settings.js";
 import type { TimerDialSettings } from "../api/types.js";
 import { translate } from "../i18n.js";
 import { recordPluginError, sessionStore, ssnClient } from "../services.js";
-
-type TimerState = {
-	mode: "countup" | "countdown";
-	label: string;
-	durationMs: number;
-	displayMs: number;
-	running: boolean;
-	done: boolean;
-	overtime: boolean;
-	receivedAt: number;
-};
 
 const TRAILING_ROTATION_SUPPRESSION_MS = 200;
 
@@ -33,6 +23,8 @@ const TRAILING_ROTATION_SUPPRESSION_MS = 200;
 export class TimerDialAction extends SingletonAction<TimerDialSettings> {
 	private state: TimerState | null = null;
 	private refreshing = false;
+	private refreshPending = false;
+	private sessionRevision = sessionStore.getSessionRevision();
 	private ticks = 0;
 	private readonly settings = new Map<string, TimerDialSettings>();
 	private readonly dialPresses = new Map<string, { rotated: boolean }>();
@@ -40,6 +32,15 @@ export class TimerDialAction extends SingletonAction<TimerDialSettings> {
 
 	constructor() {
 		super();
+		sessionStore.subscribe(() => {
+			const revision = sessionStore.getSessionRevision();
+			if (revision === this.sessionRevision) return;
+			this.sessionRevision = revision;
+			this.state = null;
+			this.refreshing = false;
+			this.refreshPending = false;
+			void this.renderVisible();
+		});
 		const timer = setInterval(() => {
 			this.ticks += 1;
 			if (this.ticks % 5 === 0) void this.refreshState();
@@ -70,8 +71,8 @@ export class TimerDialAction extends SingletonAction<TimerDialSettings> {
 		} else {
 			if (press?.rotated) return;
 			const suppressUntil = this.suppressUnpressedRotationUntil.get(ev.action.id) || 0;
-			this.suppressUnpressedRotationUntil.delete(ev.action.id);
 			if (Date.now() <= suppressUntil) return;
+			this.suppressUnpressedRotationUntil.delete(ev.action.id);
 		}
 		const settings = normalizeTimerDialSettings(ev.payload.settings);
 		const seconds = Math.abs(ev.payload.ticks) * (settings.stepSeconds || 10) * (ev.payload.pressed ? 6 : 1);
@@ -122,22 +123,29 @@ export class TimerDialAction extends SingletonAction<TimerDialSettings> {
 	}
 
 	private async refreshState(): Promise<void> {
-		if (this.refreshing || !this.hasVisibleDial()) return;
+		if (!this.hasVisibleDial()) return;
+		if (this.refreshing) {
+			this.refreshPending = true;
+			return;
+		}
+		this.refreshPending = false;
 		if (!isCommandSupported("gettimerstate", ssnClient.getCapabilities())) {
 			this.state = null;
 			await this.renderVisible();
 			return;
 		}
 		this.refreshing = true;
+		const revision = this.sessionRevision;
 		try {
 			const result = await ssnClient.sendCommand({ action: "gettimerstate" }, { awaitResponse: true });
-			this.state = parseTimerState(result);
+			if (revision === this.sessionRevision) this.state = parseTimerState(result);
 		} catch {
 			// Keep the last good timer state during temporary transport failures.
 		} finally {
-			this.refreshing = false;
+			if (revision === this.sessionRevision) this.refreshing = false;
 		}
 		await this.renderVisible();
+		if (revision === this.sessionRevision && this.refreshPending) await this.refreshState();
 	}
 
 	private hasVisibleDial(): boolean {
@@ -161,7 +169,7 @@ export class TimerDialAction extends SingletonAction<TimerDialSettings> {
 		const progress = state && state.durationMs > 0 ? clamp((displayMs / state.durationMs) * 100, 0, 100) : 0;
 		await actionContext.setFeedback({
 			title: settings.title || translate("deviceTimerTitle", "Stream Timer"),
-			status: timerStatus(connection, supported, state),
+			status: timerStatus(connection, supported, state, displayMs),
 			value: connection === "missing-session" ? translate("deviceTimerSetupValue", "SETUP") : state ? formatDuration(displayMs) : "--:--",
 			progress,
 			hint: connection === "missing-session"
@@ -171,63 +179,20 @@ export class TimerDialAction extends SingletonAction<TimerDialSettings> {
 	}
 }
 
-function timerStatus(connection: string, supported: boolean, state: TimerState | null): string {
+function timerStatus(connection: string, supported: boolean, state: TimerState | null, displayMs: number): string {
 	if (connection === "missing-session") return translate("deviceTimerSetupRequired", "SETUP NEEDED");
 	if (connection === "connecting") return translate("deviceTimerConnecting", "CONNECTING");
 	if (connection !== "connected") return translate("deviceTimerOffline", "OFFLINE");
 	if (!supported) return translate("deviceTimerUnavailable", "UNAVAILABLE");
 	if (!state) return translate("deviceTimerLoading", "LOADING");
-	return state.done
+	const reachedTarget = state.running && (state.mode === "countdown"
+		? displayMs <= 0
+		: state.durationMs > 0 && displayMs >= state.durationMs);
+	return state.done || reachedTarget
 		? translate("deviceTimerDone", "DONE")
 		: state.running
 			? translate("deviceTimerRunning", "RUNNING")
 			: translate("deviceTimerPaused", "PAUSED");
-}
-
-function parseTimerState(value: unknown): TimerState | null {
-	const unwrapped = unwrapPayload(value);
-	if (!isRecord(unwrapped)) return null;
-	return {
-		mode: unwrapped.mode === "countup" ? "countup" : "countdown",
-		label: typeof unwrapped.label === "string" ? unwrapped.label : "",
-		durationMs: finiteNumber(unwrapped.durationMs),
-		displayMs: finiteNumber(unwrapped.displayMs, finiteNumber(unwrapped.currentMs)),
-		running: unwrapped.running === true,
-		done: unwrapped.done === true,
-		overtime: unwrapped.overtime === true,
-		receivedAt: Date.now()
-	};
-}
-
-function unwrapPayload(value: unknown): unknown {
-	if (isRecord(value) && value.ok === true && "payload" in value) return value.payload;
-	return value;
-}
-
-function liveDisplayMs(state: TimerState): number {
-	if (!state.running) return state.displayMs;
-	const elapsed = Date.now() - state.receivedAt;
-	return state.mode === "countup" ? state.displayMs + elapsed : state.displayMs - elapsed;
-}
-
-function formatDuration(milliseconds: number): string {
-	const negative = milliseconds < 0;
-	const seconds = Math.floor(Math.abs(milliseconds) / 1000);
-	const hours = Math.floor(seconds / 3600);
-	const minutes = Math.floor((seconds % 3600) / 60);
-	const remaining = seconds % 60;
-	const value = hours > 0
-		? `${hours}:${String(minutes).padStart(2, "0")}:${String(remaining).padStart(2, "0")}`
-		: `${minutes}:${String(remaining).padStart(2, "0")}`;
-	return negative ? `-${value}` : value;
-}
-
-function finiteNumber(value: unknown, fallback = 0): number {
-	return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
 function clamp(value: number, min: number, max: number): number {
