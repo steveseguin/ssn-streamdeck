@@ -1,6 +1,6 @@
 {
 	"name": "social-stream-ninja-streamdeck-plugin",
-	"version": "0.2.3",
+	"version": "0.2.4",
 	"private": true,
 	"license": "GPL-3.0-only",
 	"description": "Native Elgato Stream Deck plugin for Social Stream Ninja.",

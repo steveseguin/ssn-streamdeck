@@ -6,7 +6,7 @@
 	"URL": "https://socialstream.ninja",
 	"SupportURL": "https://github.com/steveseguin/ssn-streamdeck/issues",
 	"Description": "Control Social Stream Ninja from Stream Deck keys: overlays, docks, queues, polls, chat actions, and desktop app source controls for live streams.",
-	"Version": "0.2.3.0",
+	"Version": "0.2.4.0",
 	"SDKVersion": 2,
 	"Software": {
 		"MinimumVersion": "6.9"
