@@ -6,6 +6,7 @@ const files = [
 	["../LICENSE", "ninja.socialstream.streamdeck.sdPlugin/LICENSE.txt"],
 	["manifest.json", "ninja.socialstream.streamdeck.sdPlugin/manifest.json"],
 	["ui/action-settings.html", "ninja.socialstream.streamdeck.sdPlugin/ui/action-settings.html"],
+	["ui/guide.html", "ninja.socialstream.streamdeck.sdPlugin/ui/guide.html"],
 	["THIRD_PARTY_NOTICES.txt", "ninja.socialstream.streamdeck.sdPlugin/THIRD_PARTY_NOTICES.txt"]
 ];
 

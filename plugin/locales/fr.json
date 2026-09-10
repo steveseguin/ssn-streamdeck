@@ -4,31 +4,83 @@
   "ninja.socialstream.streamdeck.connection": {
     "Name": "Configuration",
     "Tooltip": "Saisissez l’identifiant de session et testez la connexion du plugin.",
-    "States": [{ "Name": "En attente" }, { "Name": "Connecté" }]
+    "States": [
+      {
+        "Name": "En attente"
+      },
+      {
+        "Name": "Connecté"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.command": {
     "Name": "Commande prédéfinie",
     "Tooltip": "Envoyez une commande courante de Social Stream Ninja.",
-    "States": [{ "Name": "Prêt" }]
+    "States": [
+      {
+        "Name": "Prêt"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.custom-command": {
     "Name": "Commande personnalisée",
     "Tooltip": "Envoyez toute commande API pour des scénarios avancés.",
-    "States": [{ "Name": "Prêt" }]
+    "States": [
+      {
+        "Name": "Prêt"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.timer-dial": {
     "Name": "Molette du minuteur",
     "Tooltip": "Réglez et surveillez le minuteur de Social Stream Ninja.",
-    "States": [{ "Name": "Prêt" }],
-    "Encoder": { "TriggerDescription": { "Rotate": "Régler minuteur", "Push": "Démarrer/pauser", "Touch": "Actualiser minuteur", "LongTouch": "Réinit. minuteur" } }
+    "States": [
+      {
+        "Name": "Prêt"
+      }
+    ],
+    "Encoder": {
+      "TriggerDescription": {
+        "Rotate": "Régler minuteur",
+        "Push": "Démarrer/pauser",
+        "Touch": "Actualiser minuteur",
+        "LongTouch": "Réinit. minuteur"
+      }
+    }
   },
   "ninja.socialstream.streamdeck.chat-feed": {
     "Name": "Revue du chat",
     "Tooltip": "Consultez le chat récent, épinglez un message et affichez le prochain message épinglé.",
-    "States": [{ "Name": "Prêt" }],
-    "Encoder": { "TriggerDescription": { "Rotate": "Parcourir chat", "Push": "Épingler chat", "Touch": "Afficher suivant", "LongTouch": "Désépingler chat" } }
+    "States": [
+      {
+        "Name": "Prêt"
+      }
+    ],
+    "Encoder": {
+      "TriggerDescription": {
+        "Rotate": "Parcourir chat",
+        "Push": "Épingler chat",
+        "Touch": "Afficher suivant",
+        "LongTouch": "Désépingler chat"
+      }
+    }
   },
   "Localization": {
+    "group.giveaways": "Tirage",
+    "command.startgiveaway": "Ouvrir le tirage",
+    "deviceCommand_startgiveaway": "Tirage\nOuvrir",
+    "command.closegiveaway": "Fermer le tirage",
+    "deviceCommand_closegiveaway": "Tirage\nFermer",
+    "command.drawgiveaway": "Tirer un gagnant",
+    "deviceCommand_drawgiveaway": "Tirage\nTirer",
+    "command.cancelgiveaway": "Annuler et rembourser",
+    "deviceCommand_cancelgiveaway": "Tirage\nRembourser",
+    "command.resetgiveaway": "Nouveau tirage",
+    "deviceCommand_resetgiveaway": "Tirage\nNouveau",
+    "command.getgiveawaystate": "?tat du tirage",
+    "deviceCommand_getgiveawaystate": "Tirage\n?tat",
+    "valueLabel.Giveaway ID/config JSON": "ID/configuration du tirage en JSON",
+    "valueLabel.Giveaway ID JSON": "ID du tirage en JSON",
     "command.getCommerceState": "État du produit",
     "pi.commerce.product": "Produit enregistré",
     "pi.commerce.refresh": "Actualiser les produits et leur état",
@@ -186,7 +238,7 @@
     "pi.timer.heading": "Molette du minuteur",
     "pi.timer.step": "Secondes par rotation",
     "pi.timer.titlePlaceholder": "Minuteur du stream",
-    "pi.timer.hint": "Tournez pour régler. Appuyez pour démarrer ou mettre en pause. Maintenez la bande tactile pour réinitialiser.",
+    "pi.timer.hint": "Un cran ajoute/retire le pas en secondes. Tournez en maintenant le bouton enfoncé : 6× le pas (1 minute par défaut). Appuyez puis relâchez sans tourner : démarrer/pause. Touchez l’écran : actualiser ; maintenez l’écran : réinitialiser.",
     "pi.chat.heading": "Revue du chat",
     "pi.chat.titlePlaceholder": "Revue du chat",
     "pi.chat.hint": "Tournez pour parcourir le chat, appuyez pour épingler, touchez pour afficher le prochain message épinglé ou maintenez pour désépingler. Dans Social Stream Ninja, activez « Envoyer les messages du chat au serveur API ».",
@@ -228,7 +280,7 @@
     "deviceTimerTitle": "Minuteur",
     "deviceTimerSetupValue": "CONFIG.",
     "deviceTimerSetupHint": "Ajoutez Configuration + ID",
-    "deviceTimerHint": "TOURNE ±{seconds}s  APPUI ⇄  MAINT. ↻",
+    "deviceTimerHint": "TOUR ±{seconds}s · APPUI ▶/Ⅱ",
     "deviceTimerSetupRequired": "CONFIG. REQ.",
     "deviceTimerConnecting": "CONNEXION",
     "deviceTimerOffline": "HORS LIGNE",
@@ -247,6 +299,21 @@
     "deviceChatFeatureHint": "TOUCHE affiche",
     "deviceChatAnonymous": "Anonyme",
     "deviceChatMessage": "Message",
-    "deviceChatSharedImage": "Image partagée"
+    "deviceChatSharedImage": "Image partagée",
+    "group.workflows": "Scénarios Event Flow",
+    "command.triggerWorkflow": "Lancer scénario",
+    "command.getWorkflowTriggers": "Lister scénarios",
+    "valueLabel.Trigger name or workflow JSON": "Nom du déclencheur ou JSON du scénario",
+    "pi.workflow.choose": "Scénario enregistré et actif",
+    "pi.workflow.refresh": "Actualiser les scénarios",
+    "pi.workflow.manual": "Choisissez un scénario ou saisissez son déclencheur",
+    "pi.workflow.missing": "Scénario indisponible. Sa valeur est conservée ; enregistrez/activez puis actualisez.",
+    "pi.workflow.empty": "Aucun déclencheur actif reçu. Enregistrez/activez un scénario puis actualisez.",
+    "pi.workflow.hint": "Ajoutez Run from Stream Deck / API dans Event Flow, nommez le déclencheur, enregistrez et activez. La coche confirme la prise en compte, pas la fin des actions différées ou externes.",
+    "pi.timer.guide": "Gestes du minuteur et exemples",
+    "pi.help.guide": "Guide des commandes, icônes et scénarios",
+    "deviceCommand_triggerWorkflow": "Scénario\nLancer",
+    "deviceCommand_getWorkflowTriggers": "Scénarios\nListe",
+    "deviceTimerGestureHint": "APPUI+TOUR ×6 · ÉCRAN LONG ↺"
   }
 }

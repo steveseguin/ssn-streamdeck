@@ -17,6 +17,14 @@ export type CommandDefinition = {
 
 export const SSN_COMMANDS: CommandDefinition[] = [
     { id: "getCommerceState", label: "Product State", scope: "ssn", icon: "product-info", defaultAwaitResponse: true },
+    { id: "triggerWorkflow", label: "Run Workflow", scope: "ssn", icon: "workflow-play", valueLabel: "Trigger name or workflow JSON", defaultAwaitResponse: true },
+    { id: "getWorkflowTriggers", label: "List Workflows", scope: "ssn", icon: "workflow-list", defaultAwaitResponse: true, resultKind: "workflows" },
+    { id: "startgiveaway", label: "Open Giveaway", scope: "ssn", icon: "trophy-play", defaultValue: { giveawayId: "default" }, valueLabel: "Giveaway ID/config JSON", defaultAwaitResponse: true, resultKind: "giveaway" },
+    { id: "closegiveaway", label: "Close Giveaway", scope: "ssn", icon: "trophy-pause", defaultValue: { giveawayId: "default" }, valueLabel: "Giveaway ID JSON", defaultAwaitResponse: true, resultKind: "giveaway" },
+    { id: "drawgiveaway", label: "Draw Giveaway", scope: "ssn", icon: "trophy-highlight", defaultValue: { giveawayId: "default" }, valueLabel: "Giveaway ID JSON", defaultAwaitResponse: true, resultKind: "giveaway" },
+    { id: "cancelgiveaway", label: "Cancel & Refund Giveaway", scope: "ssn", icon: "trophy-stop", defaultValue: { giveawayId: "default" }, valueLabel: "Giveaway ID JSON", defaultAwaitResponse: true, resultKind: "giveaway" },
+    { id: "resetgiveaway", label: "New Giveaway Round", scope: "ssn", icon: "trophy-reset", defaultValue: { giveawayId: "default" }, valueLabel: "Giveaway ID JSON", defaultAwaitResponse: true, resultKind: "giveaway" },
+    { id: "getgiveawaystate", label: "Giveaway State", scope: "ssn", icon: "trophy-info", defaultValue: { giveawayId: "default" }, valueLabel: "Giveaway ID JSON", defaultAwaitResponse: true, resultKind: "giveaway" },
 	{ id: "commerceShow", label: "Show Product", scope: "ssn", icon: "product-play", valueType: "text", valueLabel: "Saved product URL (optional)", defaultAwaitResponse: true },
 	{ id: "commerceNext", label: "Next Product", scope: "ssn", icon: "product-next", defaultValue: "0", valueLabel: "Seconds (0 = until changed)", defaultAwaitResponse: true },
 	{ id: "commerceHide", label: "Hide Products", scope: "ssn", icon: "product-hide", defaultValue: "0", valueLabel: "Seconds (0 = until changed)", defaultAwaitResponse: true },
@@ -93,6 +101,14 @@ export const SSAPP_COMMANDS: CommandDefinition[] = [
 export const COMMANDS: CommandDefinition[] = [...SSN_COMMANDS, ...SSAPP_COMMANDS];
 
 const COMMAND_KEY_TITLES: Record<string, string> = {
+    triggerWorkflow: "Workflow\nRun",
+    getWorkflowTriggers: "Workflows\nList",
+    startgiveaway: "Giveaway\nOpen",
+    closegiveaway: "Giveaway\nClose",
+    drawgiveaway: "Giveaway\nDraw",
+    cancelgiveaway: "Cancel &\nRefund",
+    resetgiveaway: "Giveaway\nNew round",
+    getgiveawaystate: "Giveaway\nState",
     getCommerceState: "Product\nState",
 	commerceShow: "Show\nproduct",
 	commerceNext: "Next\nproduct",

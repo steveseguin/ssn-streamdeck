@@ -73,6 +73,16 @@ await writeProfile(
 	})
 );
 
+await writeProfile("Social Stream Ninja Giveaways.streamDeckProfile", profileEntries({
+    archiveId: "4C4D5F16-616A-4CAB-B47F-22A5239A96DC",
+    currentPageId: "336CF5D5-A900-451D-82A8-55AA80F84E58",
+    defaultPageId: "CBE31E93-AF2A-41D4-B57E-70E5C9DF84FB",
+    deviceModel: "20GBA9901", name: "Social Stream Ninja Giveaways",
+    keyActions: { "0,0":setupAction(), "1,0":commandAction("Giveaway State","getgiveawaystate",true),
+        "0,1":commandAction("Open Giveaway","startgiveaway",true), "1,1":commandAction("Close Giveaway","closegiveaway",true),
+        "2,1":commandAction("Draw Giveaway","drawgiveaway",true), "3,1":commandAction("Cancel and Refund","cancelgiveaway",true),
+        "4,1":commandAction("New Round","resetgiveaway",true) }
+}));
 console.log("Generated Stream Deck starter profiles");
 
 function setupAction() {

@@ -174,7 +174,8 @@ export class TimerDialAction extends SingletonAction<TimerDialSettings> {
 			progress,
 			hint: connection === "missing-session"
 				? translate("deviceTimerSetupHint", "Add Setup key + session ID")
-				: translate("deviceTimerHint", "TURN ±{seconds}s  PUSH ⇄  HOLD ↻", { seconds: settings.stepSeconds || 10 })
+				: translate("deviceTimerHint", "TURN ±{seconds}s · PUSH ▶/Ⅱ", { seconds: settings.stepSeconds || 10 }),
+			gestureHint: translate("deviceTimerGestureHint", "PUSH+TURN ×6 · HOLD SCREEN ↺")
 		});
 	}
 }

@@ -15,6 +15,9 @@ await validateProfile("Social Stream Ninja Plus.streamDeckProfile", {
 	controllers: { Keypad: 8, Encoder: 2 }
 });
 
+await validateProfile("Social Stream Ninja Giveaways.streamDeckProfile", {
+    deviceModel: "20GBA9901", controllers: { Keypad: 7 }
+});
 console.log("Stream Deck starter profiles passed V3 schema validation");
 
 async function validateProfile(fileName, expected) {

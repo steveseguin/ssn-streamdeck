@@ -4,31 +4,83 @@
   "ninja.socialstream.streamdeck.connection": {
     "Name": "セットアップ",
     "Tooltip": "セッションIDを入力してプラグイン接続をテストします。",
-    "States": [{ "Name": "待機中" }, { "Name": "接続済み" }]
+    "States": [
+      {
+        "Name": "待機中"
+      },
+      {
+        "Name": "接続済み"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.command": {
     "Name": "プリセットコマンド",
     "Tooltip": "よく使うSocial Stream Ninjaコマンドを送信します。",
-    "States": [{ "Name": "準備完了" }]
+    "States": [
+      {
+        "Name": "準備完了"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.custom-command": {
     "Name": "カスタムコマンド",
     "Tooltip": "高度なワークフロー向けに任意のAPIコマンドを送信します。",
-    "States": [{ "Name": "準備完了" }]
+    "States": [
+      {
+        "Name": "準備完了"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.timer-dial": {
     "Name": "タイマーダイヤル",
     "Tooltip": "Social Stream Ninjaのタイマーを調整・確認します。",
-    "States": [{ "Name": "準備完了" }],
-    "Encoder": { "TriggerDescription": { "Rotate": "タイマーを調整", "Push": "開始または一時停止", "Touch": "タイマーを更新", "LongTouch": "タイマーをリセット" } }
+    "States": [
+      {
+        "Name": "準備完了"
+      }
+    ],
+    "Encoder": {
+      "TriggerDescription": {
+        "Rotate": "タイマーを調整",
+        "Push": "開始または一時停止",
+        "Touch": "タイマーを更新",
+        "LongTouch": "タイマーをリセット"
+      }
+    }
   },
   "ninja.socialstream.streamdeck.chat-feed": {
     "Name": "チャット確認",
     "Tooltip": "最近のチャットを確認し、固定や次の固定メッセージの表示を行います。",
-    "States": [{ "Name": "準備完了" }],
-    "Encoder": { "TriggerDescription": { "Rotate": "最近のチャットを閲覧", "Push": "表示中のチャットを固定", "Touch": "次の固定メッセージを表示", "LongTouch": "表示中のチャットを解除" } }
+    "States": [
+      {
+        "Name": "準備完了"
+      }
+    ],
+    "Encoder": {
+      "TriggerDescription": {
+        "Rotate": "最近のチャットを閲覧",
+        "Push": "表示中のチャットを固定",
+        "Touch": "次の固定メッセージを表示",
+        "LongTouch": "表示中のチャットを解除"
+      }
+    }
   },
   "Localization": {
+    "group.giveaways": "??",
+    "command.startgiveaway": "?????",
+    "deviceCommand_startgiveaway": "??\n??",
+    "command.closegiveaway": "?????",
+    "deviceCommand_closegiveaway": "??\n??",
+    "command.drawgiveaway": "??????",
+    "deviceCommand_drawgiveaway": "??\n??",
+    "command.cancelgiveaway": "??????",
+    "deviceCommand_cancelgiveaway": "??\n??",
+    "command.resetgiveaway": "?????",
+    "deviceCommand_resetgiveaway": "??\n????",
+    "command.getgiveawaystate": "?????",
+    "deviceCommand_getgiveawaystate": "??\n??",
+    "valueLabel.Giveaway ID/config JSON": "??ID????JSON",
+    "valueLabel.Giveaway ID JSON": "??ID?JSON",
     "command.getCommerceState": "商品の状態",
     "pi.commerce.product": "保存した商品",
     "pi.commerce.refresh": "商品と状態を更新",
@@ -186,7 +238,7 @@
     "pi.timer.heading": "タイマーダイヤル",
     "pi.timer.step": "1回転あたりの秒数",
     "pi.timer.titlePlaceholder": "配信タイマー",
-    "pi.timer.hint": "回して調整、押して開始／一時停止、タッチストリップを長押ししてリセットします。",
+    "pi.timer.hint": "1クリックで設定秒数を増減します。ダイヤルを押したまま回すと6倍（既定は1分）です。回さず押して離すと開始・一時停止。タイマー画面をタップで更新、画面を長押しでリセットします。",
     "pi.chat.heading": "チャット確認",
     "pi.chat.titlePlaceholder": "チャット確認",
     "pi.chat.hint": "回して最近のチャットを閲覧、押して固定、タップして次の固定メッセージを表示、長押しで固定解除します。Social Stream Ninjaで「チャットメッセージをAPIサーバーに送信」を有効にしてください。",
@@ -228,7 +280,7 @@
     "deviceTimerTitle": "配信タイマー",
     "deviceTimerSetupValue": "設定",
     "deviceTimerSetupHint": "設定キーとセッションIDを追加",
-    "deviceTimerHint": "回す±{seconds}秒  押す切替  長押しリセット",
+    "deviceTimerHint": "回す ±{seconds}s · 押す ▶/Ⅱ",
     "deviceTimerSetupRequired": "設定が必要",
     "deviceTimerConnecting": "接続中",
     "deviceTimerOffline": "オフライン",
@@ -247,6 +299,21 @@
     "deviceChatFeatureHint": "タップ 表示",
     "deviceChatAnonymous": "匿名",
     "deviceChatMessage": "メッセージ",
-    "deviceChatSharedImage": "画像を共有"
+    "deviceChatSharedImage": "画像を共有",
+    "group.workflows": "Event Flow ワークフロー",
+    "command.triggerWorkflow": "フロー実行",
+    "command.getWorkflowTriggers": "フロー一覧",
+    "valueLabel.Trigger name or workflow JSON": "トリガー名またはフローJSON",
+    "pi.workflow.choose": "保存済み・有効なフロー",
+    "pi.workflow.refresh": "フローを更新",
+    "pi.workflow.manual": "フローを選ぶか、下にトリガーを入力",
+    "pi.workflow.missing": "保存したフローは利用できません。値は保持されています。保存・有効化して更新してください。",
+    "pi.workflow.empty": "有効なトリガーがありません。フローを保存・有効化して更新してください。",
+    "pi.workflow.hint": "Event Flow に Run from Stream Deck / API を追加し、トリガー名を設定して保存・有効化します。チェックは受付を示し、遅延処理や外部処理の完了ではありません。",
+    "pi.timer.guide": "タイマー操作と使用例",
+    "pi.help.guide": "操作・アイコン・フローガイド",
+    "deviceCommand_triggerWorkflow": "フロー\n実行",
+    "deviceCommand_getWorkflowTriggers": "フロー\n一覧",
+    "deviceTimerGestureHint": "押して回す ×6 · 画面長押し ↺"
   }
 }

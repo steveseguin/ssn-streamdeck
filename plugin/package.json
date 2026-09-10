@@ -1,12 +1,12 @@
 {
 	"name": "social-stream-ninja-streamdeck-plugin",
-	"version": "0.2.4",
+	"version": "0.2.5",
 	"private": true,
 	"license": "GPL-3.0-only",
 	"description": "Native Elgato Stream Deck plugin for Social Stream Ninja.",
 	"type": "module",
 	"scripts": {
-		"assets": "node scripts/generate-png-assets.mjs && node scripts/generate-command-icons.mjs --sheet=../docs/images/command-icons.png && node scripts/generate-profiles.mjs",
+		"assets": "node scripts/generate-png-assets.mjs && node scripts/generate-command-icons.mjs --sheet=../docs/images/command-icons.png && node scripts/generate-profiles.mjs && node scripts/generate-guide.mjs",
 		"build": "npm run assets && node scripts/clean-build.mjs && tsc -p tsconfig.build.json --noEmit && node scripts/build-plugin.mjs && node scripts/copy-assets.mjs",
 		"build:release": "npm run prepare:p2p-runtime && npm run build",
 		"check": "tsc -p tsconfig.json --noEmit",

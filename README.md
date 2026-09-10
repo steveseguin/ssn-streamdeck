@@ -8,6 +8,12 @@
 
 Native Elgato Stream Deck plugin for Social Stream Ninja.
 
+[Complete controls, gestures and icon guide](https://socialstream.ninja/beta/streamdeck/guide.html) · [Event Flow and API workflow guide](https://socialstream.ninja/beta/docs/streamdeck-event-flow.html)
+
+To run a custom workflow, use the current Social Stream beta assets, add **Run from Stream Deck / API** in Event Flow, name the trigger, save and enable the flow, then use the plugin's **Run Workflow** preset and **Refresh workflows**. Both the plugin and Social Stream runtime need the new workflow capability; existing OBS/chat triggers remain separate.
+
+**Timer tip:** hold the physical dial down while turning for 6× the configured step—one minute per click at the default 10-second step. Press/release without turning starts or pauses; holding the touchscreen above the dial resets.
+
 Social Stream Ninja collects live chat and stream events from multiple platforms into browser overlays, docks, queues, polls, waitlists, and its desktop app. This plugin lets Stream Deck users trigger those controls from keys through either the desktop app or Chrome extension.
 
 The plugin uses the official Stream Deck SDK, TypeScript source, generated icon assets, a guided property inspector, centralized command payload builders, and focused unit tests.

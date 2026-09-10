@@ -290,6 +290,13 @@
 		<select id="sourceId" class="hidden"></select>
 		<button id="refreshSources" class="secondary hidden" type="button" data-i18n="pi.preset.refreshSources">Refresh open sources</button>
 
+        <div id="workflowControls" class="hidden">
+            <label for="workflowTrigger" data-i18n="pi.workflow.choose">Saved, enabled workflow</label>
+            <select id="workflowTrigger"></select>
+            <button id="refreshWorkflows" class="secondary" type="button" data-i18n="pi.workflow.refresh">Refresh workflows</button>
+            <div id="workflowStatus" class="hint" role="status" aria-live="polite"></div>
+            <div class="hint" data-i18n="pi.workflow.hint">In Event Flow, add Run from Stream Deck / API, give it a trigger name, then save and enable the flow. A check mark means the run was accepted; delayed and external actions may still be running.</div>
+        </div>
 		<div id="commerceControls" class="hidden">
             <label id="commerceProductLabel" for="commerceProduct" data-i18n="pi.commerce.product">Saved product</label><select id="commerceProduct"></select>
             <button id="refreshCommerce" class="secondary" type="button" data-i18n="pi.commerce.refresh">Refresh products and state</button>
@@ -335,14 +342,15 @@
 		<input id="timerStep" type="number" min="1" step="1" value="10">
 		<label for="timerTitle" data-i18n="pi.common.displayTitle">Display title</label>
 		<input id="timerTitle" type="text" placeholder="Stream Timer" data-i18n-placeholder="pi.timer.titlePlaceholder">
-		<div class="hint" data-i18n="pi.timer.hint">Turn to adjust. Press to start or pause. Hold the touch strip to reset.</div>
+		<div class="hint" data-i18n="pi.timer.hint">Turn one click to add or subtract the configured seconds. Hold the dial down while turning for 6× the step (default: 1 minute). Press and release without turning to start/pause. Tap the timer display to refresh; hold that display to reset.</div>
+		<a href="guide.html#timer" target="_blank" data-i18n="pi.timer.guide">Timer gestures and examples</a>
 	</section>
 
 	<section id="chatFeedSettings" class="panel hidden">
 		<h2 data-i18n="pi.chat.heading">Chat Review</h2>
 		<label for="chatFeedTitle" data-i18n="pi.common.displayTitle">Display title</label>
 		<input id="chatFeedTitle" type="text" placeholder="Chat Review" data-i18n-placeholder="pi.chat.titlePlaceholder">
-		<div class="hint" data-i18n="pi.chat.hint">Turn to browse recent chat, press to pin, tap to feature the next pinned message, or hold to unpin. Keep Social Stream Ninja running and connected.</div>
+		<div class="hint" data-i18n="pi.chat.hint">Turn left for older chat, right for newer chat. Press the dial to pin the displayed message. Tap its display to feature the next pinned message; hold the display to unpin the reviewed message. Keep Social Stream Ninja and the default dock open.</div>
 	</section>
 
 	<details id="helpDetails">
@@ -351,6 +359,7 @@
 			<textarea id="diagnosticsText" readonly aria-label="Diagnostics" data-i18n-aria-label="pi.help.diagnostics">No errors recorded.</textarea>
 			<button id="copyDiagnostics" class="secondary" type="button" data-i18n="pi.help.copy">Copy diagnostics</button>
 			<div class="help-links">
+                <a href="guide.html" target="_blank" data-i18n="pi.help.guide">Controls, icons and workflow guide</a>
 				<a href="https://github.com/steveseguin/ssn-streamdeck/issues" target="_blank" rel="noreferrer" data-i18n="pi.help.support">Support</a>
 				<a href="https://socialstream.ninja/privacy" target="_blank" rel="noreferrer" data-i18n="pi.help.privacy">Privacy</a>
 			</div>
@@ -412,6 +421,13 @@
 			applyStaticTranslations();
 		}
 		const commandGroups = [
+            {
+                key: "workflows", label: "Event Flow workflows",
+                options: [
+                    { value: "triggerWorkflow", label: "Run workflow", scope: "ssn", valueLabel: "Trigger name or workflow JSON", defaultAwaitResponse: true },
+                    { value: "getWorkflowTriggers", label: "List workflows", scope: "ssn", defaultAwaitResponse: true }
+                ]
+            },
 			{
 				key: "overlayQueue",
 				label: "Overlay and queue",
@@ -461,6 +477,18 @@
 				]
 			},
 			{
+				key: "giveaways",
+                label: "Giveaways & Points Pot",
+                options: [
+                    { value: "startgiveaway", label: "Open giveaway", scope: "ssn", defaultValue: { giveawayId: "default" }, valueLabel: "Giveaway ID/config JSON", defaultAwaitResponse: true },
+                    { value: "closegiveaway", label: "Close giveaway", scope: "ssn", defaultValue: { giveawayId: "default" }, valueLabel: "Giveaway ID JSON", defaultAwaitResponse: true },
+                    { value: "drawgiveaway", label: "Draw giveaway", scope: "ssn", defaultValue: { giveawayId: "default" }, valueLabel: "Giveaway ID JSON", defaultAwaitResponse: true },
+                    { value: "cancelgiveaway", label: "Cancel and refund giveaway", scope: "ssn", defaultValue: { giveawayId: "default" }, valueLabel: "Giveaway ID JSON", defaultAwaitResponse: true },
+                    { value: "resetgiveaway", label: "New giveaway round", scope: "ssn", defaultValue: { giveawayId: "default" }, valueLabel: "Giveaway ID JSON", defaultAwaitResponse: true },
+                    { value: "getgiveawaystate", label: "Giveaway state", scope: "ssn", defaultValue: { giveawayId: "default" }, valueLabel: "Giveaway ID JSON", defaultAwaitResponse: true }
+                ]
+            },
+            {
 				key: "dockMessages",
 				label: "Dock messages",
 				options: [
@@ -692,8 +720,36 @@
             select.value = selected;
             if (commerceResult) byId("commerceState").textContent = t("commerce.mode." + commerceResult.mode, commerceResult.mode) + (commerceResult.selected ? ': ' + commerceResult.selected.name : '') + (commerceResult.remainingSeconds != null ? ' (' + commerceResult.remainingSeconds + 's)' : '');
         }
-        function renderCommandFields() {
+        var availableWorkflows = [];
+        function requestWorkflows() {
+            if (byId("command").value !== "triggerWorkflow" || !capabilities || !capabilities.ssn || !capabilities.ssn.actions || !capabilities.ssn.actions.getWorkflowTriggers) return;
+            send({ event: "sendToPlugin", action: actionUuid, context: propertyInspectorContext, payload: { type: "requestWorkflows" } });
+        }
+        function savedWorkflowValue() {
+            var raw = byId("value").value.trim();
+            try { var parsed = JSON.parse(raw); if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed; } catch (_) {}
+            return { trigger: raw };
+        }
+        function renderWorkflows() {
+            var select = byId("workflowTrigger"), selected = savedWorkflowValue();
+            select.innerHTML = "";
+            var first = document.createElement("option"); first.value = "";
+            first.textContent = t("pi.workflow.manual", "Choose a workflow, or enter its trigger below"); select.appendChild(first);
+            availableWorkflows.forEach(function (item) {
+                var option = document.createElement("option");
+                option.value = JSON.stringify({ flowId: item.flowId, trigger: item.trigger });
+                option.textContent = item.flowName + " — " + item.trigger;
+                select.appendChild(option);
+                if (selected.trigger === item.trigger && selected.flowId === item.flowId) option.selected = true;
+            });
+            byId("workflowStatus").textContent = selected.trigger && selected.flowId && !availableWorkflows.some(function (item) { return item.trigger === selected.trigger && item.flowId === selected.flowId; })
+                ? t("pi.workflow.missing", "Saved workflow is not currently available. Its value is preserved; save/enable the flow and refresh.")
+                : !availableWorkflows.length ? t("pi.workflow.empty", "No enabled workflow triggers received yet. Save/enable a flow, then refresh.") : "";
+        }
+		function renderCommandFields() {
 			const option = selectedCommandOption();
+            byId("workflowControls").classList.toggle("hidden", !option || option.value !== "triggerWorkflow");
+            if (option && option.value === "triggerWorkflow") renderWorkflows();
             var commerce = !!(option && /^(commerce|getCommerceState)/.test(option.value));
             byId("commerceControls").classList.toggle("hidden", !commerce);
             byId("commerceProduct").classList.toggle("hidden", !option || option.value !== 'commerceShow');
@@ -945,11 +1001,16 @@
 				currentState = payload.state || currentState;
 				updateStatus(payload.ok === true ? "ok" : payload.state === "missing-session" ? "warn" : "error", localizedStatus(payload.message || "Status updated."));
 				if (payload.ok === true && ssappAvailable()) requestSources();
-                if (payload.ok === true) requestCommerce();
+                if (payload.ok === true) { requestCommerce(); requestWorkflows(); }
 			} else if (payload.type === "capabilities") {
 				capabilities = payload.capabilities || null;
 				renderActionSettings();
+				requestWorkflows();
 				if (ssappAvailable()) requestSources();
+			} else if (payload.type === "workflows") {
+                availableWorkflows = payload.result && payload.result.payload && Array.isArray(payload.result.payload.triggers) ? payload.result.payload.triggers : [];
+                renderWorkflows();
+                if (payload.error) byId("workflowStatus").textContent = payload.error;
 			} else if (payload.type === "commerce") {
                 commerceResult = payload.result && payload.result.payload && payload.result.payload.commerce || null;
                 if (payload.error) byId("commerceState").textContent = payload.error;
@@ -1046,6 +1107,14 @@
 		});
 		byId("command").addEventListener("change", handleCommandChange);
 		byId("refreshSources").onclick = requestSources;
+        byId("refreshWorkflows").onclick = requestWorkflows;
+        byId("command").addEventListener("change", requestWorkflows);
+        byId("workflowTrigger").addEventListener("change", function () {
+            if (!this.value) return;
+            var selected = JSON.parse(this.value), old = savedWorkflowValue();
+            if (old.data && typeof old.data === "object" && !Array.isArray(old.data)) selected.data = old.data;
+            byId("value").value = JSON.stringify(selected); saveActionSettings();
+        });
         byId("refreshCommerce").onclick = requestCommerce;
         byId("commerceProduct").addEventListener("change", function () { byId("value").value = this.value; saveActionSettings(); });
         byId("command").addEventListener("change", requestCommerce);

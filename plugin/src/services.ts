@@ -71,6 +71,13 @@ function registerPropertyInspectorMessages(): void {
 		}
 		if (payload.type === "requestStatus") {
 			await sendInspectorStatus();
+		} else if (payload.type === "requestWorkflows") {
+            try {
+                const result = await ssnClient.sendCommand({ action: "getWorkflowTriggers" }, { awaitResponse: true });
+                await streamDeck.ui.sendToPropertyInspector({ type: "workflows", result: result as JsonValue });
+            } catch (error) {
+                await streamDeck.ui.sendToPropertyInspector({ type: "workflows", error: error instanceof Error ? error.message : "Workflows unavailable." });
+            }
 		} else if (payload.type === "requestCommerce") {
             try {
                 const result = await ssnClient.sendCommand({ action: "getCommerceState" }, { awaitResponse: true });

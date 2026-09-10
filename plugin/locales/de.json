@@ -4,31 +4,83 @@
   "ninja.socialstream.streamdeck.connection": {
     "Name": "Einrichtung",
     "Tooltip": "Sitzungs-ID eingeben und die Plugin-Verbindung testen.",
-    "States": [{ "Name": "Warten" }, { "Name": "Verbunden" }]
+    "States": [
+      {
+        "Name": "Warten"
+      },
+      {
+        "Name": "Verbunden"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.command": {
     "Name": "Vordefinierter Befehl",
     "Tooltip": "Einen häufigen Social-Stream-Ninja-Befehl senden.",
-    "States": [{ "Name": "Bereit" }]
+    "States": [
+      {
+        "Name": "Bereit"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.custom-command": {
     "Name": "Eigener Befehl",
     "Tooltip": "Einen beliebigen API-Befehl für erweiterte Abläufe senden.",
-    "States": [{ "Name": "Bereit" }]
+    "States": [
+      {
+        "Name": "Bereit"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.timer-dial": {
     "Name": "Timer-Regler",
     "Tooltip": "Den Social-Stream-Ninja-Timer einstellen und überwachen.",
-    "States": [{ "Name": "Bereit" }],
-    "Encoder": { "TriggerDescription": { "Rotate": "Timer ändern", "Push": "Start/Pause", "Touch": "Timer neu laden", "LongTouch": "Timer zurück" } }
+    "States": [
+      {
+        "Name": "Bereit"
+      }
+    ],
+    "Encoder": {
+      "TriggerDescription": {
+        "Rotate": "Timer ändern",
+        "Push": "Start/Pause",
+        "Touch": "Timer neu laden",
+        "LongTouch": "Timer zurück"
+      }
+    }
   },
   "ninja.socialstream.streamdeck.chat-feed": {
     "Name": "Chat-Rückblick",
     "Tooltip": "Letzte Chats ansehen, anheften und die nächste angeheftete Nachricht hervorheben.",
-    "States": [{ "Name": "Bereit" }],
-    "Encoder": { "TriggerDescription": { "Rotate": "Chats durchsuchen", "Push": "Chat anheften", "Touch": "Nächsten zeigen", "LongTouch": "Chat lösen" } }
+    "States": [
+      {
+        "Name": "Bereit"
+      }
+    ],
+    "Encoder": {
+      "TriggerDescription": {
+        "Rotate": "Chats durchsuchen",
+        "Push": "Chat anheften",
+        "Touch": "Nächsten zeigen",
+        "LongTouch": "Chat lösen"
+      }
+    }
   },
   "Localization": {
+    "group.giveaways": "Verlosung",
+    "command.startgiveaway": "Verlosung ?ffnen",
+    "deviceCommand_startgiveaway": "Verlosung\n?ffnen",
+    "command.closegiveaway": "Verlosung schlie?en",
+    "deviceCommand_closegiveaway": "Verlosung\nSchlie?en",
+    "command.drawgiveaway": "Gewinner ziehen",
+    "deviceCommand_drawgiveaway": "Verlosung\nZiehen",
+    "command.cancelgiveaway": "Abbrechen und erstatten",
+    "deviceCommand_cancelgiveaway": "Verlosung\nErstatten",
+    "command.resetgiveaway": "Neue Verlosungsrunde",
+    "deviceCommand_resetgiveaway": "Verlosung\nNeue Runde",
+    "command.getgiveawaystate": "Verlosungsstatus",
+    "deviceCommand_getgiveawaystate": "Verlosung\nStatus",
+    "valueLabel.Giveaway ID/config JSON": "Verlosungs-ID/Konfiguration als JSON",
+    "valueLabel.Giveaway ID JSON": "Verlosungs-ID als JSON",
     "command.getCommerceState": "Produktstatus",
     "pi.commerce.product": "Gespeichertes Produkt",
     "pi.commerce.refresh": "Produkte und Status aktualisieren",
@@ -186,7 +238,7 @@
     "pi.timer.heading": "Timer-Regler",
     "pi.timer.step": "Sekunden pro Drehschritt",
     "pi.timer.titlePlaceholder": "Stream-Timer",
-    "pi.timer.hint": "Drehen zum Einstellen. Drücken zum Starten oder Pausieren. Touch-Leiste zum Zurücksetzen halten.",
+    "pi.timer.hint": "Pro Rastung werden die eingestellten Sekunden addiert/abgezogen. Gedrückt drehen: 6× Schrittweite (Standard: 1 Minute). Drücken/loslassen ohne Drehen: Start/Pause. Display antippen: aktualisieren; Display halten: zurücksetzen.",
     "pi.chat.heading": "Chat-Rückblick",
     "pi.chat.titlePlaceholder": "Chat-Rückblick",
     "pi.chat.hint": "Drehen, um letzte Chats zu durchsuchen; drücken zum Anheften; tippen für die nächste angeheftete Nachricht; halten zum Lösen. Aktiviere in Social Stream Ninja „Chatnachrichten an API-Server senden“.",
@@ -228,7 +280,7 @@
     "deviceTimerTitle": "Stream-Timer",
     "deviceTimerSetupValue": "SETUP",
     "deviceTimerSetupHint": "Setup-Taste + Sitzungs-ID",
-    "deviceTimerHint": "DREH ±{seconds}s  DRÜCK ⇄  HALT ↻",
+    "deviceTimerHint": "DREH ±{seconds}s · DRUCK ▶/Ⅱ",
     "deviceTimerSetupRequired": "SETUP NÖTIG",
     "deviceTimerConnecting": "VERBINDEN",
     "deviceTimerOffline": "OFFLINE",
@@ -247,6 +299,21 @@
     "deviceChatFeatureHint": "TIPP zeigen",
     "deviceChatAnonymous": "Anonym",
     "deviceChatMessage": "Nachricht",
-    "deviceChatSharedImage": "Bild geteilt"
+    "deviceChatSharedImage": "Bild geteilt",
+    "group.workflows": "Event-Flow-Abläufe",
+    "command.triggerWorkflow": "Ablauf starten",
+    "command.getWorkflowTriggers": "Abläufe zeigen",
+    "valueLabel.Trigger name or workflow JSON": "Triggername oder Ablauf-JSON",
+    "pi.workflow.choose": "Gespeicherter, aktiver Ablauf",
+    "pi.workflow.refresh": "Abläufe aktualisieren",
+    "pi.workflow.manual": "Ablauf wählen oder Trigger unten eingeben",
+    "pi.workflow.missing": "Gespeicherter Ablauf nicht verfügbar. Wert bleibt erhalten; speichern/aktivieren und aktualisieren.",
+    "pi.workflow.empty": "Keine aktiven Trigger empfangen. Ablauf speichern/aktivieren und aktualisieren.",
+    "pi.workflow.hint": "In Event Flow „Run from Stream Deck / API“ hinzufügen, Trigger benennen, speichern und aktivieren. Das Häkchen bestätigt die Annahme, nicht den Abschluss verzögerter/externer Aktionen.",
+    "pi.timer.guide": "Timer-Gesten und Beispiele",
+    "pi.help.guide": "Anleitung zu Steuerung, Symbolen und Abläufen",
+    "deviceCommand_triggerWorkflow": "Ablauf\nStart",
+    "deviceCommand_getWorkflowTriggers": "Abläufe\nListe",
+    "deviceTimerGestureHint": "DRUCK+DREH ×6 · TOUCH HALT ↺"
   }
 }

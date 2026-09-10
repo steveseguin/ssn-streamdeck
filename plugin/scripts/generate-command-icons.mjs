@@ -46,6 +46,7 @@ const SKY = [14, 165, 233];
 const DEEP_AMBER = [245, 158, 11];
 
 const FAMILIES = {
+	workflow: { tint: [71, 214, 185], draw: drawWorkflow },
 	product: { tint: [167, 139, 250], draw: drawProduct },
 	queue: { tint: [88, 166, 255], draw: drawQueue },
 	overlay: { tint: [34, 211, 238], draw: drawOverlay },
@@ -202,6 +203,15 @@ function drawProduct(p, ink) {
     p.rect(48, 22, 26, 25, 7, ink.dark);
     p.rect(27, 37, 69, 48, 6, ink.fg);
     p.rect(36, 46, 51, 30, 3, ink.dark);
+}
+
+function drawWorkflow(p, ink) {
+    p.rect(49, 20, 6, 52, 2, ink.fg2);
+    p.rect(49, 67, 40, 6, 2, ink.fg2);
+    p.rect(30, 16, 45, 24, 5, ink.fg);
+    p.rect(37, 22, 31, 12, 2, ink.dark);
+    p.rect(65, 57, 31, 26, 5, ink.fg);
+    p.rect(71, 63, 19, 14, 2, ink.dark);
 }
 
 function drawOverlay(p, ink) {

@@ -2,6 +2,28 @@
 
 This document is the single source of truth for how the Stream Deck plugin should call Social Stream Ninja and how `social_stream` routes SSN and SSApp control commands.
 
+For the versioned envelope, descriptors and response rules, see [Remote-Control Protocol](../../docs/remote-control-protocol.md). For hands-on instructions, see the [offline controls/icon guide](../plugin/ui/guide.html) and [Event Flow workflow guide](https://socialstream.ninja/beta/docs/streamdeck-event-flow.html).
+
+## Named Event Flow workflows
+
+`getWorkflowTriggers` and `triggerWorkflow` are background-owned SSN commands. They work in the extension and SSApp when the loaded Social Stream assets advertise them; they do not require SSApp's local AI API.
+
+```json
+{ "action": "getWorkflowTriggers", "get": "workflows-1" }
+```
+
+The callback result's `payload.triggers` contains `{ "flowId": "...", "flowName": "...", "trigger": "intermission" }` entries from saved, enabled flows. Duplicate names within one flow appear once. The List Workflows key displays the number of entries.
+
+```json
+{ "action": "triggerWorkflow", "get": "run-1", "value": { "trigger": "intermission", "flowId": "FLOW_ID", "data": { "minutes": 5 } } }
+```
+
+`trigger` is a case-sensitive name, trimmed, 1–100 characters. `flowId` and the JSON object `data` are optional; other top-level value fields are rejected. The serialized value must fit in 32,768 characters (the versioned envelope has its own size limit). A plain trigger string or stringified value object is also accepted, including HTTP query values. Omit `flowId` to run all enabled flows with the same trigger. Normal graph conditions and actions apply inside each matched flow; unrelated flows are excluded.
+
+Successful results have `status: "accepted"` and `payload: { trigger, matchedFlows, flows }`. Each call starts a separate run; acceptance does not establish external action completion. Use a Rate Limiter (THROTTLE) node for a cooldown. Do not automatically retry after an uncertain acknowledgement. Errors include `INVALID_VALUE`, `WORKFLOW_NOT_FOUND`, `CONTROL_UNAVAILABLE`, and `TARGET_UNAVAILABLE`.
+
+Read extra data with `{meta.workflow.data.minutes}` in text, message and webhook JSON string templates. The workflow picker stores both the name and flow ID, preserves unavailable selections, and requires refresh/reselection after renaming. Existing `eventFlowEvent` bridge traffic remains separate.
+
 ## Scope and intent
 
 - Define current callable command surface for Stream Deck.
@@ -589,38 +611,40 @@ Expected event:
 - `starttimer`:
 
 ```json
-{ "action": "starttimer", "value": "main", "apiid": "SESSION_ID" }
+{ "action": "starttimer", "apiid": "SESSION_ID" }
 ```
 
 - `pausetimer`:
 
 ```json
-{ "action": "pausetimer", "value": "main", "apiid": "SESSION_ID" }
+{ "action": "pausetimer", "apiid": "SESSION_ID" }
 ```
 
 - `toggletimer`:
 
 ```json
-{ "action": "toggletimer", "value": "main", "apiid": "SESSION_ID" }
+{ "action": "toggletimer", "apiid": "SESSION_ID" }
 ```
 
 - `settimer`:
 
 ```json
-{ "action": "settimer", "value": 120, "target": "main", "apiid": "SESSION_ID" }
+{ "action": "settimer", "value": { "seconds": 120 }, "apiid": "SESSION_ID" }
 ```
 
 - `gettimerstate`:
 
 ```json
-{ "action": "gettimerstate", "get": "timer-main-1", "value": "main", "apiid": "SESSION_ID" }
+{ "action": "gettimerstate", "get": "timer-1", "apiid": "SESSION_ID" }
 ```
 
-Expected event:
+Versioned callback result (abridged):
 
 ```json
-{ "running": true, "secondsLeft": 95, "secondsTotal": 300, "target": "main" }
+{ "ok": true, "status": "completed", "payload": { "timer": { "running": true, "displayMs": 95000, "durationMs": 300000, "mode": "countdown" } } }
 ```
+
+There is one shared SSN timer. `timeradd` / `timersubtract` take seconds. For confirmed versioned resets use `{"action":"resettimer","value":{"confirm":true},"get":"reset-1","protocol":2}`. The dial turns by 10 seconds by default, push+turn multiplies that by six, a normal push toggles running, tapping the screen refreshes, and holding the screen resets.
 
 ### Modes and utility
 
@@ -752,7 +776,7 @@ The property inspector may pass strings. Except for the message presets describe
 
 ### Error and safety policy
 
-- Use confirmation flow for destructive SSN actions such as `clearOverlay` and `resetwaitlist`.
+- Review destructive presets before putting them in a live profile. Most execute on one press; some include confirmation in their value. Only Reset Collected Credits has a two-press confirmation when used outside a Multi Action.
 - Show explicit feedback on each key event (OK/Alert) regardless of callback presence.
 - Never hard-code session IDs.
 

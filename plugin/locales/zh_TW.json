@@ -4,31 +4,83 @@
   "ninja.socialstream.streamdeck.connection": {
     "Name": "設定",
     "Tooltip": "輸入工作階段 ID 並測試外掛程式連線。",
-    "States": [{ "Name": "等待中" }, { "Name": "已連線" }]
+    "States": [
+      {
+        "Name": "等待中"
+      },
+      {
+        "Name": "已連線"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.command": {
     "Name": "預設命令",
     "Tooltip": "傳送常用的 Social Stream Ninja 命令。",
-    "States": [{ "Name": "就緒" }]
+    "States": [
+      {
+        "Name": "就緒"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.custom-command": {
     "Name": "自訂命令",
     "Tooltip": "為進階工作流程傳送任意 API 命令。",
-    "States": [{ "Name": "就緒" }]
+    "States": [
+      {
+        "Name": "就緒"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.timer-dial": {
     "Name": "計時器旋鈕",
     "Tooltip": "調整並監控 Social Stream Ninja 計時器。",
-    "States": [{ "Name": "就緒" }],
-    "Encoder": { "TriggerDescription": { "Rotate": "調整計時器", "Push": "開始或暫停", "Touch": "重新整理計時器", "LongTouch": "重設計時器" } }
+    "States": [
+      {
+        "Name": "就緒"
+      }
+    ],
+    "Encoder": {
+      "TriggerDescription": {
+        "Rotate": "調整計時器",
+        "Push": "開始或暫停",
+        "Touch": "重新整理計時器",
+        "LongTouch": "重設計時器"
+      }
+    }
   },
   "ninja.socialstream.streamdeck.chat-feed": {
     "Name": "聊天回顧",
     "Tooltip": "查看最近聊天、釘選訊息並顯示下一則釘選訊息。",
-    "States": [{ "Name": "就緒" }],
-    "Encoder": { "TriggerDescription": { "Rotate": "瀏覽最近聊天", "Push": "釘選目前聊天", "Touch": "顯示下一則釘選訊息", "LongTouch": "取消釘選目前聊天" } }
+    "States": [
+      {
+        "Name": "就緒"
+      }
+    ],
+    "Encoder": {
+      "TriggerDescription": {
+        "Rotate": "瀏覽最近聊天",
+        "Push": "釘選目前聊天",
+        "Touch": "顯示下一則釘選訊息",
+        "LongTouch": "取消釘選目前聊天"
+      }
+    }
   },
   "Localization": {
+    "group.giveaways": "??",
+    "command.startgiveaway": "????",
+    "deviceCommand_startgiveaway": "??\n??",
+    "command.closegiveaway": "????",
+    "deviceCommand_closegiveaway": "??\n??",
+    "command.drawgiveaway": "?????",
+    "deviceCommand_drawgiveaway": "??\n??",
+    "command.cancelgiveaway": "?????",
+    "deviceCommand_cancelgiveaway": "??\n??",
+    "command.resetgiveaway": "?????",
+    "deviceCommand_resetgiveaway": "??\n???",
+    "command.getgiveawaystate": "????",
+    "deviceCommand_getgiveawaystate": "??\n??",
+    "valueLabel.Giveaway ID/config JSON": "?? ID/?? JSON",
+    "valueLabel.Giveaway ID JSON": "?? ID JSON",
     "command.getCommerceState": "商品狀態",
     "pi.commerce.product": "已儲存的商品",
     "pi.commerce.refresh": "重新整理商品和狀態",
@@ -186,7 +238,7 @@
     "pi.timer.heading": "計時器旋鈕",
     "pi.timer.step": "每格秒數",
     "pi.timer.titlePlaceholder": "直播計時器",
-    "pi.timer.hint": "旋轉進行調整，按下開始或暫停，長按觸控條重設。",
+    "pi.timer.hint": "每轉一格增加或減少設定的秒數。按住旋鈕旋轉：步長的6倍（預設1分鐘）。不旋轉，按下並放開：開始/暫停。輕點計時器螢幕：重新整理；長按螢幕：重設。",
     "pi.chat.heading": "聊天回顧",
     "pi.chat.titlePlaceholder": "聊天回顧",
     "pi.chat.hint": "旋轉瀏覽最近聊天，按下釘選，輕觸顯示下一則釘選訊息，長按取消釘選。請在 Social Stream Ninja 中啟用「將聊天訊息傳送到 API 伺服器」。",
@@ -228,7 +280,7 @@
     "deviceTimerTitle": "直播計時器",
     "deviceTimerSetupValue": "設定",
     "deviceTimerSetupHint": "新增設定按鍵和工作階段 ID",
-    "deviceTimerHint": "旋轉 ±{seconds}秒  按下 切換  長按 重設",
+    "deviceTimerHint": "旋轉 ±{seconds}s · 按下 ▶/Ⅱ",
     "deviceTimerSetupRequired": "需要設定",
     "deviceTimerConnecting": "連線中",
     "deviceTimerOffline": "離線",
@@ -247,6 +299,21 @@
     "deviceChatFeatureHint": "輕觸 顯示",
     "deviceChatAnonymous": "匿名",
     "deviceChatMessage": "訊息",
-    "deviceChatSharedImage": "分享了圖片"
+    "deviceChatSharedImage": "分享了圖片",
+    "group.workflows": "Event Flow 工作流程",
+    "command.triggerWorkflow": "執行工作流程",
+    "command.getWorkflowTriggers": "工作流程清單",
+    "valueLabel.Trigger name or workflow JSON": "觸發器名稱或工作流程 JSON",
+    "pi.workflow.choose": "已儲存並啟用的工作流程",
+    "pi.workflow.refresh": "重新整理工作流程",
+    "pi.workflow.manual": "選擇工作流程或在下方輸入觸發器",
+    "pi.workflow.missing": "已儲存的工作流程無法使用。其值已保留；請儲存並啟用後重新整理。",
+    "pi.workflow.empty": "尚未收到已啟用的觸發器。請儲存並啟用工作流程後重新整理。",
+    "pi.workflow.hint": "在 Event Flow 中新增 Run from Stream Deck / API，設定觸發器名稱，儲存並啟用。勾號表示已接受，不表示延遲或外部操作已完成。",
+    "pi.timer.guide": "計時器手勢與範例",
+    "pi.help.guide": "控制項、圖示與工作流程指南",
+    "deviceCommand_triggerWorkflow": "工作流程\n執行",
+    "deviceCommand_getWorkflowTriggers": "工作流程\n清單",
+    "deviceTimerGestureHint": "按住旋轉 ×6 · 長按螢幕 ↺"
   }
 }

@@ -4,31 +4,83 @@
   "ninja.socialstream.streamdeck.connection": {
     "Name": "Setup",
     "Tooltip": "Enter the Social Stream Ninja session ID and test the plugin connection.",
-    "States": [{ "Name": "Waiting" }, { "Name": "Connected" }]
+    "States": [
+      {
+        "Name": "Waiting"
+      },
+      {
+        "Name": "Connected"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.command": {
     "Name": "Preset Command",
     "Tooltip": "Send a common Social Stream Ninja remote-control command.",
-    "States": [{ "Name": "Ready" }]
+    "States": [
+      {
+        "Name": "Ready"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.custom-command": {
     "Name": "Custom Command",
     "Tooltip": "Send any Social Stream Ninja API command for advanced workflows.",
-    "States": [{ "Name": "Ready" }]
+    "States": [
+      {
+        "Name": "Ready"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.timer-dial": {
     "Name": "Timer Dial",
     "Tooltip": "Adjust and monitor the Social Stream Ninja timer from a dial.",
-    "States": [{ "Name": "Ready" }],
-    "Encoder": { "TriggerDescription": { "Rotate": "Adjust timer", "Push": "Start or pause", "Touch": "Refresh timer", "LongTouch": "Reset timer" } }
+    "States": [
+      {
+        "Name": "Ready"
+      }
+    ],
+    "Encoder": {
+      "TriggerDescription": {
+        "Rotate": "Adjust timer",
+        "Push": "Start or pause",
+        "Touch": "Refresh timer",
+        "LongTouch": "Reset timer"
+      }
+    }
   },
   "ninja.socialstream.streamdeck.chat-feed": {
     "Name": "Chat Review",
     "Tooltip": "Review recent chat, pin a message, and feature the next pinned message.",
-    "States": [{ "Name": "Ready" }],
-    "Encoder": { "TriggerDescription": { "Rotate": "Browse recent chat", "Push": "Pin displayed chat", "Touch": "Feature next pinned", "LongTouch": "Unpin displayed chat" } }
+    "States": [
+      {
+        "Name": "Ready"
+      }
+    ],
+    "Encoder": {
+      "TriggerDescription": {
+        "Rotate": "Browse recent chat",
+        "Push": "Pin displayed chat",
+        "Touch": "Feature next pinned",
+        "LongTouch": "Unpin displayed chat"
+      }
+    }
   },
   "Localization": {
+    "group.giveaways": "Giveaway",
+    "command.startgiveaway": "Open giveaway",
+    "deviceCommand_startgiveaway": "Giveaway\nOpen",
+    "command.closegiveaway": "Close giveaway",
+    "deviceCommand_closegiveaway": "Giveaway\nClose",
+    "command.drawgiveaway": "Draw giveaway",
+    "deviceCommand_drawgiveaway": "Giveaway\nDraw",
+    "command.cancelgiveaway": "Cancel and refund",
+    "deviceCommand_cancelgiveaway": "Giveaway\nRefund",
+    "command.resetgiveaway": "New giveaway round",
+    "deviceCommand_resetgiveaway": "Giveaway\nNew round",
+    "command.getgiveawaystate": "Giveaway state",
+    "deviceCommand_getgiveawaystate": "Giveaway\nState",
+    "valueLabel.Giveaway ID/config JSON": "Giveaway ID/config JSON",
+    "valueLabel.Giveaway ID JSON": "Giveaway ID JSON",
     "command.getCommerceState": "Product state",
     "pi.commerce.product": "Saved product",
     "pi.commerce.refresh": "Refresh products and state",
@@ -186,10 +238,10 @@
     "pi.timer.heading": "Timer Dial",
     "pi.timer.step": "Seconds per turn",
     "pi.timer.titlePlaceholder": "Stream Timer",
-    "pi.timer.hint": "Turn to adjust. Press to start or pause. Hold the touch strip to reset.",
+    "pi.timer.hint": "Turn one click to add/subtract the configured seconds. Hold the dial down while turning for 6× the step (default: 1 minute). Press/release without turning to start/pause. Tap the timer display to refresh; hold the display to reset.",
     "pi.chat.heading": "Chat Review",
     "pi.chat.titlePlaceholder": "Chat Review",
-    "pi.chat.hint": "Turn to browse recent chat, press to pin, tap to feature the next pinned message, or hold to unpin. Keep Social Stream Ninja running and connected.",
+    "pi.chat.hint": "Turn left for older chat, right for newer chat. Press the dial to pin the displayed message. Tap its display to feature the next pinned message; hold the display to unpin the reviewed message. Keep SSN and the default dock open.",
     "pi.status.enterFirst": "Enter a session ID first.",
     "pi.status.verified": "Connection verified.",
     "pi.status.verifyFailed": "Unable to verify the connection.",
@@ -228,7 +280,7 @@
     "deviceTimerTitle": "Stream Timer",
     "deviceTimerSetupValue": "SETUP",
     "deviceTimerSetupHint": "Add Setup key + session ID",
-    "deviceTimerHint": "TURN ±{seconds}s  PUSH ⇄  HOLD ↻",
+    "deviceTimerHint": "TURN ±{seconds}s · PUSH ▶/Ⅱ",
     "deviceTimerSetupRequired": "SETUP NEEDED",
     "deviceTimerConnecting": "CONNECTING",
     "deviceTimerOffline": "OFFLINE",
@@ -247,6 +299,21 @@
     "deviceChatFeatureHint": "TAP feature",
     "deviceChatAnonymous": "Anonymous",
     "deviceChatMessage": "Message",
-    "deviceChatSharedImage": "Shared an image"
+    "deviceChatSharedImage": "Shared an image",
+    "group.workflows": "Event Flow workflows",
+    "command.triggerWorkflow": "Run workflow",
+    "command.getWorkflowTriggers": "List workflows",
+    "valueLabel.Trigger name or workflow JSON": "Trigger name or workflow JSON",
+    "pi.workflow.choose": "Saved, enabled workflow",
+    "pi.workflow.refresh": "Refresh workflows",
+    "pi.workflow.manual": "Choose a workflow, or enter its trigger below",
+    "pi.workflow.missing": "Saved workflow unavailable. Its value is preserved; save/enable the flow and refresh.",
+    "pi.workflow.empty": "No enabled workflow triggers received. Save/enable a flow and refresh.",
+    "pi.workflow.hint": "Add Run from Stream Deck / API in Event Flow, name the trigger, save and enable. The check mark acknowledges acceptance, not completion of delayed/external actions.",
+    "pi.timer.guide": "Timer gestures and examples",
+    "pi.help.guide": "Controls, icons and workflow guide",
+    "deviceCommand_triggerWorkflow": "Workflow\nRun",
+    "deviceCommand_getWorkflowTriggers": "Workflows\nList",
+    "deviceTimerGestureHint": "PUSH+TURN ×6 · HOLD SCREEN ↺"
   }
 }

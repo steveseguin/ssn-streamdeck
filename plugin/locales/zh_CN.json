@@ -4,31 +4,83 @@
   "ninja.socialstream.streamdeck.connection": {
     "Name": "设置",
     "Tooltip": "输入会话 ID 并测试插件连接。",
-    "States": [{ "Name": "等待中" }, { "Name": "已连接" }]
+    "States": [
+      {
+        "Name": "等待中"
+      },
+      {
+        "Name": "已连接"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.command": {
     "Name": "预设命令",
     "Tooltip": "发送常用的 Social Stream Ninja 命令。",
-    "States": [{ "Name": "就绪" }]
+    "States": [
+      {
+        "Name": "就绪"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.custom-command": {
     "Name": "自定义命令",
     "Tooltip": "为高级工作流程发送任意 API 命令。",
-    "States": [{ "Name": "就绪" }]
+    "States": [
+      {
+        "Name": "就绪"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.timer-dial": {
     "Name": "计时器旋钮",
     "Tooltip": "调整并监控 Social Stream Ninja 计时器。",
-    "States": [{ "Name": "就绪" }],
-    "Encoder": { "TriggerDescription": { "Rotate": "调整计时器", "Push": "开始或暂停", "Touch": "刷新计时器", "LongTouch": "重置计时器" } }
+    "States": [
+      {
+        "Name": "就绪"
+      }
+    ],
+    "Encoder": {
+      "TriggerDescription": {
+        "Rotate": "调整计时器",
+        "Push": "开始或暂停",
+        "Touch": "刷新计时器",
+        "LongTouch": "重置计时器"
+      }
+    }
   },
   "ninja.socialstream.streamdeck.chat-feed": {
     "Name": "聊天回顾",
     "Tooltip": "查看最近聊天、置顶消息并展示下一条置顶消息。",
-    "States": [{ "Name": "就绪" }],
-    "Encoder": { "TriggerDescription": { "Rotate": "浏览最近聊天", "Push": "置顶当前聊天", "Touch": "展示下一条置顶消息", "LongTouch": "取消置顶当前聊天" } }
+    "States": [
+      {
+        "Name": "就绪"
+      }
+    ],
+    "Encoder": {
+      "TriggerDescription": {
+        "Rotate": "浏览最近聊天",
+        "Push": "置顶当前聊天",
+        "Touch": "展示下一条置顶消息",
+        "LongTouch": "取消置顶当前聊天"
+      }
+    }
   },
   "Localization": {
+    "group.giveaways": "??",
+    "command.startgiveaway": "????",
+    "deviceCommand_startgiveaway": "??\n??",
+    "command.closegiveaway": "????",
+    "deviceCommand_closegiveaway": "??\n??",
+    "command.drawgiveaway": "?????",
+    "deviceCommand_drawgiveaway": "??\n??",
+    "command.cancelgiveaway": "?????",
+    "deviceCommand_cancelgiveaway": "??\n??",
+    "command.resetgiveaway": "?????",
+    "deviceCommand_resetgiveaway": "??\n???",
+    "command.getgiveawaystate": "????",
+    "deviceCommand_getgiveawaystate": "??\n??",
+    "valueLabel.Giveaway ID/config JSON": "?? ID/?? JSON",
+    "valueLabel.Giveaway ID JSON": "?? ID JSON",
     "command.getCommerceState": "商品状态",
     "pi.commerce.product": "已保存的商品",
     "pi.commerce.refresh": "刷新商品和状态",
@@ -186,7 +238,7 @@
     "pi.timer.heading": "计时器旋钮",
     "pi.timer.step": "每格秒数",
     "pi.timer.titlePlaceholder": "直播计时器",
-    "pi.timer.hint": "旋转进行调整，按下开始或暂停，长按触控条重置。",
+    "pi.timer.hint": "每转一格增加或减少设定的秒数。按住旋钮旋转：步长的6倍（默认1分钟）。不旋转，按下并松开：开始/暂停。轻点计时器屏幕：刷新；长按屏幕：重置。",
     "pi.chat.heading": "聊天回顾",
     "pi.chat.titlePlaceholder": "聊天回顾",
     "pi.chat.hint": "旋转浏览最近聊天，按下置顶，轻触展示下一条置顶消息，长按取消置顶。请在 Social Stream Ninja 中启用“将聊天消息发送到 API 服务器”。",
@@ -228,7 +280,7 @@
     "deviceTimerTitle": "直播计时器",
     "deviceTimerSetupValue": "设置",
     "deviceTimerSetupHint": "添加设置按键和会话 ID",
-    "deviceTimerHint": "旋转 ±{seconds}秒  按下 切换  长按 重置",
+    "deviceTimerHint": "旋转 ±{seconds}s · 按下 ▶/Ⅱ",
     "deviceTimerSetupRequired": "需要设置",
     "deviceTimerConnecting": "连接中",
     "deviceTimerOffline": "离线",
@@ -247,6 +299,21 @@
     "deviceChatFeatureHint": "轻触 展示",
     "deviceChatAnonymous": "匿名",
     "deviceChatMessage": "消息",
-    "deviceChatSharedImage": "分享了图片"
+    "deviceChatSharedImage": "分享了图片",
+    "group.workflows": "Event Flow 工作流",
+    "command.triggerWorkflow": "运行工作流",
+    "command.getWorkflowTriggers": "工作流列表",
+    "valueLabel.Trigger name or workflow JSON": "触发器名称或工作流 JSON",
+    "pi.workflow.choose": "已保存并启用的工作流",
+    "pi.workflow.refresh": "刷新工作流",
+    "pi.workflow.manual": "选择工作流或在下方输入触发器",
+    "pi.workflow.missing": "已保存的工作流不可用。其值已保留；请保存并启用后刷新。",
+    "pi.workflow.empty": "尚未收到已启用的触发器。请保存并启用工作流后刷新。",
+    "pi.workflow.hint": "在 Event Flow 中添加 Run from Stream Deck / API，设置触发器名称，保存并启用。勾号表示已接受，不表示延迟或外部操作已完成。",
+    "pi.timer.guide": "计时器手势与示例",
+    "pi.help.guide": "控件、图标和工作流指南",
+    "deviceCommand_triggerWorkflow": "工作流\n运行",
+    "deviceCommand_getWorkflowTriggers": "工作流\n列表",
+    "deviceTimerGestureHint": "按住旋转 ×6 · 长按屏幕 ↺"
   }
 }

@@ -4,31 +4,83 @@
   "ninja.socialstream.streamdeck.connection": {
     "Name": "설정",
     "Tooltip": "세션 ID를 입력하고 플러그인 연결을 테스트합니다.",
-    "States": [{ "Name": "대기 중" }, { "Name": "연결됨" }]
+    "States": [
+      {
+        "Name": "대기 중"
+      },
+      {
+        "Name": "연결됨"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.command": {
     "Name": "프리셋 명령",
     "Tooltip": "자주 사용하는 Social Stream Ninja 명령을 보냅니다.",
-    "States": [{ "Name": "준비됨" }]
+    "States": [
+      {
+        "Name": "준비됨"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.custom-command": {
     "Name": "사용자 지정 명령",
     "Tooltip": "고급 작업을 위한 임의의 API 명령을 보냅니다.",
-    "States": [{ "Name": "준비됨" }]
+    "States": [
+      {
+        "Name": "준비됨"
+      }
+    ]
   },
   "ninja.socialstream.streamdeck.timer-dial": {
     "Name": "타이머 다이얼",
     "Tooltip": "Social Stream Ninja 타이머를 조정하고 확인합니다.",
-    "States": [{ "Name": "준비됨" }],
-    "Encoder": { "TriggerDescription": { "Rotate": "타이머 조정", "Push": "시작 또는 일시 정지", "Touch": "타이머 새로 고침", "LongTouch": "타이머 초기화" } }
+    "States": [
+      {
+        "Name": "준비됨"
+      }
+    ],
+    "Encoder": {
+      "TriggerDescription": {
+        "Rotate": "타이머 조정",
+        "Push": "시작 또는 일시 정지",
+        "Touch": "타이머 새로 고침",
+        "LongTouch": "타이머 초기화"
+      }
+    }
   },
   "ninja.socialstream.streamdeck.chat-feed": {
     "Name": "채팅 검토",
     "Tooltip": "최근 채팅을 보고 메시지를 고정하거나 다음 고정 메시지를 표시합니다.",
-    "States": [{ "Name": "준비됨" }],
-    "Encoder": { "TriggerDescription": { "Rotate": "최근 채팅 탐색", "Push": "표시된 채팅 고정", "Touch": "다음 고정 메시지 표시", "LongTouch": "표시된 채팅 고정 해제" } }
+    "States": [
+      {
+        "Name": "준비됨"
+      }
+    ],
+    "Encoder": {
+      "TriggerDescription": {
+        "Rotate": "최근 채팅 탐색",
+        "Push": "표시된 채팅 고정",
+        "Touch": "다음 고정 메시지 표시",
+        "LongTouch": "표시된 채팅 고정 해제"
+      }
+    }
   },
   "Localization": {
+    "group.giveaways": "??",
+    "command.startgiveaway": "?? ??",
+    "deviceCommand_startgiveaway": "??\n??",
+    "command.closegiveaway": "?? ??",
+    "deviceCommand_closegiveaway": "??\n??",
+    "command.drawgiveaway": "??? ??",
+    "deviceCommand_drawgiveaway": "??\n??",
+    "command.cancelgiveaway": "?? ? ??",
+    "deviceCommand_cancelgiveaway": "??\n??",
+    "command.resetgiveaway": "? ??",
+    "deviceCommand_resetgiveaway": "??\n? ??",
+    "command.getgiveawaystate": "?? ??",
+    "deviceCommand_getgiveawaystate": "??\n??",
+    "valueLabel.Giveaway ID/config JSON": "?? ID/?? JSON",
+    "valueLabel.Giveaway ID JSON": "?? ID JSON",
     "command.getCommerceState": "상품 상태",
     "pi.commerce.product": "저장된 상품",
     "pi.commerce.refresh": "상품 및 상태 새로 고침",
@@ -186,7 +238,7 @@
     "pi.timer.heading": "타이머 다이얼",
     "pi.timer.step": "회전당 초",
     "pi.timer.titlePlaceholder": "스트림 타이머",
-    "pi.timer.hint": "돌려서 조정하고, 눌러서 시작 또는 일시 정지하며, 터치 스트립을 길게 눌러 초기화합니다.",
+    "pi.timer.hint": "한 클릭마다 설정한 초만큼 증가/감소합니다. 다이얼을 누른 채 돌리면 6배(기본 1분)입니다. 돌리지 않고 눌렀다 놓으면 시작/일시정지합니다. 타이머 화면을 탭하면 새로 고침, 길게 누르면 초기화합니다.",
     "pi.chat.heading": "채팅 검토",
     "pi.chat.titlePlaceholder": "채팅 검토",
     "pi.chat.hint": "돌려서 최근 채팅을 보고, 눌러서 고정하고, 탭하여 다음 고정 메시지를 표시하거나 길게 눌러 고정을 해제합니다. Social Stream Ninja에서 ‘API 서버로 채팅 메시지 보내기’를 활성화하세요.",
@@ -228,7 +280,7 @@
     "deviceTimerTitle": "스트림 타이머",
     "deviceTimerSetupValue": "설정",
     "deviceTimerSetupHint": "설정 키 + 세션 ID 추가",
-    "deviceTimerHint": "회전 ±{seconds}초  누름 전환  길게 초기화",
+    "deviceTimerHint": "회전 ±{seconds}s · 누름 ▶/Ⅱ",
     "deviceTimerSetupRequired": "설정 필요",
     "deviceTimerConnecting": "연결 중",
     "deviceTimerOffline": "오프라인",
@@ -247,6 +299,21 @@
     "deviceChatFeatureHint": "탭 표시",
     "deviceChatAnonymous": "익명",
     "deviceChatMessage": "메시지",
-    "deviceChatSharedImage": "이미지 공유"
+    "deviceChatSharedImage": "이미지 공유",
+    "group.workflows": "Event Flow 워크플로",
+    "command.triggerWorkflow": "워크플로 실행",
+    "command.getWorkflowTriggers": "워크플로 목록",
+    "valueLabel.Trigger name or workflow JSON": "트리거 이름 또는 워크플로 JSON",
+    "pi.workflow.choose": "저장되고 활성화된 워크플로",
+    "pi.workflow.refresh": "워크플로 새로 고침",
+    "pi.workflow.manual": "워크플로를 선택하거나 아래에 트리거 입력",
+    "pi.workflow.missing": "저장된 워크플로를 사용할 수 없습니다. 값은 유지됩니다. 저장/활성화 후 새로 고침하세요.",
+    "pi.workflow.empty": "활성 트리거가 없습니다. 워크플로를 저장/활성화하고 새로 고침하세요.",
+    "pi.workflow.hint": "Event Flow에 Run from Stream Deck / API를 추가하고 트리거 이름을 지정한 뒤 저장하고 활성화하세요. 체크 표시는 접수 확인이며 지연 또는 외부 작업 완료를 뜻하지 않습니다.",
+    "pi.timer.guide": "타이머 조작과 예제",
+    "pi.help.guide": "컨트롤, 아이콘 및 워크플로 안내",
+    "deviceCommand_triggerWorkflow": "워크플로\n실행",
+    "deviceCommand_getWorkflowTriggers": "워크플로\n목록",
+    "deviceTimerGestureHint": "누르고 회전 ×6 · 화면 길게 ↺"
   }
 }
