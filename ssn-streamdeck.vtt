@@ -1,0 +1,173 @@
+WEBVTT
+
+1
+00:00:01.000 --> 00:00:05.190
+Running a live stream means juggling chat, overlays and alerts,
+
+2
+00:00:05.190 --> 00:00:06.969
+all at the same time.
+
+3
+00:00:06.969 --> 00:00:11.925
+Here's how Social Stream Ninja and a Stream Deck make that a lot easier.
+
+4
+00:00:12.675 --> 00:00:15.619
+Social Stream Ninja, or SSN, is a free,
+
+5
+00:00:15.619 --> 00:00:19.765
+open-source tool that pulls live chat from YouTube, Twitch,
+
+6
+00:00:19.765 --> 00:00:24.100
+Kick, TikTok and over a hundred other sites into one dock.
+
+7
+00:00:24.850 --> 00:00:29.055
+From that dock you can feature a viewer's message on screen,
+
+8
+00:00:29.055 --> 00:00:33.750
+run polls, giveaways and timers, and drive your overlays in OBS.
+
+9
+00:00:34.500 --> 00:00:37.271
+SSN runs as a Chrome extension,
+
+10
+00:00:37.271 --> 00:00:40.900
+or as the standalone desktop app, SSApp.
+
+11
+00:00:41.650 --> 00:00:45.396
+The Stream Deck plugin puts all of that on physical buttons.
+
+12
+00:00:45.396 --> 00:00:48.072
+There are seventy-seven preset commands:
+
+13
+00:00:48.072 --> 00:00:51.871
+feature the next message, clear the overlay, start the timer,
+
+14
+00:00:51.871 --> 00:00:55.225
+roll the credits, show a product, and much more.
+
+15
+00:00:55.975 --> 00:00:58.034
+Every key gets its own icon.
+
+16
+00:00:58.034 --> 00:01:00.202
+The big symbol is the feature,
+
+17
+00:01:00.202 --> 00:01:02.586
+and the small badge is the action:
+
+18
+00:01:02.586 --> 00:01:05.275
+play, pause, next, reset, or clear.
+
+19
+00:01:06.025 --> 00:01:07.771
+On a Stream Deck Plus,
+
+20
+00:01:07.771 --> 00:01:12.138
+turn a dial to adjust the stream timer and press it to start or pause.
+
+21
+00:01:12.138 --> 00:01:15.685
+Chat Review lets you scroll recent chat, pin a message,
+
+22
+00:01:15.685 --> 00:01:17.900
+and feature it with a tap.
+
+23
+00:01:18.650 --> 00:01:21.710
+With the desktop app, you can also start, stop,
+
+24
+00:01:21.710 --> 00:01:23.696
+mute and hide your sources,
+
+25
+00:01:23.696 --> 00:01:27.650
+and fire your own Event Flow workflows with a single press.
+
+26
+00:01:28.400 --> 00:01:30.945
+Setup only takes a couple of minutes.
+
+27
+00:01:30.945 --> 00:01:34.031
+First, download the plugin from the setup page,
+
+28
+00:01:34.031 --> 00:01:37.800
+and open the file to install it in the Stream Deck app.
+
+29
+00:01:38.550 --> 00:01:40.770
+Next, copy your session ID.
+
+30
+00:01:40.770 --> 00:01:44.910
+In SSApp, open the Stream Deck Setup tab and click Copy ID.
+
+31
+00:01:44.910 --> 00:01:49.000
+With the Chrome extension, you'll find it in Settings.
+
+32
+00:01:49.750 --> 00:01:53.366
+In the Stream Deck app, drag the Setup action onto a key.
+
+33
+00:01:53.366 --> 00:01:56.928
+Paste your session ID, add your password if you use one,
+
+34
+00:01:56.928 --> 00:01:59.175
+and choose Test Connection.
+
+35
+00:01:59.925 --> 00:02:02.925
+When the key says Online, you're connected.
+
+36
+00:02:04.125 --> 00:02:07.600
+Now add Preset Command keys and pick what each one does.
+
+37
+00:02:07.600 --> 00:02:10.075
+Every key shares that one connection,
+
+38
+00:02:10.075 --> 00:02:12.800
+so there's nothing else to configure.
+
+39
+00:02:13.550 --> 00:02:16.003
+Keep SSN running while you stream,
+
+40
+00:02:16.003 --> 00:02:18.650
+and keep your session ID private.
+
+41
+00:02:19.750 --> 00:02:22.597
+Get the plugin, the full controls guide,
+
+42
+00:02:22.597 --> 00:02:26.469
+and troubleshooting tips at socialstream.ninja/streamdeck.
+
+43
+00:02:26.469 --> 00:02:28.200
+Happy streaming!
