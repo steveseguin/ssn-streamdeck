@@ -84,7 +84,7 @@ for (const [name, config] of Object.entries(encoderAssets)) {
 }
 
 function renderAsset(config, outputSize) {
-	return renderKey(config, outputSize, drawMark);
+	return renderKey({ ...config, glass: false }, outputSize, drawMark);
 }
 
 function drawMark(canvas, config) {
