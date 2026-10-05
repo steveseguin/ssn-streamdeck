@@ -314,6 +314,22 @@
     "pi.help.guide": "操作・アイコン・フローガイド",
     "deviceCommand_triggerWorkflow": "フロー\n実行",
     "deviceCommand_getWorkflowTriggers": "フロー\n一覧",
-    "deviceTimerGestureHint": "押して回す ×6 · 画面長押し ↺"
+    "deviceTimerGestureHint": "押して回す ×6 · 画面長押し ↺",
+    "pi.source.editValue": "ID・JSONを編集",
+    "pi.source.choose": "デスクトップアプリのソース",
+    "pi.source.refresh": "ソースを更新",
+    "pi.source.hint": "ソースを選択してください。停止中のソースも選択して再開できます。",
+    "pi.source.manual": "ソースを選択 / IDを手入力",
+    "pi.source.missing": "{value}（利用不可）",
+    "pi.source.preserved": "保存済みのソースは利用できません。更新するか別のソースを選択してください。保存値は保持されます。",
+    "pi.source.empty": "ソースを取得できていません。SSAppに接続してから更新してください。",
+    "pi.source.chooseState": "操作を選択",
+    "pi.source.audio": "ソースの音声",
+    "pi.source.window": "ソースのウィンドウ",
+    "pi.source.mute": "ミュート",
+    "pi.source.unmute": "ミュート解除",
+    "pi.source.show": "表示",
+    "pi.source.hide": "非表示",
+    "pi.preset.preview": "キーのプレビュー"
   }
 }

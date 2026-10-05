@@ -314,6 +314,22 @@
     "pi.help.guide": "Guía de controles, iconos y flujos",
     "deviceCommand_triggerWorkflow": "Flujo\nEjecutar",
     "deviceCommand_getWorkflowTriggers": "Flujos\nLista",
-    "deviceTimerGestureHint": "PULSA+GIRA ×6 · PANT. HOLD ↺"
+    "deviceTimerGestureHint": "PULSA+GIRA ×6 · PANT. HOLD ↺",
+    "pi.source.editValue": "Editar ID o JSON",
+    "pi.source.choose": "Fuente de la aplicación de escritorio",
+    "pi.source.refresh": "Actualizar fuentes",
+    "pi.source.hint": "Elige una fuente. Las fuentes detenidas siguen disponibles para volver a iniciarlas.",
+    "pi.source.manual": "Elegir fuente / introducir ID manualmente",
+    "pi.source.missing": "{value} (no disponible)",
+    "pi.source.preserved": "La fuente guardada no está disponible. Actualiza o elige otra fuente; se conserva el valor guardado.",
+    "pi.source.empty": "No se han recibido fuentes. Conecta SSApp y actualiza.",
+    "pi.source.chooseState": "Elegir acción",
+    "pi.source.audio": "Audio de la fuente",
+    "pi.source.window": "Ventana de la fuente",
+    "pi.source.mute": "Silenciar",
+    "pi.source.unmute": "Activar sonido",
+    "pi.source.show": "Mostrar",
+    "pi.source.hide": "Ocultar",
+    "pi.preset.preview": "Vista previa de la tecla"
   }
 }

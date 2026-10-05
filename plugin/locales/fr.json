@@ -314,6 +314,22 @@
     "pi.help.guide": "Guide des commandes, icônes et scénarios",
     "deviceCommand_triggerWorkflow": "Scénario\nLancer",
     "deviceCommand_getWorkflowTriggers": "Scénarios\nListe",
-    "deviceTimerGestureHint": "APPUI+TOUR ×6 · ÉCRAN LONG ↺"
+    "deviceTimerGestureHint": "APPUI+TOUR ×6 · ÉCRAN LONG ↺",
+    "pi.source.editValue": "Modifier l’ID ou le JSON",
+    "pi.source.choose": "Source de l’application de bureau",
+    "pi.source.refresh": "Actualiser les sources",
+    "pi.source.hint": "Choisissez une source. Les sources arrêtées restent disponibles pour être redémarrées.",
+    "pi.source.manual": "Choisir une source / saisir un ID",
+    "pi.source.missing": "{value} (indisponible)",
+    "pi.source.preserved": "La source enregistrée est indisponible. Actualisez ou choisissez une autre source ; la valeur enregistrée est conservée.",
+    "pi.source.empty": "Aucune source reçue. Connectez SSApp, puis actualisez.",
+    "pi.source.chooseState": "Choisir une action",
+    "pi.source.audio": "Audio de la source",
+    "pi.source.window": "Fenêtre de la source",
+    "pi.source.mute": "Couper le son",
+    "pi.source.unmute": "Activer le son",
+    "pi.source.show": "Afficher",
+    "pi.source.hide": "Masquer",
+    "pi.preset.preview": "Aperçu de la touche"
   }
 }

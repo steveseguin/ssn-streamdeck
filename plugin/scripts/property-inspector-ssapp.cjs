@@ -14,6 +14,7 @@ const messages = [], errors = [];
 const globals = { sessionId: 'isolated-inspector-qa', transport: 'websocket', apiHost: '127.0.0.1', useTls: false, inChannel: 2, outChannel: 1 };
 const items = [{ name: 'QA print <safe>', url: 'https://example.com/print' }, { name: 'QA support', url: 'https://example.com/support' }];
 const registry = fs.readFileSync(path.resolve(__dirname,'../src/api/command-registry.ts'),'utf8');
+const commandCount = [...registry.matchAll(/\{ id: "([^"]+)"/g)].length;
 const capabilities = { version: 2, ssn: { available: true, actions: {} }, ssapp: { available: true } };
 for (const line of registry.split('\n')) {
  const id = line.match(/\{ id: "([^"]+)"/);
@@ -57,7 +58,7 @@ let app;
    await page.locator('#refreshCommerce').click();
    assert.equal(await page.locator('#commerceProduct').inputValue(),items[1].url);
    const commands = await page.locator('#command option:not([disabled])').evaluateAll(es => es.map(e=>e.value));
-   assert.equal(commands.length,69,'All advertised presets must be selectable');
+   assert.equal(commands.length,commandCount,'All advertised presets must be selectable');
    presets = Math.max(presets,commands.length);
    for (const command of commands) {
     await page.locator('#command').selectOption(command);

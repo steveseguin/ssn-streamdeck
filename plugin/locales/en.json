@@ -314,6 +314,22 @@
     "pi.help.guide": "Controls, icons and workflow guide",
     "deviceCommand_triggerWorkflow": "Workflow\nRun",
     "deviceCommand_getWorkflowTriggers": "Workflows\nList",
-    "deviceTimerGestureHint": "PUSH+TURN ×6 · HOLD SCREEN ↺"
+    "deviceTimerGestureHint": "PUSH+TURN ×6 · HOLD SCREEN ↺",
+    "pi.source.editValue": "Edit ID or JSON",
+    "pi.source.choose": "Desktop app source",
+    "pi.source.refresh": "Refresh sources",
+    "pi.source.hint": "Choose a source. Stopped sources remain available so you can start them again.",
+    "pi.source.manual": "Choose a source / enter ID manually",
+    "pi.source.missing": "{value} (unavailable)",
+    "pi.source.preserved": "Saved source is unavailable. Refresh or choose another source; the saved value is kept.",
+    "pi.source.empty": "No sources received. Connect to SSApp, then refresh.",
+    "pi.source.chooseState": "Choose an action",
+    "pi.source.audio": "Source audio",
+    "pi.source.window": "Source window",
+    "pi.source.mute": "Mute",
+    "pi.source.unmute": "Unmute",
+    "pi.source.show": "Show",
+    "pi.source.hide": "Hide",
+    "pi.preset.preview": "Key preview"
   }
 }

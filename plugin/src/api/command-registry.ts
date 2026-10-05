@@ -13,6 +13,7 @@ export type CommandDefinition = {
 	resultKind?: QueryResultKind;
 	defaultAwaitResponse?: boolean;
 	capabilityPath?: string[];
+	sourceValue?: "id" | "isMuted" | "isVisible";
 };
 
 export const SSN_COMMANDS: CommandDefinition[] = [
@@ -79,20 +80,20 @@ export const SSN_COMMANDS: CommandDefinition[] = [
 
 export const SSAPP_COMMANDS: CommandDefinition[] = [
 	{ id: "getSources", label: "Desktop App Sources", scope: "ssapp", icon: "sources-list", capabilityPath: ["sourceControls", "list"], defaultAwaitResponse: true, resultKind: "sources" },
-	{ id: "getSource", label: "Desktop App Source", scope: "ssapp", icon: "source-info", capabilityPath: ["sourceControls", "get"], valueLabel: "Source ID", defaultAwaitResponse: true, resultKind: "source" },
+	{ id: "getSource", label: "Desktop App Source", scope: "ssapp", icon: "source-info", capabilityPath: ["sourceControls", "get"], valueLabel: "Source ID", defaultAwaitResponse: true, resultKind: "source", sourceValue: "id" },
 	{ id: "addSource", label: "Add Source", scope: "ssapp", icon: "source-add", capabilityPath: ["sourceControls", "add"], valueLabel: "Source JSON", defaultAwaitResponse: true },
 	{ id: "updateSource", label: "Update Source", scope: "ssapp", icon: "source-edit", capabilityPath: ["sourceControls", "update"], valueLabel: "{\"sourceId\":\"...\",\"updates\":{...}}", defaultAwaitResponse: true },
 	{ id: "removeSource", label: "Remove Source", scope: "ssapp", icon: "source-remove", capabilityPath: ["sourceControls", "remove"], valueLabel: "{\"sourceId\":\"...\",\"confirm\":true}", defaultAwaitResponse: true },
-	{ id: "startSource", label: "Start Source", scope: "ssapp", icon: "source-play", capabilityPath: ["sourceControls", "start"], valueLabel: "Source ID", defaultAwaitResponse: true },
-	{ id: "stopSource", label: "Stop Source", scope: "ssapp", icon: "source-stop", capabilityPath: ["sourceControls", "stop"], valueLabel: "Source ID", defaultAwaitResponse: true },
-	{ id: "restartSource", label: "Restart Source", scope: "ssapp", icon: "source-restart", capabilityPath: ["sourceControls", "restart"], valueLabel: "Source ID", defaultAwaitResponse: true },
+	{ id: "startSource", label: "Start Source", scope: "ssapp", icon: "source-play", capabilityPath: ["sourceControls", "start"], valueLabel: "Source ID", defaultAwaitResponse: true, sourceValue: "id" },
+	{ id: "stopSource", label: "Stop Source", scope: "ssapp", icon: "source-stop", capabilityPath: ["sourceControls", "stop"], valueLabel: "Source ID", defaultAwaitResponse: true, sourceValue: "id" },
+	{ id: "restartSource", label: "Restart Source", scope: "ssapp", icon: "source-restart", capabilityPath: ["sourceControls", "restart"], valueLabel: "Source ID", defaultAwaitResponse: true, sourceValue: "id" },
 	{ id: "startAllSources", label: "Start All Sources", scope: "ssapp", icon: "sources-play", capabilityPath: ["bulkControls", "startAll"], defaultValue: {}, valueLabel: "Filter JSON", defaultAwaitResponse: true },
 	{ id: "stopAllSources", label: "Stop All Sources", scope: "ssapp", icon: "sources-stop", capabilityPath: ["bulkControls", "stopAll"], defaultValue: { confirm: true }, valueLabel: "Filter JSON", defaultAwaitResponse: true },
 	{ id: "restartAllSources", label: "Restart All Sources", scope: "ssapp", icon: "sources-restart", capabilityPath: ["bulkControls", "restartAll"], defaultValue: { confirm: true }, valueLabel: "Filter JSON", defaultAwaitResponse: true },
-	{ id: "setSourceMute", label: "Set Source Mute", scope: "ssapp", icon: "mute-edit", capabilityPath: ["mute", "set"], valueLabel: "{\"sourceId\":\"...\",\"isMuted\":true}", defaultAwaitResponse: true },
-	{ id: "toggleSourceMute", label: "Toggle Source Mute", scope: "ssapp", icon: "speaker-toggle", capabilityPath: ["mute", "toggle"], valueLabel: "Source ID", defaultAwaitResponse: true },
-	{ id: "setSourceVisibility", label: "Set Source Visibility", scope: "ssapp", icon: "eye-edit", capabilityPath: ["visibility", "set"], valueLabel: "{\"sourceId\":\"...\",\"isVisible\":false}", defaultAwaitResponse: true },
-	{ id: "toggleSourceVisibility", label: "Toggle Source Visibility", scope: "ssapp", icon: "eye-toggle", capabilityPath: ["visibility", "toggle"], valueLabel: "Source ID", defaultAwaitResponse: true },
+	{ id: "setSourceMute", label: "Set Source Mute", scope: "ssapp", icon: "mute-edit", capabilityPath: ["mute", "set"], valueLabel: "{\"sourceId\":\"...\",\"isMuted\":true}", defaultAwaitResponse: true, sourceValue: "isMuted" },
+	{ id: "toggleSourceMute", label: "Toggle Source Mute", scope: "ssapp", icon: "speaker-toggle", capabilityPath: ["mute", "toggle"], valueLabel: "Source ID", defaultAwaitResponse: true, sourceValue: "id" },
+	{ id: "setSourceVisibility", label: "Set Source Visibility", scope: "ssapp", icon: "eye-edit", capabilityPath: ["visibility", "set"], valueLabel: "{\"sourceId\":\"...\",\"isVisible\":false}", defaultAwaitResponse: true, sourceValue: "isVisible" },
+	{ id: "toggleSourceVisibility", label: "Toggle Source Visibility", scope: "ssapp", icon: "eye-toggle", capabilityPath: ["visibility", "toggle"], valueLabel: "Source ID", defaultAwaitResponse: true, sourceValue: "id" },
 	{ id: "setSourceConnectionMode", label: "Set Connection Mode", scope: "ssapp", icon: "plug-edit", capabilityPath: ["connectionMode", "set"], valueLabel: "{\"sourceId\":\"...\",\"mode\":\"websocket\"}", defaultAwaitResponse: true },
 	{ id: "getSettings", label: "Desktop App Settings", scope: "ssapp", icon: "settings-info", capabilityPath: ["settings", "get"], defaultAwaitResponse: true },
 	{ id: "updateSettings", label: "Update Desktop App Settings", scope: "ssapp", icon: "settings-edit", capabilityPath: ["settings", "update"], valueLabel: "Settings JSON", defaultAwaitResponse: true }

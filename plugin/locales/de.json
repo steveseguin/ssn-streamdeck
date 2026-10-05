@@ -314,6 +314,22 @@
     "pi.help.guide": "Anleitung zu Steuerung, Symbolen und Abläufen",
     "deviceCommand_triggerWorkflow": "Ablauf\nStart",
     "deviceCommand_getWorkflowTriggers": "Abläufe\nListe",
-    "deviceTimerGestureHint": "DRUCK+DREH ×6 · TOUCH HALT ↺"
+    "deviceTimerGestureHint": "DRUCK+DREH ×6 · TOUCH HALT ↺",
+    "pi.source.editValue": "ID oder JSON bearbeiten",
+    "pi.source.choose": "Quelle in der Desktop-App",
+    "pi.source.refresh": "Quellen aktualisieren",
+    "pi.source.hint": "Wähle eine Quelle. Gestoppte Quellen bleiben verfügbar, damit du sie wieder starten kannst.",
+    "pi.source.manual": "Quelle wählen / ID manuell eingeben",
+    "pi.source.missing": "{value} (nicht verfügbar)",
+    "pi.source.preserved": "Die gespeicherte Quelle ist nicht verfügbar. Aktualisiere die Liste oder wähle eine andere Quelle. Der gespeicherte Wert bleibt erhalten.",
+    "pi.source.empty": "Keine Quellen empfangen. Verbinde dich mit SSApp und aktualisiere die Liste.",
+    "pi.source.chooseState": "Aktion wählen",
+    "pi.source.audio": "Quellenaudio",
+    "pi.source.window": "Quellenfenster",
+    "pi.source.mute": "Stummschalten",
+    "pi.source.unmute": "Ton einschalten",
+    "pi.source.show": "Anzeigen",
+    "pi.source.hide": "Ausblenden",
+    "pi.preset.preview": "Tastenvorschau"
   }
 }

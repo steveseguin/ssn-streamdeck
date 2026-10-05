@@ -206,9 +206,19 @@
 			min-height: 92px;
 			font: 11px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
 		}
+		input, select, textarea { border-color: #718099; }
+		input:focus, select:focus, textarea:focus, button:focus, summary:focus, a:focus { outline: 2px solid #9dcaff; outline-offset: 2px; }
+		button:disabled { opacity: .55; cursor: default; }
+		#refreshSources, #editSourceValue { margin-top: 8px; }
+		.key-preview { display: flex; align-items: center; gap: 12px; margin: 14px 0 0; }
+		.key-face { position: relative; flex: 0 0 108px; width: 108px; height: 108px; background: #181e28; border-radius: 8px; overflow: hidden; }
+		.key-face img { width: 100%; height: 100%; }
+		.key-face span { position: absolute; left: 4px; right: 4px; bottom: 5px; max-height: 38px; overflow: hidden; text-align: center; white-space: pre; color: #fff; font: 15px/18px Arial, sans-serif; text-shadow: 0 1px 2px #000; }
+		.key-preview figcaption { color: var(--muted); font-size: 12px; }
 	</style>
 </head>
 <body>
+	<main>
 	<div id="statusBox" class="status" role="status" aria-live="polite" aria-atomic="true">
 		<div class="dot"></div>
 		<div>
@@ -239,7 +249,7 @@
 
 				<div class="actions">
 					<button id="testConnection" type="button" data-i18n="pi.setup.test">Test Connection</button>
-					<button id="showSession" class="secondary" type="button" data-i18n="pi.setup.showId">Show ID</button>
+					<button id="showSession" class="secondary" type="button" aria-controls="sessionId password" data-i18n="pi.setup.showId">Show ID</button>
 				</div>
 
 				<details>
@@ -289,6 +299,12 @@
 		<label id="sourceIdLabel" class="hidden" for="sourceId" data-i18n="pi.preset.openSource">Open desktop app source</label>
 		<select id="sourceId" class="hidden"></select>
 		<button id="refreshSources" class="secondary hidden" type="button" data-i18n="pi.preset.refreshSources">Refresh open sources</button>
+		<div id="sourceStatus" class="hint hidden" role="status" aria-live="polite"></div>
+		<div id="sourceStateFields" class="hidden">
+			<label id="sourceStateLabel" for="sourceState">Source audio</label>
+			<select id="sourceState"></select>
+		</div>
+		<button id="editSourceValue" class="secondary hidden" type="button" aria-expanded="false" aria-controls="value valueLabel" data-i18n="pi.source.editValue">Edit ID or JSON</button>
 
         <div id="workflowControls" class="hidden">
             <label for="workflowTrigger" data-i18n="pi.workflow.choose">Saved, enabled workflow</label>
@@ -306,7 +322,11 @@
 		<textarea id="value" placeholder="Optional" data-i18n-placeholder="pi.common.optional"></textarea>
 
 		<label for="commandTitle" data-i18n="pi.common.titleOverride">Title override</label>
-		<input id="commandTitle" type="text" placeholder="Optional" data-i18n-placeholder="pi.common.optional">
+		<textarea id="commandTitle" rows="2" placeholder="Optional" data-i18n-placeholder="pi.common.optional"></textarea>
+		<figure class="key-preview">
+			<div class="key-face"><img id="keyPreviewImage" alt=""><span id="keyPreviewTitle"></span></div>
+			<figcaption data-i18n="pi.preset.preview">Key preview</figcaption>
+		</figure>
 
 		<label class="checkline">
 			<input id="commandAwaitResponse" type="checkbox">
@@ -366,7 +386,9 @@
 		</div>
 	</details>
 
+	</main>
 	<script src="locales.js"></script>
+	<script src="commands.js"></script>
 	<script>
 		let websocket = null;
 		let actionInfo = null;
@@ -378,6 +400,8 @@
 		let capabilities = null;
 		let diagnostics = null;
 		let availableSources = [];
+		let sourceError = "";
+		let manualSourceValue = false;
 		let currentState = "missing-session";
 		let globalSettingsLoaded = false;
 		let setupDetailsInitialized = false;
@@ -558,6 +582,9 @@
 			}
 		];
 		const commandOptions = commandGroups.flatMap(group => group.options);
+		commandOptions.forEach(function (option) {
+			Object.assign(option, (window.SSN_STREAMDECK_COMMANDS || {})[option.value] || {});
+		});
 
 		window.connectElgatoStreamDeckSocket = function(port, uuid, registerEvent, info, actionInfoJson) {
 			propertyInspectorContext = uuid;
@@ -756,7 +783,8 @@
             var productLabel = byId("commerceProductLabel"); if (productLabel) productLabel.classList.toggle("hidden", !option || option.value !== 'commerceShow');
             if (commerce) renderCommerce();
 			const isSsapp = option && option.scope === "ssapp";
-			const supportsSourceSelection = !!(option && (option.value === "sendChat" || option.value === "sendEncodedChat") && ssappAvailable());
+			const sourceControl = !!(option && option.sourceValue);
+			const supportsSourceSelection = sourceControl || !!(option && (option.value === "sendChat" || option.value === "sendEncodedChat") && ssappAvailable());
 			const valueLabel = option && option.valueLabel;
 			const hasValue = !!(option && (valueLabel || Object.prototype.hasOwnProperty.call(option, "defaultValue")));
 			const requiresResponse = !!(option && option.defaultAwaitResponse === true);
@@ -766,9 +794,16 @@
 			byId("sourceIdLabel").classList.toggle("hidden", !supportsSourceSelection);
 			byId("sourceId").classList.toggle("hidden", !supportsSourceSelection);
 			byId("refreshSources").classList.toggle("hidden", !supportsSourceSelection);
+			byId("sourceStatus").classList.toggle("hidden", !supportsSourceSelection);
+			byId("sourceIdLabel").textContent = sourceControl ? t("pi.source.choose", "Desktop app source") : t("pi.preset.openSource", "Open desktop app source");
+			byId("refreshSources").textContent = sourceControl ? t("pi.source.refresh", "Refresh sources") : t("pi.preset.refreshSources", "Refresh open sources");
+			byId("editSourceValue").classList.toggle("hidden", !sourceControl);
+			byId("editSourceValue").setAttribute("aria-expanded", String(manualSourceValue));
+			byId("sourceStateFields").classList.toggle("hidden", !sourceControl || option.sourceValue === "id");
 			if (supportsSourceSelection) renderSourceOptions();
-			byId("valueLabel").classList.toggle("hidden", !hasValue);
-			byId("value").classList.toggle("hidden", !hasValue);
+			if (sourceControl && option.sourceValue !== "id") renderSourceState(option);
+			byId("valueLabel").classList.toggle("hidden", !hasValue || (sourceControl && !manualSourceValue));
+			byId("value").classList.toggle("hidden", !hasValue || (sourceControl && !manualSourceValue));
 			byId("valueLabel").textContent = valueLabel ? t("valueLabel." + valueLabel, valueLabel) : t("pi.common.value", "Value");
 			byId("value").placeholder = valueLabel
 				? t("valueLabel." + valueLabel, valueLabel)
@@ -777,7 +812,9 @@
 					: t("pi.common.optional", "Optional");
 			awaitResponse.checked = requiresResponse || actionSettings.awaitResponse === true;
 			awaitResponse.disabled = requiresResponse;
-			const baseHint = supportsSourceSelection
+			const baseHint = sourceControl
+				? t("pi.source.hint", "Choose a source. Stopped sources remain available so you can start them again.")
+				: supportsSourceSelection
 				? t("pi.preset.sourceHint", "Select one open desktop app source to reply there only. The source is resolved again when the key is pressed, so restarts are safe.")
 				: isSsapp
 				? t("pi.preset.desktopHint", "Desktop app commands are still sent through Social Stream Ninja, which decides how to route them.")
@@ -787,21 +824,76 @@
 				? " " + t("pi.preset.confirmHint", "Standalone keys require two presses; Multi Actions reset immediately.")
 				: "";
 			byId("commandHint").textContent = baseHint + waitHint + confirmHint;
+			renderKeyPreview();
+		}
+
+		function sourceValue() {
+			const raw = byId("value").value.trim();
+			try {
+				const parsed = JSON.parse(raw);
+				if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+			} catch (_) { }
+			return { sourceId: raw };
+		}
+
+		function renderSourceState(option) {
+			const isMute = option.sourceValue === "isMuted";
+			const state = sourceValue()[option.sourceValue];
+			const select = byId("sourceState");
+			select.innerHTML = "";
+			[["true", isMute ? "mute" : "show", isMute ? "Mute" : "Show"], ["false", isMute ? "unmute" : "hide", isMute ? "Unmute" : "Hide"]].forEach(function (item) {
+				const choice = document.createElement("option");
+				choice.value = item[0];
+				choice.textContent = t("pi.source." + item[1], item[2]);
+				select.appendChild(choice);
+			});
+			if (state !== true && state !== false) {
+				const unset = document.createElement("option");
+				unset.value = "";
+				unset.textContent = t("pi.source.chooseState", "Choose an action");
+				select.appendChild(unset);
+			}
+			select.value = typeof state === "boolean" ? String(state) : "";
+			select.disabled = !sourceValue().sourceId;
+			byId("sourceStateLabel").textContent = isMute ? t("pi.source.audio", "Source audio") : t("pi.source.window", "Source window");
+		}
+
+		function updateSourceValue() {
+			const option = selectedCommandOption();
+			if (!option || !option.sourceValue) { saveActionSettings(); return; }
+			const selected = byId("sourceId").value;
+			if (!selected) { manualSourceValue = true; renderCommandFields(); return; }
+			const value = sourceValue();
+			value.sourceId = selected;
+			if (option.sourceValue !== "id" && byId("sourceState").value !== "") value[option.sourceValue] = byId("sourceState").value === "true";
+			byId("value").value = option.sourceValue === "id" && Object.keys(value).length === 1 ? selected : JSON.stringify(value);
+			saveActionSettings();
+		}
+
+		function renderKeyPreview() {
+			const option = selectedCommandOption();
+			if (!option) return;
+			byId("keyPreviewImage").src = "../imgs/commands/" + option.icon + ".png";
+			byId("keyPreviewTitle").textContent = byId("commandTitle").value.trim() || t("deviceCommand_" + option.value, option.keyTitle || option.label);
 		}
 
 		function renderSourceOptions() {
 			const select = byId("sourceId");
-			const selected = actionSettings.sourceId || select.value || "";
+			const option = selectedCommandOption();
+			const sourceControl = !!(option && option.sourceValue);
+			const selected = sourceControl ? sourceValue().sourceId || "" : actionSettings.sourceId || "";
 			select.innerHTML = "";
 			const allOption = document.createElement("option");
 			allOption.value = "";
-			allOption.textContent = t("pi.preset.allSources", "All sources / use target");
+			allOption.textContent = sourceControl ? t("pi.source.manual", "Choose a source / enter ID manually") : t("pi.preset.allSources", "All sources / use target");
 			select.appendChild(allOption);
 			let selectedFound = !selected;
-			availableSources.filter(source => source.status === "active" && Number.isInteger(source.tabId) && source.tabId > 0).forEach(source => {
+			const sources = sourceControl ? availableSources : availableSources.filter(source => source.status === "active" && Number.isInteger(source.tabId) && source.tabId > 0);
+			sources.forEach(source => {
 				const item = document.createElement("option");
 				item.value = source.id;
 				item.textContent = source.target + ": " + (source.username || source.videoId || source.id);
+				if (sourceControl && source.status && source.status !== "active") item.textContent += " (" + source.status + ")";
 				select.appendChild(item);
 				if (source.id === selected) selectedFound = true;
 			});
@@ -810,10 +902,13 @@
 				unavailable.value = selected;
 				const notOpenValues = {};
 				notOpenValues.value = selected;
-				unavailable.textContent = t("pi.common.notOpen", "{value} (not open)", notOpenValues);
+				unavailable.textContent = sourceControl ? t("pi.source.missing", "{value} (unavailable)", notOpenValues) : t("pi.common.notOpen", "{value} (not open)", notOpenValues);
 				select.appendChild(unavailable);
 			}
 			select.value = selected;
+			byId("sourceStatus").textContent = sourceError || (selected && !selectedFound
+				? t("pi.source.preserved", "Saved source is unavailable. Refresh or choose another source; the saved value is kept.")
+				: !sources.length ? t("pi.source.empty", "No sources received. Connect to SSApp, then refresh.") : "");
 		}
 
 		function renderActionSettings() {
@@ -945,10 +1040,11 @@
 		function saveActionSettings() {
 			if (actionUuid === "ninja.socialstream.streamdeck.command") {
 				const option = selectedCommandOption();
+				const isChat = option && (option.value === "sendChat" || option.value === "sendEncodedChat");
 				actionSettings = {
 					command: byId("command").value,
 					target: byId("target").value.trim(),
-					sourceId: byId("sourceId").value,
+					sourceId: isChat ? byId("sourceId").value : actionSettings.sourceId || "",
 					value: byId("value").value.trim(),
 					title: byId("commandTitle").value.trim(),
 					awaitResponse: !!(option && option.defaultAwaitResponse === true) || byId("commandAwaitResponse").checked
@@ -978,6 +1074,7 @@
 		}
 
 		function handleCommandChange() {
+			manualSourceValue = false;
 			const option = selectedCommandOption();
 			actionSettings = {
 				...actionSettings,
@@ -1017,6 +1114,7 @@
                 else renderCommerce();
             } else if (payload.type === "sources") {
 				availableSources = Array.isArray(payload.sources) ? payload.sources : [];
+				sourceError = payload.error || "";
 				renderSourceOptions();
 			}
 			renderSetupSteps();
@@ -1098,7 +1196,7 @@
 			byId(id).addEventListener("change", saveGlobalSettings);
 		});
 		[
-			"target", "sourceId", "value", "commandTitle", "commandAwaitResponse",
+			"target", "value", "commandTitle", "commandAwaitResponse",
 			"customAction", "customTarget", "customValue", "customTitle", "customAwaitResponse",
 			"timerStep", "timerTitle", "chatFeedTitle"
 		].forEach(id => {
@@ -1106,6 +1204,9 @@
 			byId(id).addEventListener("input", saveActionSettings);
 		});
 		byId("command").addEventListener("change", handleCommandChange);
+		byId("sourceId").addEventListener("change", updateSourceValue);
+		byId("sourceState").addEventListener("change", updateSourceValue);
+		byId("editSourceValue").onclick = function () { manualSourceValue = !manualSourceValue; renderCommandFields(); };
 		byId("refreshSources").onclick = requestSources;
         byId("refreshWorkflows").onclick = requestWorkflows;
         byId("command").addEventListener("change", requestWorkflows);

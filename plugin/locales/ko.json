@@ -314,6 +314,22 @@
     "pi.help.guide": "컨트롤, 아이콘 및 워크플로 안내",
     "deviceCommand_triggerWorkflow": "워크플로\n실행",
     "deviceCommand_getWorkflowTriggers": "워크플로\n목록",
-    "deviceTimerGestureHint": "누르고 회전 ×6 · 화면 길게 ↺"
+    "deviceTimerGestureHint": "누르고 회전 ×6 · 화면 길게 ↺",
+    "pi.source.editValue": "ID 또는 JSON 편집",
+    "pi.source.choose": "데스크톱 앱 소스",
+    "pi.source.refresh": "소스 새로 고침",
+    "pi.source.hint": "소스를 선택하세요. 중지된 소스도 선택하여 다시 시작할 수 있습니다.",
+    "pi.source.manual": "소스 선택 / ID 직접 입력",
+    "pi.source.missing": "{value} (사용 불가)",
+    "pi.source.preserved": "저장된 소스를 사용할 수 없습니다. 새로 고치거나 다른 소스를 선택하세요. 저장된 값은 유지됩니다.",
+    "pi.source.empty": "소스를 받지 못했습니다. SSApp에 연결한 다음 새로 고치세요.",
+    "pi.source.chooseState": "동작 선택",
+    "pi.source.audio": "소스 오디오",
+    "pi.source.window": "소스 창",
+    "pi.source.mute": "음소거",
+    "pi.source.unmute": "음소거 해제",
+    "pi.source.show": "표시",
+    "pi.source.hide": "숨기기",
+    "pi.preset.preview": "키 미리보기"
   }
 }

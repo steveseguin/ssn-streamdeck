@@ -314,6 +314,22 @@
     "pi.help.guide": "控制項、圖示與工作流程指南",
     "deviceCommand_triggerWorkflow": "工作流程\n執行",
     "deviceCommand_getWorkflowTriggers": "工作流程\n清單",
-    "deviceTimerGestureHint": "按住旋轉 ×6 · 長按螢幕 ↺"
+    "deviceTimerGestureHint": "按住旋轉 ×6 · 長按螢幕 ↺",
+    "pi.source.editValue": "編輯 ID 或 JSON",
+    "pi.source.choose": "桌面應用程式來源",
+    "pi.source.refresh": "重新整理來源",
+    "pi.source.hint": "選擇來源。已停止的來源仍可選擇，以便重新啟動。",
+    "pi.source.manual": "選擇來源 / 手動輸入 ID",
+    "pi.source.missing": "{value}（無法使用）",
+    "pi.source.preserved": "已儲存的來源無法使用。請重新整理或選擇其他來源；已儲存的值會保留。",
+    "pi.source.empty": "尚未收到來源。請連接 SSApp 後重新整理。",
+    "pi.source.chooseState": "選擇操作",
+    "pi.source.audio": "來源音訊",
+    "pi.source.window": "來源視窗",
+    "pi.source.mute": "靜音",
+    "pi.source.unmute": "取消靜音",
+    "pi.source.show": "顯示",
+    "pi.source.hide": "隱藏",
+    "pi.preset.preview": "按鍵預覽"
   }
 }

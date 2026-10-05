@@ -8,7 +8,7 @@ export const SUPERSAMPLE = 4;
 export function renderKey(config, outputSize, drawMark) {
 	const canvas = createCanvas(outputSize * SUPERSAMPLE, outputSize * SUPERSAMPLE);
 	fillBackground(canvas, config);
-	drawGlass(canvas);
+	if (config.glass !== false) drawGlass(canvas);
 	drawMark(canvas, config);
 	return downsample(canvas, outputSize, outputSize);
 }

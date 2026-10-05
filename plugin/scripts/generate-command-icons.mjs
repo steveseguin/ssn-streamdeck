@@ -149,7 +149,7 @@ function resolveIcon(command) {
 function renderIcon(family, modifier) {
 	const fg = family.tint;
 	const ink = { fg, fg2: mix(fg, WHITE, .6), dark: DARK, alert: ALERT };
-	const config = { bgA: mix([18, 24, 34], fg, .05), bgB: mix([36, 42, 57], fg, .16) };
+	const config = { bgA: [24, 30, 40], bgB: [24, 30, 40], glass: false };
 	return renderKey(config, KEY_SIZE, canvas => {
 		family.draw(painter(canvas, 3, SHADOW), ink);
 		family.draw(painter(canvas), ink);

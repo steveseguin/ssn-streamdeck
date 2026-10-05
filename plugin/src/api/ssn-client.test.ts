@@ -273,6 +273,24 @@ describe("SsnClient", () => {
 		expect(seenCapabilities.filter(next => next === null)).toHaveLength(1);
 	});
 
+	it("resolves negotiated hosted commandResult replies", async () => {
+		const server = new WebSocketServer({ port: 0 });
+		await new Promise<void>(resolve => server.once("listening", resolve));
+		cleanup.push(() => server.close());
+		server.on("connection", socket => socket.on("message", raw => {
+			const request = JSON.parse(raw.toString());
+			if (request.join) return;
+			expect(request.replyFormat).toBe("commandResult");
+			socket.send(JSON.stringify({ type: "commandResult", get: request.get,
+				result: request.action === "getCapabilities" ? capabilities : { ok: true, status: "completed" } }));
+		}));
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+		client.configure({sessionId:"negotiated",transport:"websocket",apiHost:`127.0.0.1:${(server.address() as {port:number}).port}`,useTls:false,httpFallback:false,requestTimeoutMs:500});
+		await waitFor(() => client.connectionState === "connected");
+		await expect(client.sendCommand({action:"nextInQueue"},{awaitResponse:true})).resolves.toMatchObject({ok:true,status:"completed"});
+	});
+
 	it("resolves awaited socket callbacks", async () => {
 		const { port, server } = await createServer();
 		cleanup.push(() => server.close());

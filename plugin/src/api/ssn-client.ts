@@ -276,6 +276,7 @@ export class SsnClient {
 		const get = typeof payload.get === "string" && payload.get ? payload.get : this.createRequestId(payload.action);
 		const request = {
 			...payload,
+			...(this.settings.transport === "websocket" ? { replyFormat: "commandResult" } : {}),
 			get
 		};
 		return new Promise((resolve, reject) => {
@@ -617,7 +618,9 @@ export class SsnClient {
 		if (!isRecord(message)) {
 			return;
 		}
-		const callback = message.callback;
+		const callback = message.type === "commandResult"
+            ? { get: message.get || (isRecord(message.result) ? message.result.request : undefined), result: message.result }
+            : message.callback;
 		if (!isRecord(callback) || typeof callback.get !== "string") {
 			return;
 		}

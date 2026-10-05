@@ -1,8 +1,68 @@
 import { readFileSync } from "node:fs";
 import { createContext, runInContext } from "node:vm";
 import { describe, expect, it } from "vitest";
+import { COMMANDS, buildSsnCommandPayload } from "./command-registry.js";
 
 describe("property inspector", () => {
+	it("uses the runtime definitions for required values and source controls", () => {
+		const inspector = createPropertyInspector();
+		for (const command of COMMANDS) {
+			const option = inspector.run(`commandOptions.find(option => option.value === ${JSON.stringify(command.id)})`);
+			expect(option.valueLabel, command.id).toBe(command.valueLabel);
+			expect(option.defaultValue, command.id).toEqual(command.defaultValue);
+			expect(option.sourceValue, command.id).toBe(command.sourceValue);
+		}
+	});
+
+	it("selects stopped sources for desktop commands without changing chat targeting", () => {
+		const inspector = createPropertyInspector();
+		inspector.run(`
+			actionUuid = "ninja.socialstream.streamdeck.command";
+			actionSettings = { command: "startSource", value: "stopped-source", sourceId: "chat-source" };
+			availableSources = [{ id: "stopped-source", target: "twitch", username: "My channel", status: "inactive", tabId: null }];
+			renderActionSettings();
+		`);
+		expect(inspector.element("sourceId").value).toBe("stopped-source");
+		expect(inspector.element("sourceId").children.map(option => option.value)).toContain("stopped-source");
+		inspector.run(`byId("sourceId").value = "new-source"; updateSourceValue();`);
+		const settings = inspector.run("actionSettings");
+		expect(settings.sourceId).toBe("chat-source");
+		expect(buildSsnCommandPayload(settings)).toEqual({ action: "startSource", target: "ssapp", value: "new-source" });
+		inspector.run(`byId("command").value = "clearOverlay"; handleCommandChange();`);
+		expect(inspector.run("actionSettings.sourceId")).toBe("chat-source");
+		inspector.run(`capabilities = { ssapp: { available: true } }; byId("command").value = "sendChat"; handleCommandChange();`);
+		expect(inspector.element("sourceId").value).toBe("chat-source");
+	});
+
+	it.each([["setSourceMute", "isMuted"], ["setSourceVisibility", "isVisible"]])("keeps false and advanced values when choosing a source for %s", (command, field) => {
+		const inspector = createPropertyInspector();
+		inspector.run(`
+			actionUuid = "ninja.socialstream.streamdeck.command";
+			actionSettings = { command: ${JSON.stringify(command)}, value: JSON.stringify({sourceId: "old", ${field}: false, extra: "keep"}) };
+			renderActionSettings();
+		`);
+		expect(inspector.element("sourceState").value).toBe("false");
+		inspector.run(`byId("sourceId").value = "new"; updateSourceValue();`);
+		expect(buildSsnCommandPayload(inspector.run("actionSettings"))).toEqual({ action: command, target: "ssapp", value: { sourceId: "new", [field]: false, extra: "keep" } });
+		inspector.run(`byId("sourceState").value = "true"; updateSourceValue();`);
+		expect(JSON.parse(inspector.element("value").value)[field]).toBe(true);
+	});
+
+	it("preserves missing source selections, raw JSON and custom multiline titles", () => {
+		const inspector = createPropertyInspector();
+		const saved = '{"sourceId":"missing","isMuted":false,"extra":1}';
+		inspector.run(`
+			actionUuid = "ninja.socialstream.streamdeck.command";
+			actionSettings = { command: "setSourceMute", value: ${JSON.stringify(saved)}, title: "My channel\\nMute" };
+			renderActionSettings();
+			handlePluginMessage({ type: "sources", sources: [], error: "Connection unavailable" });
+		`);
+		expect(inspector.element("value").value).toBe(saved);
+		expect(inspector.element("sourceId").value).toBe("missing");
+		expect(inspector.element("sourceStatus").textContent).toBe("Connection unavailable");
+		expect(inspector.element("keyPreviewTitle").textContent).toBe("My channel\nMute");
+	});
+
 	it.each(["server", "server2", "server3"])("imports WebSocket transport for an empty %s flag", flag => {
 		const inspector = createPropertyInspector();
 		inspector.run(`
@@ -307,6 +367,7 @@ function createPropertyInspector() {
 	if (!script) {
 		throw new Error("Property inspector script not found");
 	}
+	runInContext(readFileSync(new URL("../../ui/commands.js", import.meta.url), "utf8"), context);
 	runInContext(script[1], context);
 
 	return {
@@ -349,6 +410,7 @@ function createElement(tag: string): InspectorElement {
 			return child;
 		},
 		addEventListener: () => undefined,
+		setAttribute: () => undefined,
 		set innerHTML(value: string) {
 			this.children = [];
 			this._innerHTML = value;
@@ -376,6 +438,7 @@ type InspectorElement = {
 	};
 	appendChild: (child: InspectorElement) => InspectorElement;
 	addEventListener: () => void;
+	setAttribute: (name: string, value: string) => void;
 	innerHTML: string;
 };
 
