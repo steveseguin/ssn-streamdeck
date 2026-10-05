@@ -140,9 +140,19 @@ export class SsnClient {
 			this.p2p.connect(this.settings.sessionId, this.settings.password || "");
 			return;
 		}
-		const socket = new WebSocket(this.buildEndpoint(this.settings.useTls === false ? "ws" : "wss"), {
-			handshakeTimeout: this.settings.requestTimeoutMs || 5000
-		});
+		let socket: WebSocket;
+		try {
+			socket = new WebSocket(this.buildEndpoint(this.settings.useTls === false ? "ws" : "wss"), {
+				handshakeTimeout: this.settings.requestTimeoutMs || 5000
+			});
+		} catch {
+			// Invalid saved hosts throw before ws can emit an error event. Keep
+			// initialization alive so the property inspector can correct them.
+			this.setCapabilities(null);
+			this.setState("error");
+			this.scheduleReconnect();
+			return;
+		}
 		this.socket = socket;
 		socket.on("open", () => {
 			if (this.socket !== socket) {
