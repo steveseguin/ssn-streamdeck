@@ -13,7 +13,7 @@ import { normalizeSsnCommandSettings } from "../api/settings.js";
 import { summarizeQueryResult } from "../api/query-result.js";
 import type { SsnCommandSettings } from "../api/types.js";
 import { translate } from "../i18n.js";
-import { recordPluginError, ssnClient } from "../services.js";
+import { recordPluginError, sessionStore, ssnClient } from "../services.js";
 
 @action({ UUID: "ninja.socialstream.streamdeck.command" })
 export class SsnCommandAction extends SingletonAction<SsnCommandSettings> {
@@ -48,7 +48,7 @@ export class SsnCommandAction extends SingletonAction<SsnCommandSettings> {
             return false;
         }
     }
-    private readonly confirmations = new Map<string, { command: string; timer: NodeJS.Timeout }>();
+    private readonly confirmations = new Map<string, { command: string; sessionRevision: number; timer: NodeJS.Timeout }>();
 	private readonly resultTimers = new Map<string, NodeJS.Timeout>();
 	private readonly feedbackTokens = new Map<string, object>();
 
@@ -148,7 +148,7 @@ export class SsnCommandAction extends SingletonAction<SsnCommandSettings> {
 
 	private async armOrConfirm(actionContext: KeyAction<SsnCommandSettings>, settings: SsnCommandSettings, token: object): Promise<boolean> {
 		const current = this.confirmations.get(actionContext.id);
-		if (current?.command === settings.command) {
+		if (current && current.command === settings.command && current.sessionRevision === sessionStore.getSessionRevision()) {
 			this.clearConfirmation(actionContext.id);
 			return false;
 		}
@@ -160,7 +160,7 @@ export class SsnCommandAction extends SingletonAction<SsnCommandSettings> {
 			void this.render(actionContext, settings, token);
 		}, 2000);
 		timer.unref();
-		this.confirmations.set(actionContext.id, { command: settings.command || "", timer });
+		this.confirmations.set(actionContext.id, { command: settings.command || "", sessionRevision: sessionStore.getSessionRevision(), timer });
 		await actionContext.setTitle(translate("deviceConfirmPressAgain", "Press\nAgain"));
 		return true;
 	}
