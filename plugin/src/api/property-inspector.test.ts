@@ -14,12 +14,60 @@ describe("property inspector", () => {
 		}
 	});
 
+	it.each(["sendChat", "sendEncodedChat"])("preserves the saved source for %s while SSApp capabilities are pending or unavailable", command => {
+		for (const capabilities of [null, { ssapp: { available: false }, ssn: { actions: { [command]: true } } }]) {
+			for (const field of ["commandTitle", "value", "commandAwaitResponse"]) {
+				const inspector = createPropertyInspector();
+				inspector.run(`
+					actionUuid = "ninja.socialstream.streamdeck.command";
+					actionSettings = { command: ${JSON.stringify(command)}, value: "Hello", sourceId: "saved-source", target: "" };
+					capabilities = ${JSON.stringify(capabilities)};
+					renderActionSettings();
+				`);
+				if (field === "commandAwaitResponse") inspector.element(field).checked = true;
+				else inspector.element(field).value = "Updated";
+				inspector.run("saveActionSettings()");
+				expect(inspector.run("actionSettings.sourceId"), field).toBe("saved-source");
+				inspector.run(`handlePluginMessage({ type: "capabilities", capabilities: { ssapp: { available: true }, ssn: { actions: { ${JSON.stringify(command)}: true } } } });`);
+				expect(inspector.element("sourceId").value, field).toBe("saved-source");
+			}
+		}
+	});
+
+	it("keeps a saved chat source through command changes and source removal, but permits an explicit clear", () => {
+		const inspector = createPropertyInspector();
+		inspector.run(`
+			actionUuid = "ninja.socialstream.streamdeck.command";
+			actionSettings = { command: "sendChat", value: "Hello", sourceId: "saved-source" };
+			renderActionSettings();
+			byId("command").value = "clearOverlay"; handleCommandChange();
+			byId("command").value = "sendEncodedChat"; handleCommandChange();
+		`);
+		expect(inspector.run("actionSettings.sourceId")).toBe("saved-source");
+		inspector.run(`
+			handlePluginMessage({ type: "capabilities", capabilities: { ssapp: { available: true }, ssn: { actions: { sendEncodedChat: true } } } });
+			handlePluginMessage({ type: "sources", sources: [] });
+			byId("commandTitle").value = "Renamed"; saveActionSettings();
+		`);
+		expect(inspector.run("actionSettings.sourceId")).toBe("saved-source");
+		inspector.run(`byId("sourceId").value = ""; updateSourceValue();`);
+		expect(inspector.run("actionSettings.sourceId")).toBe("");
+		inspector.run(`
+			handlePluginMessage({ type: "capabilities", capabilities: { ssapp: { available: false }, ssn: { actions: { sendEncodedChat: true } } } });
+			byId("commandTitle").value = "Renamed again"; saveActionSettings();
+		`);
+		expect(inspector.run("actionSettings.sourceId")).toBe("");
+	});
+
 	it("selects stopped sources for desktop commands without changing chat targeting", () => {
 		const inspector = createPropertyInspector();
 		inspector.run(`
 			actionUuid = "ninja.socialstream.streamdeck.command";
 			actionSettings = { command: "startSource", value: "stopped-source", sourceId: "chat-source" };
-			availableSources = [{ id: "stopped-source", target: "twitch", username: "My channel", status: "inactive", tabId: null }];
+			availableSources = [
+				{ id: "stopped-source", target: "twitch", username: "My channel", status: "inactive", tabId: null },
+				{ id: "new-source", target: "twitch", username: "New channel", status: "active", tabId: 42 }
+			];
 			renderActionSettings();
 		`);
 		expect(inspector.element("sourceId").value).toBe("stopped-source");
@@ -39,6 +87,7 @@ describe("property inspector", () => {
 		inspector.run(`
 			actionUuid = "ninja.socialstream.streamdeck.command";
 			actionSettings = { command: ${JSON.stringify(command)}, value: JSON.stringify({sourceId: "old", ${field}: false, extra: "keep"}) };
+			availableSources = [{ id: "new", target: "twitch", username: "New channel", status: "active", tabId: 42 }];
 			renderActionSettings();
 		`);
 		expect(inspector.element("sourceState").value).toBe("false");
@@ -340,7 +389,7 @@ function createPropertyInspector() {
 
 	function element(id: string): InspectorElement {
 		if (!elements.has(id)) {
-			elements.set(id, createElement("div"));
+			elements.set(id, createElement(id === "sourceId" ? "select" : "div"));
 		}
 		return elements.get(id) as InspectorElement;
 	}
@@ -394,7 +443,12 @@ function createElement(tag: string): InspectorElement {
 	return {
 		tag,
 		children: [],
-		value: "",
+		get value() {
+			return this._value || "";
+		},
+		set value(value: string) {
+			this._value = tag !== "select" || this.children.some(option => option.value === value) ? value : "";
+		},
 		textContent: "",
 		label: "",
 		disabled: false,
@@ -407,12 +461,14 @@ function createElement(tag: string): InspectorElement {
 		},
 		appendChild(child: InspectorElement) {
 			this.children.push(child);
+			if (tag === "select" && this.children.length === 1) this.value = child.value;
 			return child;
 		},
 		addEventListener: () => undefined,
 		setAttribute: () => undefined,
 		set innerHTML(value: string) {
 			this.children = [];
+			if (tag === "select") this._value = "";
 			this._innerHTML = value;
 		},
 		get innerHTML() {
@@ -431,6 +487,7 @@ type InspectorElement = {
 	checked: boolean;
 	type: string;
 	_innerHTML?: string;
+	_value?: string;
 	classList: {
 		add: () => void;
 		remove: () => void;
