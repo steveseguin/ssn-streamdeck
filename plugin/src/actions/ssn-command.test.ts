@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
 	sendCommand: vi.fn<() => Promise<unknown>>(async () => undefined),
-	recordPluginError: vi.fn()
+	recordPluginError: vi.fn(),
+	sessionRevision: 0
 }));
 
 vi.mock("../services.js", () => ({
 	recordPluginError: mocks.recordPluginError,
+	sessionStore: { getSessionRevision: () => mocks.sessionRevision },
 	ssnClient: {
 		getCapabilities: () => ({
 			type: "capabilities",
@@ -23,6 +25,7 @@ describe("SsnCommandAction reset confirmation", () => {
 	beforeEach(() => {
 		mocks.sendCommand.mockReset();
 		mocks.recordPluginError.mockClear();
+		mocks.sessionRevision = 0;
 	});
 
 	it.each([
@@ -125,6 +128,47 @@ describe("SsnCommandAction reset confirmation", () => {
 			{ awaitResponse: true }
 		);
 		expect(action.showOk).toHaveBeenCalled();
+	});
+
+	it("requires two fresh presses after the global session changes", async () => {
+		const command = new SsnCommandAction();
+		const action = fakeKey();
+		const event = keyDownEvent(action, false);
+		await command.onKeyDown(event);
+		mocks.sessionRevision++;
+		await command.onKeyDown(event);
+		expect(mocks.sendCommand).not.toHaveBeenCalled();
+		expect(action.setTitle).toHaveBeenLastCalledWith("Press\nAgain");
+		await command.onKeyDown(event);
+		expect(mocks.sendCommand).toHaveBeenCalledTimes(1);
+		command.onWillDisappear({ action } as never);
+	});
+
+	it("does not restore an old confirmation when switching away and back", async () => {
+		const command = new SsnCommandAction();
+		const action = fakeKey();
+		const event = keyDownEvent(action, false);
+		await command.onKeyDown(event);
+		mocks.sessionRevision += 2;
+		await command.onKeyDown(event);
+		expect(mocks.sendCommand).not.toHaveBeenCalled();
+		command.onWillDisappear({ action } as never);
+	});
+
+	it("keeps confirmations independent for each key after a session change", async () => {
+		const command = new SsnCommandAction();
+		const first = fakeKey();
+		const second = { ...fakeKey(), id: "second-credits-key" };
+		await command.onKeyDown(keyDownEvent(first, false));
+		await command.onKeyDown(keyDownEvent(second, false));
+		mocks.sessionRevision++;
+		await command.onKeyDown(keyDownEvent(first, false));
+		await command.onKeyDown(keyDownEvent(second, false));
+		expect(mocks.sendCommand).not.toHaveBeenCalled();
+		await command.onKeyDown(keyDownEvent(second, false));
+		expect(mocks.sendCommand).toHaveBeenCalledTimes(1);
+		command.onWillDisappear({ action: first } as never);
+		command.onWillDisappear({ action: second } as never);
 	});
 
 	it("does not block an intentional multi-action workflow", async () => {
