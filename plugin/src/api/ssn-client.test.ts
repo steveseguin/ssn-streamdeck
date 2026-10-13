@@ -455,6 +455,28 @@ describe("SsnClient", () => {
 		);
 	});
 
+	it.each(["failed", "timeout", "special", '"failed"'])("rejects the legacy HTTP failure response %s", async body => {
+		const { server, port } = await createHttpServer(body);
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+		client.configure({ sessionId: "session-http-failure", transport: "websocket", apiHost: `127.0.0.1:${port}`, useTls: false });
+
+		for (const awaitResponse of [false, true]) {
+			await expect(client.sendCommand({ action: "clearOverlay" }, { awaitResponse })).rejects.toThrow(/API.*(?:failed|timed out|no clients)/);
+		}
+	});
+
+	it.each(["false", "0", '"custom result"'])("preserves a legitimate HTTP query result %s", async body => {
+		const { server, port } = await createHttpServer(body);
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+		client.configure({ sessionId: "session-http-query", transport: "websocket", apiHost: `127.0.0.1:${port}`, useTls: false });
+
+		await expect(client.sendCommand({ action: "customQuery" }, { awaitResponse: true })).resolves.toEqual(JSON.parse(body));
+	});
+
 	it("preserves the selected source and channel in HTTP fallback", async () => {
 		const { server, port, requests } = await createHttpServer();
 		cleanup.push(() => server.close());

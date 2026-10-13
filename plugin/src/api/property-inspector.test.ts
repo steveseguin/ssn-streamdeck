@@ -208,6 +208,31 @@ describe("property inspector", () => {
 		});
 	});
 
+	it.each(["clearOverlay", "nextInQueue", "getQueueSize"])("clears a hidden chat target when changing to %s", command => {
+		const inspector = createPropertyInspector();
+		inspector.run(`
+			actionUuid = "ninja.socialstream.streamdeck.command";
+			actionSettings = { command: "sendChat", target: "twitch", value: "Hello" };
+			renderActionSettings();
+			byId("command").value = ${JSON.stringify(command)};
+			handleCommandChange();
+		`);
+		expect(inspector.element("target").value).toBe("");
+		expect(buildSsnCommandPayload(inspector.run("actionSettings"))).toEqual({ action: command });
+	});
+
+	it("preserves an editable target when changing between targeted commands", () => {
+		const inspector = createPropertyInspector();
+		inspector.run(`
+			actionUuid = "ninja.socialstream.streamdeck.command";
+			actionSettings = { command: "sendChat", target: "twitch", value: "Hello" };
+			renderActionSettings();
+			byId("command").value = "sendEncodedChat";
+			handleCommandChange();
+		`);
+		expect(buildSsnCommandPayload(inspector.run("actionSettings")).target).toBe("twitch");
+	});
+
 	it("lists only open SSApp sources and saves the stable source ID", () => {
 		const inspector = createPropertyInspector();
 		inspector.run(`

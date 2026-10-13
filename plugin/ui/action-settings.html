@@ -1076,6 +1076,7 @@
 		function handleCommandChange() {
 			manualSourceValue = false;
 			const option = selectedCommandOption();
+			if (!option || option.allowTarget !== true) byId("target").value = "";
 			actionSettings = {
 				...actionSettings,
 				command: byId("command").value,
