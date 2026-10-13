@@ -79,9 +79,18 @@ export class ChatFeedClient {
 			return;
 		}
 		const protocol = this.settings.useTls === false ? "ws" : "wss";
-		const socket = new WebSocket(`${protocol}://${normalizeHost(this.settings.apiHost || DEFAULT_API_HOST)}`, {
-			handshakeTimeout: this.settings.requestTimeoutMs || 5000
-		});
+		let socket: WebSocket;
+		try {
+			socket = new WebSocket(`${protocol}://${normalizeHost(this.settings.apiHost || DEFAULT_API_HOST)}`, {
+				handshakeTimeout: this.settings.requestTimeoutMs || 5000
+			});
+		} catch {
+			// Constructor errors never reach the socket's error listener. Avoid
+			// including the user-entered endpoint in diagnostic output.
+			this.emitError(new Error("Social Stream Ninja chat-feed WebSocket could not be created"));
+			this.scheduleReconnect();
+			return;
+		}
 		this.socket = socket;
 		socket.on("open", () => {
 			if (this.socket !== socket) return;
