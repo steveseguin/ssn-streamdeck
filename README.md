@@ -2,7 +2,7 @@
 
 Control chat, overlays, queues, timers, products, and desktop app sources from your Stream Deck.
 
-[Download the plugin](https://github.com/steveseguin/ssn-streamdeck/releases/latest) · [Setup guide](https://socialstream.ninja/streamdeck/) · [All controls](https://socialstream.ninja/streamdeck/guide.html)
+[Download the plugin](https://github.com/steveseguin/ssn-streamdeck/releases/latest) · [Watch the 2-minute overview](https://cdn.jsdelivr.net/gh/steveseguin/ssn-streamdeck@media/ssn-streamdeck.mp4) · [Setup guide](https://socialstream.ninja/streamdeck/) · [All controls](https://socialstream.ninja/streamdeck/guide.html)
 
 ![Example command keys with their titles](docs/images/command-preview.png)
 

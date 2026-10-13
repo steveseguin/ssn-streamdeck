@@ -333,7 +333,18 @@ export class SsnClient {
 		try {
 			result = JSON.parse(text) as unknown;
 		} catch {
-			return text;
+			result = text;
+		}
+		// Legacy relays report delivery failures in a successful HTTP response.
+		const status = typeof result === "string" ? result.trim() : "";
+		if (status === "timeout") {
+			throw new Error(`Social Stream Ninja API request timed out: ${payload.action}`);
+		}
+		if (status === "failed") {
+			throw new Error(`Social Stream Ninja API request failed: ${payload.action}`);
+		}
+		if (status === "special") {
+			throw new Error(`Social Stream Ninja API request failed: no clients are connected to the requested channel (${payload.action})`);
 		}
 		if (isRecord(result) && result.ok === false) {
 			const error = isRecord(result.error) ? result.error : {};
