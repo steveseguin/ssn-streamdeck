@@ -6,6 +6,9 @@ const PEER_LABEL = "streamdeck";
 
 type Listener<T> = (value: T) => void;
 type SdkFactory = (options: VDONinjaOptions) => VDONinjaSDKNode;
+type SdkWithOfferHandler = VDONinjaSDKNode & {
+	_handleOfferSDP(message: { description?: RTCSessionDescriptionInit }): Promise<void>;
+};
 const VDONinjaConstructor = VDONinjaNodeModule as unknown as new (options?: VDONinjaOptions) => VDONinjaSDKNode;
 
 export class SsnP2pTransport {
@@ -59,6 +62,7 @@ export class SsnP2pTransport {
 			autoPingViewer: true,
 			autoRecover: true
 		});
+		disableUnsupportedSctpSnap(sdk);
 		this.sdk = sdk;
 		this.bindSdkEvents(sdk, generation);
 		void this.openSdk(sdk, generation, sessionId, p2pPassword);
@@ -198,6 +202,27 @@ export class SsnP2pTransport {
 		const set = this.listeners[type] as Set<Listener<typeof payload>>;
 		for (const listener of set) listener(payload);
 	}
+}
+
+function disableUnsupportedSctpSnap(sdk: VDONinjaSDKNode): void {
+	if (sdk.webrtcAdapter?.getImplementation() !== "node-datachannel") return;
+	const nativeSdk = sdk as SdkWithOfferHandler;
+	const handleOffer = nativeSdk._handleOfferSDP;
+	if (typeof handleOffer !== "function") return;
+
+	// libdatachannel echoes unknown SDP attributes into its answer. Echoing
+	// sctp-init falsely negotiates SNAP, which it cannot complete. Remove only
+	// that attribute before the offer reaches the native stack so the browser
+	// uses the standard SCTP handshake. Keep this workaround on this SDK instance.
+	nativeSdk._handleOfferSDP = function (message) {
+		if (typeof message.description?.sdp === "string") {
+			const sdp = message.description.sdp.replace(/^a=sctp-init:[^\r\n]*(?:\r?\n|$)/gm, "");
+			if (sdp !== message.description.sdp) {
+				message = { ...message, description: { ...message.description, sdp } };
+			}
+		}
+		return handleOffer.call(this, message);
+	};
 }
 
 function eventDetail(event: Event): Record<string, unknown> {

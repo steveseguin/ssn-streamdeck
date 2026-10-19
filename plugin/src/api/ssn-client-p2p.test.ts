@@ -39,6 +39,42 @@ class FakeSdk extends EventTarget {
 }
 
 describe("SsnClient P2P transport", () => {
+	it.each(["\r\n", "\n"])("declines unsupported SNAP without changing the rest of an offer (%j)", async newline => {
+		const handleOffer = vi.fn(async (_message: { description?: RTCSessionDescriptionInit }) => undefined);
+		const sdk = Object.assign(new FakeSdk({}), {
+			webrtcAdapter: { getImplementation: () => "node-datachannel" },
+			_handleOfferSDP: handleOffer
+		});
+		const transport = new SsnP2pTransport(() => sdk as unknown as VDONinjaSDKNode);
+		transport.connect("snap-session");
+		const lines = ["v=0", "a=ice-ufrag:keep", "a=fingerprint:sha-256 keep", "a=sctp-port:5000", "a=max-message-size:262144"];
+		const offer = {
+			UUID: "publisher", session: "publisher-session",
+			description: { type: "offer" as const, sdp: [...lines, "a=sctp-init:unsupported", ""].join(newline) }
+		};
+		await sdk._handleOfferSDP(offer);
+		expect(handleOffer).toHaveBeenCalledWith({ ...offer, description: { ...offer.description, sdp: [...lines, ""].join(newline) } });
+		expect(handleOffer.mock.contexts[0]).toBe(sdk);
+		expect(offer.description.sdp).toContain("a=sctp-init:unsupported");
+
+		const legacyOffer = { description: { type: "offer" as const, sdp: [...lines, ""].join(newline) } };
+		await sdk._handleOfferSDP(legacyOffer);
+		expect(handleOffer.mock.calls[1][0]).toBe(legacyOffer);
+		transport.disconnect();
+	});
+
+	it("leaves other WebRTC implementations untouched", () => {
+		const handleOffer = vi.fn(async () => undefined);
+		const sdk = Object.assign(new FakeSdk({}), {
+			webrtcAdapter: { getImplementation: () => "@roamhq/wrtc" },
+			_handleOfferSDP: handleOffer
+		});
+		const transport = new SsnP2pTransport(() => sdk as unknown as VDONinjaSDKNode);
+		transport.connect("other-implementation");
+		expect(sdk._handleOfferSDP).toBe(handleOffer);
+		transport.disconnect();
+	});
+
 	it("joins and views the Social Stream publisher, then routes commands and callbacks", async () => {
 		const holder: { sdk: FakeSdk | null } = { sdk: null };
 		const transport = new SsnP2pTransport(options => {
