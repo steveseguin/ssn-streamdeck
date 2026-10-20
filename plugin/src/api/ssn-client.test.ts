@@ -42,6 +42,29 @@ describe("SsnClient", () => {
 		}
 	});
 
+	it("reports an invalid WebSocket host without aborting initialization", () => {
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+		expect(() => client.configure({ sessionId: "invalid-host-test", transport: "websocket", apiHost: ":", httpFallback: false })).not.toThrow();
+		expect(client.connectionState).toBe("error");
+		expect(client.getCapabilities()).toBeNull();
+		expect(() => client.reconnect()).not.toThrow();
+		client.configure({ sessionId: "" });
+		expect(client.connectionState).toBe("missing-session");
+	});
+
+	it("connects after an invalid WebSocket host is corrected", async () => {
+		const { server, port } = await createServer();
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+		const settings = { sessionId: "corrected-host-test", transport: "websocket" as const, httpFallback: false };
+		client.configure({ ...settings, apiHost: ":" });
+		client.configure({ ...settings, apiHost: `127.0.0.1:${port}`, useTls: false });
+		await waitFor(() => client.connectionState === "connected");
+		expect(client.getCapabilities()).toEqual(capabilities);
+	});
+
 	it("retries a WebSocket handshake that never receives a response", async () => {
 		const server = http.createServer();
 		let attempts = 0;

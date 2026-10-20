@@ -10,6 +10,19 @@ describe("ChatFeedClient", () => {
 		for (const fn of cleanup.splice(0)) fn();
 	});
 
+	it("reports an invalid chat-feed host without throwing from activation or reconnect", () => {
+		const client = new ChatFeedClient();
+		cleanup.push(() => client.setActive("invalid-host-test", false));
+		const errors: Error[] = [];
+		client.onError(error => errors.push(error));
+		client.configure({ sessionId: "invalid-host-test", transport: "websocket", apiHost: ":" });
+		expect(() => client.setActive("invalid-host-test", true)).not.toThrow();
+		expect(errors).toHaveLength(1);
+		expect(errors[0]?.message).toBe("Social Stream Ninja chat-feed WebSocket could not be created");
+		expect(() => client.reconnect()).not.toThrow();
+		expect(errors).toHaveLength(2);
+	});
+
 	it("retries a stalled chat-feed WebSocket handshake", async () => {
 		const server = http.createServer();
 		let attempts = 0;
