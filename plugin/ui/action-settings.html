@@ -784,7 +784,8 @@
             if (commerce) renderCommerce();
 			const isSsapp = option && option.scope === "ssapp";
 			const sourceControl = !!(option && option.sourceValue);
-			const supportsSourceSelection = sourceControl || !!(option && (option.value === "sendChat" || option.value === "sendEncodedChat") && ssappAvailable());
+			const isChat = !!(option && (option.value === "sendChat" || option.value === "sendEncodedChat"));
+			const supportsSourceSelection = sourceControl || (isChat && ssappAvailable());
 			const valueLabel = option && option.valueLabel;
 			const hasValue = !!(option && (valueLabel || Object.prototype.hasOwnProperty.call(option, "defaultValue")));
 			const requiresResponse = !!(option && option.defaultAwaitResponse === true);
@@ -800,7 +801,7 @@
 			byId("editSourceValue").classList.toggle("hidden", !sourceControl);
 			byId("editSourceValue").setAttribute("aria-expanded", String(manualSourceValue));
 			byId("sourceStateFields").classList.toggle("hidden", !sourceControl || option.sourceValue === "id");
-			if (supportsSourceSelection) renderSourceOptions();
+			if (sourceControl || isChat) renderSourceOptions();
 			if (sourceControl && option.sourceValue !== "id") renderSourceState(option);
 			byId("valueLabel").classList.toggle("hidden", !hasValue || (sourceControl && !manualSourceValue));
 			byId("value").classList.toggle("hidden", !hasValue || (sourceControl && !manualSourceValue));
