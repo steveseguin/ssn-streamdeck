@@ -46,6 +46,7 @@ const SKY = [14, 165, 233];
 const DEEP_AMBER = [245, 158, 11];
 
 const FAMILIES = {
+	breaks: { tint: [140, 224, 186], draw: drawBreaks },
 	workflow: { tint: [71, 214, 185], draw: drawWorkflow },
 	product: { tint: [167, 139, 250], draw: drawProduct },
 	queue: { tint: [88, 166, 255], draw: drawQueue },
@@ -85,6 +86,7 @@ const MODIFIERS = {
 	remove: { badge: RED, symbol: WHITE, draw: badgeRemove },
 	clear: { badge: RED, symbol: WHITE, draw: badgeClear },
 	next: { badge: BLUE, symbol: WHITE, draw: badgeNext },
+	previous: { badge: BLUE, symbol: WHITE, draw: badgePrevious },
 	send: { badge: BLUE, symbol: WHITE, draw: badgeSend },
 	download: { badge: BLUE, symbol: WHITE, draw: badgeDownload },
 	message: { badge: BLUE, symbol: WHITE, draw: badgeMessage },
@@ -530,4 +532,14 @@ function badgeFolder(p, bx, by, s, badge) {
 	p.rect(bx - 10, by - 8, 9, 6, 2, s);
 	p.rect(bx - 10, by - 5, 20, 14, 2.5, s);
 	p.rect(bx - 10, by - 2, 20, 1.5, 0, badge);
+}
+
+function drawBreaks(p, ink) {
+    for (let row = 0; row < 2; row++) for (let column = 0; column < 3; column++) {
+        p.rect(25 + column * 25, 23 + row * 30, 20, 24, 4, row === 0 && column === 1 ? ink.fg : ink.fg2);
+    }
+}
+function badgePrevious(p, bx, by, s) {
+    p.line(bx + 8, by - 9, bx - 6, by, 4, s);
+    p.line(bx - 6, by, bx + 8, by + 9, 4, s);
 }

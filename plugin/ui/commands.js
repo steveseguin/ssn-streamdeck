@@ -116,6 +116,36 @@ window.SSN_STREAMDECK_COMMANDS = {
     "defaultAwaitResponse": true,
     "keyTitle": "Resume\nproducts"
   },
+  "breaksShow": {
+    "scope": "ssn",
+    "icon": "breaks-play",
+    "defaultAwaitResponse": true,
+    "keyTitle": "Show\nbreak"
+  },
+  "breaksHide": {
+    "scope": "ssn",
+    "icon": "breaks-hide",
+    "defaultAwaitResponse": true,
+    "keyTitle": "Hide\nbreak"
+  },
+  "breaksNextSpot": {
+    "scope": "ssn",
+    "icon": "breaks-next",
+    "defaultAwaitResponse": true,
+    "keyTitle": "Next\nspot"
+  },
+  "breaksPreviousSpot": {
+    "scope": "ssn",
+    "icon": "breaks-previous",
+    "defaultAwaitResponse": true,
+    "keyTitle": "Previous\nspot"
+  },
+  "breaksClearHighlight": {
+    "scope": "ssn",
+    "icon": "breaks-clear",
+    "defaultAwaitResponse": true,
+    "keyTitle": "Clear\nhighlight"
+  },
   "nextInQueue": {
     "scope": "ssn",
     "icon": "queue-next",

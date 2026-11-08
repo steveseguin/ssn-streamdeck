@@ -4,6 +4,24 @@ This document is the single source of truth for how the Stream Deck plugin shoul
 
 For the versioned envelope, descriptors and response rules, see [Remote-Control Protocol](../../docs/remote-control-protocol.md). For hands-on instructions, see the [offline controls/icon guide](../plugin/ui/guide.html) and [Event Flow workflow guide](https://socialstream.ninja/beta/docs/streamdeck-event-flow.html).
 
+## Breaks display keys
+
+These version 2 SSN commands target the active break in the host, in both the extension and SSApp. They use the plugin's shared P2P connection or its explicitly configured API relay (default send 1, receive 2), with the existing session/password and API permissions. No private workspace link or new connection settings are needed. Require the action in `getCapabilities` before using it.
+
+| Action | Effect |
+| --- | --- |
+| `breaksShow` | Enable the current break's overlay feed. |
+| `breaksHide` | Hide the break overlay feed. |
+| `breaksNextSpot` | Highlight the next spot in board order. |
+| `breaksPreviousSpot` | Highlight the previous spot in board order. |
+| `breaksClearHighlight` | Remove the highlight. |
+
+No value is required. Next/previous wrap and honor the overlay's Available only filter; they do not change the workspace selection, reveal a pull, or enable a hidden overlay. The confirmed callback contains `payload.breaksDisplay` with `visible`, `highlight` (spot ID), and `stage`. It does not establish OBS scene visibility. The keys cannot read or edit buyers, payments, stock, notes, packing, or print jobs. Keep those operations in the private workspace. Missing active breaks return `TARGET_UNAVAILABLE`; a disabled host returns `CONTROL_UNAVAILABLE`. Do not automatically retry an uncertain next/previous command.
+
+```json
+{"protocol":2,"action":"breaksNextSpot","get":"break-key-1"}
+```
+
 ## Named Event Flow workflows
 
 `getWorkflowTriggers` and `triggerWorkflow` are background-owned SSN commands. They work in the extension and SSApp when the loaded Social Stream assets advertise them; they do not require SSApp's local AI API.

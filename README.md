@@ -38,6 +38,7 @@ Use **Refresh sources** after changing sources in the desktop app. If a saved so
 
 - **Timer shortcuts:** hold the dial while turning for larger steps. Hold the touchscreen above it to reset.
 - **Event Flow:** save and enable a flow with a **Run from Stream Deck / API** trigger. Choose **Run workflow**, refresh workflows, and select it. [Workflow guide](https://socialstream.ninja/beta/docs/streamdeck-event-flow.html).
+- **Breaks:** choose a Breaks display preset to show/hide the board or move/clear its highlight. Create the break in SSN first. These keys use the shared connection and leave buyer, stock and payment records in the private workspace. [Breaks guide](https://socialstream.ninja/docs/breaks.html#shortcuts).
 - **Products:** save and enable products in Social Stream Ninja, then use Show product, Next product, Hide products, or Resume products. Product state shows the selected, hidden, or scheduled state in SSN; it does not indicate OBS scene visibility. [Product guide](https://socialstream.ninja/docs/product-controls.html).
 - **WebSocket mode:** enable the matching remote API control in Social Stream Ninja before selecting WebSocket in the plugin. For Chat Review, also enable **Send chat messages to API server**. The default connection needs no channel changes.
 
