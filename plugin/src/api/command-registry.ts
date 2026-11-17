@@ -72,7 +72,7 @@ export const SSN_COMMANDS: CommandDefinition[] = [
 	{ id: "timersubtract", label: "Subtract Timer Time", scope: "ssn", icon: "timer-remove", defaultValue: "30", valueLabel: "Seconds" },
 	{ id: "settimer", label: "Set Timer", scope: "ssn", icon: "timer-edit", defaultValue: { seconds: 300 }, valueLabel: "Timer JSON" },
 	{ id: "gettimerstate", label: "Timer State", scope: "ssn", icon: "timer-info", defaultAwaitResponse: true, resultKind: "timer" },
-	{ id: "loadpoll", label: "Load Poll Preset", scope: "ssn", icon: "poll-load", valueLabel: "{\"pollId\":\"...\"}" },
+	{ id: "loadpoll", label: "Load Poll Preset", scope: "ssn", icon: "poll-load", valueLabel: "{\"pollId\":1234567890}", defaultAwaitResponse: true },
 	{ id: "setpollsettings", label: "Set Poll Settings", scope: "ssn", icon: "poll-settings", valueLabel: "Poll settings JSON" },
 	{ id: "getpollpresets", label: "Poll Presets", scope: "ssn", icon: "poll-list", defaultAwaitResponse: true, resultKind: "polls" },
 	{ id: "createpoll", label: "Create Poll", scope: "ssn", icon: "poll-add", valueLabel: "Poll definition JSON" },

@@ -1,7 +1,11 @@
 <!doctype html>
 <html lang="en">
 <head>
-	<meta charset="utf-8">
+    <meta charset="utf-8">
+    <meta name="description" content="Social Stream Ninja Settings. Part of the Social Stream Ninja toolkit for managing live chat, stream overlays and audience interactions.">
+    <meta name="robots" content="noindex">
+    <link rel="icon" href="../../../icons/favicon.ico" type="image/x-icon">
+
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title data-i18n="pi.documentTitle">Social Stream Ninja Settings</title>
 	<style>
@@ -306,6 +310,13 @@
 		</div>
 		<button id="editSourceValue" class="secondary hidden" type="button" aria-expanded="false" aria-controls="value valueLabel" data-i18n="pi.source.editValue">Edit ID or JSON</button>
 
+        <div id="pollControls" class="hidden">
+            <label for="pollPreset">Saved poll</label>
+            <select id="pollPreset"></select>
+            <button id="refreshPollPresets" class="secondary" type="button">Refresh presets</button>
+            <div id="pollPresetStatus" class="hint" role="status" aria-live="polite"></div>
+            <button id="editPollValue" class="secondary" type="button" aria-expanded="false" aria-controls="value valueLabel" data-i18n="pi.source.editValue">Edit ID or JSON</button>
+        </div>
         <div id="workflowControls" class="hidden">
             <label for="workflowTrigger" data-i18n="pi.workflow.choose">Saved, enabled workflow</label>
             <select id="workflowTrigger"></select>
@@ -502,7 +513,7 @@
 				options: [
 					{ value: "sendChat", label: "Send chat", scope: "ssn", allowTarget: true, defaultValue: "Hello from Stream Deck", valueLabel: "Message" },
 					{ value: "sendEncodedChat", label: "Send encoded chat", scope: "ssn", allowTarget: true, defaultValue: "Hello%20from%20Stream%20Deck", valueLabel: "Encoded message" },
-					{ value: "loadpoll", label: "Load poll preset", scope: "ssn", valueLabel: "{\"pollId\":\"...\"}" },
+					{ value: "loadpoll", label: "Load poll preset", scope: "ssn", valueLabel: "{\"pollId\":1234567890}", defaultAwaitResponse: true },
 					{ value: "setpollsettings", label: "Set poll settings", scope: "ssn", valueLabel: "Poll settings JSON" },
 					{ value: "getpollpresets", label: "Get poll presets", scope: "ssn", defaultAwaitResponse: true },
 					{ value: "createpoll", label: "Create poll", scope: "ssn", valueLabel: "Poll definition JSON" },
@@ -757,6 +768,32 @@
             select.value = selected;
             if (commerceResult) byId("commerceState").textContent = t("commerce.mode." + commerceResult.mode, commerceResult.mode) + (commerceResult.selected ? ': ' + commerceResult.selected.name : '') + (commerceResult.remainingSeconds != null ? ' (' + commerceResult.remainingSeconds + 's)' : '');
         }
+        var availablePollPresets = [];
+        var pollPresetsLoaded = false;
+        var manualPollValue = false;
+        function requestPollPresets() {
+            if (!/^(loadpoll|getpollpresets)$/.test(byId("command").value)) return;
+            byId("pollPresetStatus").textContent = "Loading presets...";
+            send({ event: "sendToPlugin", action: actionUuid, context: propertyInspectorContext, payload: { type: "requestPollPresets" } });
+        }
+        function renderPollPresets() {
+            var select = byId("pollPreset"), selected = "";
+            try { selected = String(JSON.parse(byId("value").value).pollId || ""); } catch (_) {}
+            select.innerHTML = "";
+            var first = document.createElement("option"); first.value = ""; first.textContent = "Choose a preset"; select.appendChild(first);
+            var found = !selected;
+            availablePollPresets.forEach(function (preset) {
+                var option = document.createElement("option");
+                option.value = String(preset.id); option.textContent = preset.name + " (" + preset.id + ")";
+                select.appendChild(option);
+                if (option.value === selected) found = true;
+            });
+            if (!found) {
+                var missing = document.createElement("option"); missing.value = selected; missing.textContent = "Saved preset unavailable (" + selected + ")"; select.appendChild(missing);
+            }
+            select.value = selected;
+            byId("pollPresetStatus").textContent = !pollPresetsLoaded ? "" : !found ? "Saved preset unavailable. Refresh presets or choose another." : !availablePollPresets.length ? "No saved presets. Save a poll in SSN, then refresh." : "";
+        }
         var availableWorkflows = [];
         function requestWorkflows() {
             if (byId("command").value !== "triggerWorkflow" || !capabilities || !capabilities.ssn || !capabilities.ssn.actions || !capabilities.ssn.actions.getWorkflowTriggers) return;
@@ -785,6 +822,11 @@
         }
 		function renderCommandFields() {
 			const option = selectedCommandOption();
+            var pollCommand = !!(option && /^(loadpoll|getpollpresets)$/.test(option.value));
+            byId("pollControls").classList.toggle("hidden", !pollCommand);
+            if (pollCommand) renderPollPresets();
+            byId("editPollValue").classList.toggle("hidden", !option || option.value !== "loadpoll");
+            byId("editPollValue").setAttribute("aria-expanded", String(manualPollValue));
             byId("workflowControls").classList.toggle("hidden", !option || option.value !== "triggerWorkflow");
             if (option && option.value === "triggerWorkflow") renderWorkflows();
             var commerce = !!(option && /^(commerce|getCommerceState)/.test(option.value));
@@ -812,8 +854,8 @@
 			byId("sourceStateFields").classList.toggle("hidden", !sourceControl || option.sourceValue === "id");
 			if (supportsSourceSelection) renderSourceOptions();
 			if (sourceControl && option.sourceValue !== "id") renderSourceState(option);
-			byId("valueLabel").classList.toggle("hidden", !hasValue || (sourceControl && !manualSourceValue));
-			byId("value").classList.toggle("hidden", !hasValue || (sourceControl && !manualSourceValue));
+			byId("valueLabel").classList.toggle("hidden", !hasValue || (sourceControl && !manualSourceValue) || (pollCommand && !manualPollValue));
+			byId("value").classList.toggle("hidden", !hasValue || (sourceControl && !manualSourceValue) || (pollCommand && !manualPollValue));
 			byId("valueLabel").textContent = valueLabel ? t("valueLabel." + valueLabel, valueLabel) : t("pi.common.value", "Value");
 			byId("value").placeholder = valueLabel
 				? t("valueLabel." + valueLabel, valueLabel)
@@ -1085,6 +1127,7 @@
 
 		function handleCommandChange() {
 			manualSourceValue = false;
+            manualPollValue = false;
 			const option = selectedCommandOption();
 			if (!option || option.allowTarget !== true) byId("target").value = "";
 			actionSettings = {
@@ -1109,12 +1152,20 @@
 				currentState = payload.state || currentState;
 				updateStatus(payload.ok === true ? "ok" : payload.state === "missing-session" ? "warn" : "error", localizedStatus(payload.message || "Status updated."));
 				if (payload.ok === true && ssappAvailable()) requestSources();
-                if (payload.ok === true) { requestCommerce(); requestWorkflows(); }
+                if (payload.ok === true) { requestCommerce(); requestWorkflows(); requestPollPresets(); }
 			} else if (payload.type === "capabilities") {
 				capabilities = payload.capabilities || null;
 				renderActionSettings();
 				requestWorkflows();
+				requestPollPresets();
 				if (ssappAvailable()) requestSources();
+			} else if (payload.type === "pollPresets") {
+                var result = payload.result;
+                var presets = result && result.ok === true ? result.payload : result;
+                availablePollPresets = Array.isArray(presets) ? presets : [];
+                pollPresetsLoaded = !payload.error && Array.isArray(presets);
+                renderPollPresets();
+                if (!pollPresetsLoaded) byId("pollPresetStatus").textContent = payload.error || "Poll presets unavailable. Check the SSN connection and refresh.";
 			} else if (payload.type === "workflows") {
                 availableWorkflows = payload.result && payload.result.payload && Array.isArray(payload.result.payload.triggers) ? payload.result.payload.triggers : [];
                 renderWorkflows();
@@ -1219,6 +1270,15 @@
 		byId("sourceState").addEventListener("change", updateSourceValue);
 		byId("editSourceValue").onclick = function () { manualSourceValue = !manualSourceValue; renderCommandFields(); };
 		byId("refreshSources").onclick = requestSources;
+        byId("refreshPollPresets").onclick = requestPollPresets;
+        byId("editPollValue").onclick = function () { manualPollValue = !manualPollValue; renderCommandFields(); };
+        byId("command").addEventListener("change", requestPollPresets);
+        byId("pollPreset").addEventListener("change", function () {
+            if (byId("command").value !== "loadpoll") return;
+            var selected = availablePollPresets.find(function (preset) { return String(preset.id) === byId("pollPreset").value; });
+            if (!selected) return;
+            byId("value").value = JSON.stringify({ pollId: selected.id }); saveActionSettings(); renderPollPresets();
+        });
         byId("refreshWorkflows").onclick = requestWorkflows;
         byId("command").addEventListener("change", requestWorkflows);
         byId("workflowTrigger").addEventListener("change", function () {

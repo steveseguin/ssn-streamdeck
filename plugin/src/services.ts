@@ -71,6 +71,13 @@ function registerPropertyInspectorMessages(): void {
 		}
 		if (payload.type === "requestStatus") {
 			await sendInspectorStatus();
+		} else if (payload.type === "requestPollPresets") {
+            try {
+                const result = await ssnClient.sendCommand({ action: "getpollpresets" }, { awaitResponse: true });
+                await streamDeck.ui.sendToPropertyInspector({ type: "pollPresets", result: result as JsonValue });
+            } catch (error) {
+                await streamDeck.ui.sendToPropertyInspector({ type: "pollPresets", error: error instanceof Error ? error.message : "Poll presets unavailable." });
+            }
 		} else if (payload.type === "requestWorkflows") {
             try {
                 const result = await ssnClient.sendCommand({ action: "getWorkflowTriggers" }, { awaitResponse: true });

@@ -378,7 +378,8 @@ window.SSN_STREAMDECK_COMMANDS = {
   "loadpoll": {
     "scope": "ssn",
     "icon": "poll-load",
-    "valueLabel": "{\"pollId\":\"...\"}",
+    "valueLabel": "{\"pollId\":1234567890}",
+    "defaultAwaitResponse": true,
     "keyTitle": "Poll\nLoad"
   },
   "setpollsettings": {
