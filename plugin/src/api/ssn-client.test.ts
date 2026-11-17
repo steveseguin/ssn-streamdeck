@@ -41,6 +41,18 @@ describe("SsnClient", () => {
 			fn();
 		}
 	});
+	it.each(["true", JSON.stringify({ ok: false, status: "failed", error: { message: "Dock unavailable" } })])("does not accept an unconfirmed HTTP mutation: %s", async body => {
+		const { server, port, requests } = await createHttpServer(body);
+		cleanup.push(() => server.close());
+		const client = new SsnClient();
+		cleanup.push(() => client.disconnect());
+		client.configure({ sessionId: "http-confirmed", transport: "websocket", apiHost: `127.0.0.1:${port}`, useTls: false });
+		await expect(client.sendCommand({ action: "nextInQueue" })).rejects.toThrow(/did not confirm|Dock unavailable/);
+		const mutations = requests.filter(request => request.method === "POST" && JSON.parse(request.body).action !== "getCapabilities");
+		expect(mutations).toHaveLength(1);
+		expect(JSON.parse(mutations[0].body)).toMatchObject({ action: "nextInQueue", protocol: 2, get: expect.any(String) });
+		expect(JSON.parse(mutations[0].body).replyFormat).toBeUndefined();
+	});
 
 	it("retries a WebSocket handshake that never receives a response", async () => {
 		const server = http.createServer();
@@ -101,7 +113,7 @@ describe("SsnClient", () => {
 	it.each([["clear", 200], ["switch", 200], ["clear", 503], ["switch", 503]] as const)("ignores a delayed capability response after session %s (HTTP %s)", async (change, status) => {
 		let heldResponse: http.ServerResponse | undefined;
 		const server = http.createServer((req, res) => {
-			if (req.url?.startsWith("/old-session/")) { heldResponse = res; return; }
+			if (req.url?.startsWith("/old-session")) { heldResponse = res; return; }
 			res.end(JSON.stringify({ ...capabilities, runtime: "current-runtime" }));
 		});
 		const wsServer = new WebSocketServer({ server });
@@ -337,7 +349,7 @@ describe("SsnClient", () => {
 	});
 
 	it("falls back to HTTP for SSApp source controls when the socket is not verified", async () => {
-		const { server, port, requests } = await createHttpServer();
+		const { server, port, requests } = await createHttpServer(JSON.stringify({ ok: true, status: "completed" }));
 		cleanup.push(() => server.close());
 		const client = new SsnClient();
 		cleanup.push(() => client.disconnect());
@@ -351,8 +363,8 @@ describe("SsnClient", () => {
 			requestTimeoutMs: 500
 		});
 
-		await expect(client.sendCommand({ action: "startSource", target: "ssapp", value: "source-1" }, { awaitResponse: true })).resolves.toBe("ok");
-		expect(requests.some(request => request.url === "/session-4/startSource/ssapp/source-1")).toBe(true);
+		await expect(client.sendCommand({ action: "startSource", target: "ssapp", value: "source-1" }, { awaitResponse: true })).resolves.toMatchObject({ ok: true });
+		expect(requests.some(request => request.method === "POST" && request.url === "/session-4" && JSON.parse(request.body).value === "source-1")).toBe(true);
 	});
 
 	it("keeps HTTP fallback for ordinary SSN commands", async () => {
@@ -438,8 +450,7 @@ describe("SsnClient", () => {
 			ok: true,
 			payload: { sources: [] }
 		});
-		expect(requests).toContain("/session-http-capabilities/getCapabilities");
-		expect(requests).toContain("/session-http-capabilities/getSources/ssapp");
+		expect(requests).toContain("/session-http-capabilities");
 	});
 
 	it("rejects structured HTTP command errors", async () => {
@@ -485,7 +496,7 @@ describe("SsnClient", () => {
 		client.configure({ sessionId: "session-targeted", transport: "websocket", apiHost: `127.0.0.1:${port}`, useTls: false, outChannel: 7 });
 
 		await client.sendCommand({ action: "sendChat", target: "youtube", tabId: 123, value: "Hello" });
-		const request = requests.find(request => request.method === "POST");
+		const request = requests.find(request => request.method === "POST" && JSON.parse(request.body).action === "sendChat");
 		expect(request).toBeDefined();
 		expect(request?.url).toBe("/session-targeted?channel=7");
 		expect(request?.contentType).toBe("application/json");
@@ -626,7 +637,8 @@ async function createHttpServer(body = "ok"): Promise<{ server: http.Server; por
 		req.on("end", () => {
 			requests.push({ method: req.method, url: req.url, contentType: req.headers["content-type"], body: received });
 			res.writeHead(200, { "Content-Type": "text/plain" });
-			res.end(body);
+			const isCapabilities = req.url?.split("?")[0].endsWith("/getCapabilities") || (received && JSON.parse(received).action === "getCapabilities");
+			res.end(isCapabilities && !body.includes('"type":"capabilities"') ? JSON.stringify(capabilities) : body);
 		});
 	});
 	await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
@@ -641,10 +653,12 @@ async function createSilentWebSocketHttpServer(): Promise<{
 	requests: string[];
 }> {
 	const requests: string[] = [];
-	const server = http.createServer((req, res) => {
+	const server = http.createServer(async (req, res) => {
 		requests.push(req.url || "");
+		let body = "";
+		for await (const chunk of req) body += chunk;
 		res.writeHead(200, { "Content-Type": "application/json" });
-		if (req.url?.endsWith("/getCapabilities")) {
+		if (req.url?.endsWith("/getCapabilities") || (body && JSON.parse(body).action === "getCapabilities")) {
 			res.end(JSON.stringify(capabilities));
 			return;
 		}

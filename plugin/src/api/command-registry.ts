@@ -294,7 +294,7 @@ export function buildCustomCommandPayload(settings: CustomCommandSettings): SsnC
 		payload.target = settings.target;
 	}
 	if (typeof settings.value !== "undefined") {
-		payload.value = settings.value;
+		payload.value = parseValue(settings.value);
 	}
 	return payload;
 }

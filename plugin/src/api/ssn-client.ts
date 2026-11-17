@@ -200,11 +200,13 @@ export class SsnClient {
 			...payload,
 			apiid: this.settings.sessionId || payload.apiid
 		};
-		if (this.isTransportOpen() && this.transportVerified) {
-			const verifiedProtocol = this.getVerifiedCommandProtocol(command);
-			if (verifiedProtocol !== null) {
-				command = { ...command, protocol: verifiedProtocol };
-			}
+		const useTransport = this.isTransportOpen() && this.transportVerified;
+		if (!useTransport && this.settings.transport === "websocket" && this.settings.httpFallback !== false && !this.capabilities) {
+			await this.requestHttpCapabilities();
+		}
+		const verifiedProtocol = this.getVerifiedCommandProtocol(command);
+		if (verifiedProtocol !== null) command = { ...command, protocol: verifiedProtocol };
+		if (useTransport) {
 			if (options.awaitResponse === true || command.get || verifiedProtocol !== null) {
 				return this.sendTransportRequest(
 					command,
@@ -215,7 +217,12 @@ export class SsnClient {
 			return command;
 		}
 		if (this.settings.transport === "websocket" && this.settings.httpFallback !== false) {
-			return this.sendHttp(command, options.awaitResponse === true);
+			const requireResult = verifiedProtocol !== null || isSsappCommand(command);
+			if (requireResult) {
+				// HTTP relays consume callback envelopes, unlike the plugin's WebSocket listener.
+				command = { ...command, get: command.get || this.createRequestId(command.action) };
+			}
+			return this.sendHttp(command, options.awaitResponse === true || requireResult, requireResult);
 		}
 		throw new Error(`Social Stream Ninja ${this.transportMode.toUpperCase()} transport is not connected`);
 	}
@@ -295,7 +302,7 @@ export class SsnClient {
 		});
 	}
 
-	private async sendHttp(payload: SsnCommandPayload, awaitResponse: boolean): Promise<unknown> {
+	private async sendHttp(payload: SsnCommandPayload, awaitResponse: boolean, requireResult = false): Promise<unknown> {
 		const generation = this.generation;
 		if (!this.settings.sessionId) {
 			throw new Error("Missing Social Stream Ninja session ID");
@@ -349,6 +356,9 @@ export class SsnClient {
 		if (isRecord(result) && result.ok === false) {
 			const error = isRecord(result.error) ? result.error : {};
 			throw new Error(typeof error.message === "string" ? error.message : "Social Stream Ninja API request failed");
+		}
+		if (requireResult && !isStructuredCommandResult(result)) {
+			throw new Error(`Social Stream Ninja API did not confirm the command: ${payload.action}`);
 		}
 		return awaitResponse ? result : text;
 	}
@@ -529,7 +539,13 @@ export class SsnClient {
 			}
 		}
 
-		const response = await this.sendHttp({ action: "getCapabilities", apiid: this.settings.sessionId }, true);
+		return this.requestHttpCapabilities();
+	}
+
+	private async requestHttpCapabilities(): Promise<StreamDeckCapabilities> {
+		const generation = this.generation;
+		// Versioned requests are ignored by overlays that do not own the command.
+		const response = await this.sendHttp({ action: "getCapabilities", apiid: this.settings.sessionId, protocol: 2, get: this.createRequestId("getCapabilities") }, true);
 		this.assertCurrentConnection(generation);
 		const capabilities = extractCapabilities(response);
 		if (!capabilities) {

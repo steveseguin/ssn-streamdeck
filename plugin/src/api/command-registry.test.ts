@@ -15,6 +15,12 @@ import {
 } from "./command-registry.js";
 
 describe("command registry", () => {
+	it("parses custom command objects, arrays and booleans", () => {
+		expect(buildCustomCommandPayload({ action: "settimer", value: '{"seconds":90,"running":false}' }).value).toEqual({ seconds: 90, running: false });
+		expect(buildCustomCommandPayload({ action: "pin", value: '["message-1","message-2"]' }).value).toEqual(["message-1", "message-2"]);
+		expect(buildCustomCommandPayload({ action: "drawmode", value: "false" }).value).toBe(false);
+		expect(buildCustomCommandPayload({ action: "custom", value: "plain text" }).value).toBe("plain text");
+	});
 	it("preserves literal text in message presets", () => {
 		for (const command of ["sendChat", "sendEncodedChat", "waitlistmessage", "setwaitlistmessage"]) {
 			for (const value of ["false", "true", "null", '{"hello":"world"}', "[1,2]"]) {
